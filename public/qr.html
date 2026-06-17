@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LBC Cargo Quest QR</title>
+    <style>
+      :root {
+        --green: #1a7e34;
+        --green-light: #27a349;
+        --surface: #08100a;
+        --surface-soft: #101810;
+        --text: #f7faf8;
+        --muted: rgba(247, 250, 248, 0.62);
+        --line: rgba(255, 255, 255, 0.1);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; }
+      body {
+        margin: 0;
+        font-family: Manrope, Arial, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top, rgba(39, 163, 73, 0.22), transparent 24%),
+          linear-gradient(180deg, #09100a 0%, #071009 45%, #050a06 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .card {
+        width: min(100%, 460px);
+        background: linear-gradient(180deg, rgba(16, 24, 16, 0.95), rgba(8, 16, 10, 0.92));
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+        padding: 28px;
+        text-align: center;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.22em;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green-light);
+        box-shadow: 0 0 12px rgba(39, 163, 73, 0.9);
+      }
+
+      h1 {
+        margin: 18px 0 8px;
+        font-size: 40px;
+        line-height: 0.94;
+        letter-spacing: -0.04em;
+      }
+
+      h1 span { color: var(--green-light); }
+
+      p.lead {
+        margin: 0 0 22px;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 15px;
+      }
+
+      .qr-wrap {
+        background: #ffffff;
+        border-radius: 22px;
+        padding: 16px;
+        margin: 0 auto 18px;
+        width: fit-content;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+      }
+
+      .qr-wrap img {
+        display: block;
+        width: 260px;
+        max-width: 100%;
+        height: auto;
+      }
+
+      .url {
+        margin: 0 0 18px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--green-light);
+        font-size: 14px;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 0 0 18px;
+      }
+
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 12px 10px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .step strong {
+        display: inline-flex;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, var(--green-light), var(--green));
+        margin-bottom: 8px;
+      }
+
+      .step div {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .note {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .warning {
+        display: none;
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255, 200, 0, 0.12);
+        border: 1px solid rgba(255, 200, 0, 0.28);
+        color: #ffe08a;
+        text-align: left;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .warning.show { display: block; }
+
+      @media print {
+        body { background: #ffffff; padding: 0; }
+        .card { box-shadow: none; border: 2px solid #111; color: #111; }
+        .note, .warning { color: #333; }
+      }
+
+      @media (max-width: 520px) {
+        .steps { grid-template-columns: 1fr; }
+        h1 { font-size: 34px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="eyebrow"><span class="dot"></span> Mässläge</div>
+      <h1>LBC Cargo <span>Quest</span></h1>
+      <p class="lead">Scanna koden och spela direkt i mobilen. Ingen app, inget OneDrive, bara en publik länk till spelet.</p>
+
+      <div class="qr-wrap">
+        <img id="qr" src="./fair-qr.svg" alt="QR-kod till LBC Cargo Quest" />
+      </div>
+
+      <div class="url" id="game-url">Konfigureras...</div>
+
+      <section class="steps">
+        <article class="step">
+          <strong>1</strong>
+          <div>Öppna kameran och scanna QR-koden</div>
+        </article>
+        <article class="step">
+          <strong>2</strong>
+          <div>Spelet öppnas direkt i webbläsaren</div>
+        </article>
+        <article class="step">
+          <strong>3</strong>
+          <div>Samla gods, lasta och leverera</div>
+        </article>
+      </section>
+
+      <div class="note">Tips: öppna denna sida som affisch på skärm eller skriv ut den från den publika adressen <strong id="qr-page-url">qr.html</strong>.</div>
+      <div id="warning" class="warning"></div>
+    </main>
+
+    <script>
+      async function boot() {
+        const gameUrlEl = document.getElementById('game-url')
+        const qrPageUrlEl = document.getElementById('qr-page-url')
+        const warningEl = document.getElementById('warning')
+
+        try {
+          const res = await fetch('./fair-config.json', { cache: 'no-store' })
+          if (!res.ok) throw new Error('fair-config.json saknas')
+
+          const config = await res.json()
+          if (!config.publicGameUrl || config.publicGameUrl.includes('example.com')) {
+            throw new Error('placeholder-url upptäckt')
+          }
+          gameUrlEl.textContent = config.publicGameUrl
+          qrPageUrlEl.textContent = config.qrPageUrl
+        } catch (err) {
+          warningEl.classList.add('show')
+          warningEl.textContent = 'QR-filen är inte färdigkonfigurerad ännu. Kör build:fair med PUBLIC_GAME_URL satt till den publika adress där spelet ska ligga, till exempel https://cargoquest.dindoman.se/'
+          gameUrlEl.textContent = 'Publik URL saknas'
+        }
+      }
+
+      boot()
+    </script>
+  </body>
+  </html>

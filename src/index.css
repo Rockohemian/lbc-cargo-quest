@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
+  --bg-base: #08100a;
+  --bg-deep: #050a06;
+}
+
+@layer base {
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body, #root { height: 100%; }
+  html, body { overflow: hidden; background: var(--bg-base); }
+  body {
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(circle at 50% 18%, rgba(39,163,73,.18), transparent 24%),
+      radial-gradient(circle at 82% 22%, rgba(42,138,224,.12), transparent 18%),
+      radial-gradient(circle at 15% 85%, rgba(26,126,52,.12), transparent 20%),
+      linear-gradient(180deg, #09100a 0%, #071009 40%, #050a06 100%);
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(circle at center, black, transparent 85%);
+    opacity: .45;
+  }
+
+  /* Leaflet dark overrides */
+  .leaflet-container { background: #08100a !important; }
+  .leaflet-tile { filter: brightness(0.9) saturate(0.85); }
+  .leaflet-control-attribution { display: none !important; }
+
+  /* Nattläge – lysande gröna vägar mot svart bakgrund */
+  .map-night .leaflet-container { background: #03070400 !important; }
+  .map-night .leaflet-tile {
+    filter: brightness(0.82) sepia(1) hue-rotate(72deg) saturate(5.5) contrast(1.12);
+  }
+
+  /* Dagläge – ljus, lättläst karta */
+  .map-day .leaflet-container { background: #e9eee9 !important; }
+  .map-day .leaflet-tile { filter: none; }
+
+  /* Scrollbar hide utility */
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+}
+
+@layer utilities {
+  /* Safe area paddings for notched phones */
+  .safe-area-top    { padding-top:    env(safe-area-inset-top); }
+  .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .font-display { font-family: var(--font-display); }
+}
+
+/* CSS animation for Leaflet player icon pulse */
+@keyframes pulse {
+  0%,100% { transform: scale(1);   opacity: .6; }
+  50%      { transform: scale(1.8); opacity: .15; }
+}
+
+/* Smooth canvas rendering */
+canvas { display: block; }

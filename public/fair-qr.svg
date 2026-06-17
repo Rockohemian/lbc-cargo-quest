@@ -1,18 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420" role="img" aria-label="Konfigurera PUBLIC_GAME_URL innan QR-koden används">
-	<rect width="420" height="420" rx="24" fill="#ffffff"/>
-	<rect x="24" y="24" width="372" height="372" rx="18" fill="#f3f6f4" stroke="#d6ddd7"/>
-	<rect x="58" y="58" width="86" height="86" rx="10" fill="#1a7e34"/>
-	<rect x="70" y="70" width="62" height="62" rx="6" fill="#ffffff"/>
-	<rect x="82" y="82" width="38" height="38" rx="4" fill="#1a7e34"/>
-	<rect x="276" y="58" width="86" height="86" rx="10" fill="#1a7e34"/>
-	<rect x="288" y="70" width="62" height="62" rx="6" fill="#ffffff"/>
-	<rect x="300" y="82" width="38" height="38" rx="4" fill="#1a7e34"/>
-	<rect x="58" y="276" width="86" height="86" rx="10" fill="#1a7e34"/>
-	<rect x="70" y="288" width="62" height="62" rx="6" fill="#ffffff"/>
-	<rect x="82" y="300" width="38" height="38" rx="4" fill="#1a7e34"/>
-	<text x="210" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#1a7e34">QR ej klar</text>
-	<text x="210" y="222" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#33413a">Kör build:fair med</text>
-	<text x="210" y="246" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#33413a">PUBLIC_GAME_URL</text>
-	<text x="210" y="286" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#55635b">Exempel:</text>
-	<text x="210" y="308" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#55635b">https://cargoquest.lbcfrakt.se/</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 35 35" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h35v35H0z"/><path stroke="#101010" d="M1 1.5h7m1 0h3m2 0h1m3 0h5m1 0h1m2 0h7M1 2.5h1m5 0h1m1 0h1m1 0h2m1 0h1m2 0h1m1 0h1m3 0h3m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m2 0h1m1 0h2m2 0h1m1 0h1m2 0h1m1 0h3m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1m2 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m2 0h3m1 0h2m5 0h2m2 0h1m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m4 0h2m1 0h1m4 0h2m1 0h1m1 0h1m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h1m8 0h2m1 0h1M1 9.5h1m1 0h2m1 0h3m3 0h1m2 0h1m1 0h4m1 0h1m4 0h1m2 0h1m1 0h2M1 10.5h1m1 0h1m1 0h1m2 0h1m1 0h1m1 0h1m4 0h1m2 0h2m2 0h1m2 0h2m1 0h2m1 0h1M2 11.5h2m1 0h3m1 0h2m1 0h2m1 0h1m1 0h2m2 0h6m1 0h3m2 0h1M2 12.5h1m2 0h2m2 0h3m2 0h2m1 0h1m1 0h1m1 0h1m2 0h1m2 0h2m1 0h1m2 0h1M5 13.5h1m1 0h2m2 0h3m5 0h2m1 0h1m1 0h1m3 0h3M1 14.5h2m1 0h1m4 0h5m3 0h3m5 0h1m2 0h1m2 0h2M2 15.5h1m3 0h2m1 0h3m2 0h1m1 0h2m1 0h1m5 0h1m1 0h2m1 0h1M3 16.5h1m1 0h1m2 0h2m2 0h1m1 0h2m1 0h1m1 0h5m2 0h2m2 0h2M1 17.5h1m4 0h3m3 0h1m1 0h1m1 0h1m2 0h6m1 0h2m1 0h3M4 18.5h3m2 0h3m1 0h1m2 0h1m1 0h1m3 0h4m1 0h1m1 0h2m1 0h2M2 19.5h6m5 0h2m1 0h1m1 0h1m4 0h1m2 0h4m1 0h2M1 20.5h3m8 0h1m1 0h4m2 0h1m1 0h1m3 0h2m1 0h1M1 21.5h1m2 0h1m2 0h1m1 0h2m2 0h2m1 0h1m2 0h1m1 0h1m8 0h3M1 22.5h2m3 0h1m3 0h4m1 0h2m1 0h2m4 0h1m1 0h2m3 0h1m1 0h1M3 23.5h2m2 0h1m1 0h4m4 0h2m4 0h3m1 0h1m1 0h1m1 0h3M2 24.5h3m4 0h1m1 0h2m1 0h1m2 0h1m2 0h1m4 0h3m1 0h2m1 0h2M1 25.5h1m1 0h1m1 0h1m1 0h2m1 0h3m1 0h3m1 0h1m4 0h1m1 0h5m2 0h2M9 26.5h1m1 0h3m2 0h1m1 0h3m3 0h2m3 0h2M1 27.5h7m1 0h3m1 0h1m1 0h1m1 0h1m2 0h2m1 0h3m1 0h1m1 0h1M1 28.5h1m5 0h1m1 0h1m1 0h2m1 0h1m7 0h4m3 0h3M1 29.5h1m1 0h3m1 0h1m3 0h2m1 0h2m2 0h1m2 0h1m2 0h6m1 0h2M1 30.5h1m1 0h3m1 0h1m1 0h3m2 0h2m3 0h4m1 0h2m2 0h1m3 0h2M1 31.5h1m1 0h3m1 0h1m1 0h3m1 0h2m5 0h1m1 0h1m1 0h1m2 0h2m1 0h2M1 32.5h1m5 0h1m2 0h2m1 0h2m1 0h5m2 0h1m1 0h1m1 0h3m3 0h1M1 33.5h7m1 0h2m4 0h5m2 0h1m1 0h1m4 0h3"/></svg>

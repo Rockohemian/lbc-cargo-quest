@@ -9,7 +9,7 @@ import { TruckPreview } from '../game/TruckPreview'
 import { generateCargoItems } from '../../utils/cargoGenerator'
 
 export function ProfileScreen() {
-  const { player, garage, resetRound, setCargoItems, playerPosition, setScreen } = useGameStore()
+  const { player, garage, testMode, testUnlockGarage, resetRound, setCargoItems, playerPosition, setScreen } = useGameStore()
 
   const rankIdx = RANKS.indexOf(player.rank)
   const nextRank = RANKS[Math.min(rankIdx + 1, RANKS.length - 1)]
@@ -139,6 +139,11 @@ export function ProfileScreen() {
             <Button fullWidth size="md" variant="ghost" onClick={() => setScreen('map')}>
               ← Tillbaka
             </Button>
+            {testMode && !garage.unlocked && (
+              <Button fullWidth size="sm" variant="secondary" onClick={testUnlockGarage}>
+                🧪 Simulera 10 000 poäng (test)
+              </Button>
+            )}
           </motion.div>
         </div>
       </div>

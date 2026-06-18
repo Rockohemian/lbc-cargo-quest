@@ -36,6 +36,7 @@ interface GameState {
   equipPart: (category: PartCategory, partId: string) => void
   unequipPart: (category: PartCategory) => void
   dismissUnlockNotice: () => void
+  testUnlockGarage: () => void
 }
 
 const DEFAULT_GARAGE: GarageState = {
@@ -181,6 +182,20 @@ export const useGameStore = create<GameState>()(
       dismissUnlockNotice: () => set((s) => ({
         garage: { ...s.garage, unlockQueue: s.garage.unlockQueue.slice(1) },
       })),
+
+      testUnlockGarage: () => {
+        const s = get()
+        if (s.garage.unlocked) return
+        set({
+          garage: {
+            ...s.garage,
+            unlocked: true,
+            stats: { ...s.garage.stats, lifetimePoints: GARAGE_UNLOCK_POINTS },
+            pendingCrates: [...s.garage.pendingCrates, 'gold'],
+            unlockQueue: [...s.garage.unlockQueue, { kind: 'garage' }],
+          },
+        })
+      },
     }),
     {
       name: 'lcq-v1',

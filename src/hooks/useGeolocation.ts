@@ -27,7 +27,7 @@ export function useGeolocation(onUpdate: (pos: LatLng) => void, options: Options
       return
     }
 
-    const opts: PositionOptions = { enableHighAccuracy: true, timeout: 14000, maximumAge: 4000 }
+    const opts: PositionOptions = { enableHighAccuracy: true, timeout: 14000, maximumAge: 0 }
     let settled = false
 
     // Fall back after 15 s if no position has arrived.
@@ -41,8 +41,9 @@ export function useGeolocation(onUpdate: (pos: LatLng) => void, options: Options
     const ok = (p: GeolocationPosition) => {
       settled = true
       window.clearTimeout(fallbackTimer)
-      // Accuracy >200 m = network/cell estimate, mark as fallback but still use the real coords.
-      statusRef.current?.(p.coords.accuracy && p.coords.accuracy > 200 ? 'fallback' : 'ok')
+      // Always 'ok' when real device coordinates arrive – accuracy is a separate concern.
+      // 'fallback' is reserved for the timer-based KARLSTAD default only.
+      statusRef.current?.('ok')
       cbRef.current({ lat: p.coords.latitude, lng: p.coords.longitude })
     }
 

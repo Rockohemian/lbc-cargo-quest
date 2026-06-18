@@ -31,7 +31,7 @@ export function SplashScreen() {
   }
 
   return (
-    <div className="fixed inset-0 bg-surface-900 flex flex-col overflow-y-auto scrollbar-hide">
+    <div className="fixed inset-0 bg-surface-900 flex flex-col overflow-hidden" style={{ overscrollBehavior: 'none' }}>
       {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[22%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[26rem] h-[26rem] bg-lbc-green/15 rounded-full blur-3xl" />
@@ -39,7 +39,7 @@ export function SplashScreen() {
         <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-lbc-blue/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative flex-1 flex flex-col items-center justify-start px-6 gap-6 pt-10 pb-6">
+      <div className="relative flex-1 flex flex-col items-center justify-start px-6 gap-5 overflow-y-auto scrollbar-hide pt-8 pb-6" style={{ overscrollBehavior: 'contain' }}>
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, scale: 0.7 }}

@@ -366,7 +366,6 @@ export function LoadingScreen() {
       {phase === 'secure' && (
         <div className="flex-1 flex flex-col min-h-0">
           <div className="px-4 pt-1">
-            <p className="text-white/55 text-sm mb-2">Dra fingret vågrätt över lasten för att spänna fast band. Lägg till nät, mellanvägg och stoppklossar för full säkring.</p>
             <div ref={secureRef} className="relative touch-none"
               onPointerDown={onSecurePointerDown}
               onPointerUp={onSecurePointerUp}
@@ -391,16 +390,14 @@ export function LoadingScreen() {
           </div>
 
           {/* Securing tools */}
-          <div className="px-4 mt-3 grid grid-cols-2 gap-2">
-            <ToolToggle active={strapYs.length > 0} icon="🔗" label={`Spännband · ${strapYs.length}`} onClick={() => {
-              // tapping also adds a strap at a sensible default height
+          <div className="px-4 mt-2 grid grid-cols-3 gap-1.5">
+            <ToolToggle active={strapYs.length > 0} icon="🔗" label={`Band · ${strapYs.length}`} onClick={() => {
               setStrapYs(prev => prev.length >= 6 ? prev : [...prev, 0.3 + prev.length * 0.12])
             }} />
-            <ToolToggle active={false} icon="↩️" label="Ångra band" disabled={strapYs.length === 0} onClick={() => setStrapYs(prev => prev.slice(0, -1))} />
-            <ToolToggle active={net} icon="🕸️" label="Lastnät bak" onClick={() => setNet(v => !v)} />
+            <ToolToggle active={false} icon="↩️" label="Ångra" disabled={strapYs.length === 0} onClick={() => setStrapYs(prev => prev.slice(0, -1))} />
+            <ToolToggle active={net} icon="🕸️" label="Lastnät" onClick={() => setNet(v => !v)} />
             <ToolToggle active={divider} icon="🧱" label="Mellanvägg" onClick={() => setDivider(v => !v)} />
             <ToolToggle active={chocks} icon="🔻" label="Stoppklossar" onClick={() => setChocks(v => !v)} />
-            <ToolToggle active={false} icon="🤖" label="Säkra automatiskt" onClick={() => { setStrapYs([0.28, 0.45, 0.62, 0.78]); setNet(true); setChocks(true) }} />
           </div>
 
           {/* Feedback */}

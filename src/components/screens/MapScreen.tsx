@@ -370,31 +370,31 @@ export function MapScreen() {
             {isNight ? '☀️ Dagläge' : '🌙 Nattläge'}
           </button>
           {showTestTools && (
-            <>
-              <button
-                onClick={handleNearbyTestSpawn}
-                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-lbc-blue/14 text-lbc-blue border border-lbc-blue/25 backdrop-blur-lg shadow-[0_14px_34px_rgba(0,0,0,.24)]"
-              >
-                🧪 Nära gods
-              </button>
-              <button
-                onClick={toggleSimulate}
-                className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold border shadow-[0_14px_34px_rgba(0,0,0,.24)] transition-all ${
-                  simulating
-                    ? 'bg-lbc-green text-white border-lbc-green-d'
-                    : 'bg-surface-800/90 text-white/80 border-white/15 backdrop-blur-lg'
-                }`}
-              >
-                {simulating ? '⏸ Stopp' : '🚶 Simulera'}
-              </button>
-            </>
+            <button
+              onClick={handleNearbyTestSpawn}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-lbc-blue/14 text-lbc-blue border border-lbc-blue/25 backdrop-blur-lg opacity-70"
+            >
+              🧪 Nära
+            </button>
+          )}
+          {testMode && (
+            <button
+              onClick={toggleSimulate}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-all opacity-70 ${
+                simulating
+                  ? 'bg-lbc-green text-white border-lbc-green-d'
+                  : 'bg-surface-800/90 text-white/80 border-white/15 backdrop-blur-lg'
+              }`}
+            >
+              {simulating ? '⏸' : '🚶'}
+            </button>
           )}
           {showTestTools && uncollectedCount < 4 && (
             <button
               onClick={handleRespawn}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-surface-800/90 text-white/80 border border-white/15 backdrop-blur-lg shadow-[0_14px_34px_rgba(0,0,0,.24)]"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-surface-800/90 text-white/80 border border-white/15 backdrop-blur-lg opacity-70"
             >
-              🔄 Nytt gods
+              🔄
             </button>
           )}
         </div>
@@ -443,62 +443,51 @@ export function MapScreen() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom panel */}
-      <div className="bg-[linear-gradient(180deg,rgba(16,24,16,.94),rgba(8,16,10,.98))] backdrop-blur-xl border-t border-white/10 px-4 pt-4 pb-6 z-[1000] safe-area-bottom">
+      {/* Bottom panel — kompakt */}
+      <div className="bg-[linear-gradient(180deg,rgba(16,24,16,.96),rgba(8,16,10,.99))] backdrop-blur-xl border-t border-white/10 px-3 pt-2 pb-3 z-[1000] safe-area-bottom">
         <div className="max-w-lg mx-auto">
-          <div className="flex items-end justify-between gap-3 mb-3">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.24em] text-white/28">Dispatch</div>
-              <div className="text-white font-black font-display text-lg">Sök och lasta gods</div>
-              {testMode && (
-                <div className="mt-1 text-xs font-bold text-lbc-blue">Testläge — gods spawnar nära dig</div>
-              )}
-              {gpsStatus === 'fallback' && !testMode && (
-                <div className="mt-1 text-xs text-amber-300/80">GPS ej tillgänglig — startposition används</div>
-              )}
+          {/* header row */}
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-white font-black text-sm">Sök gods</span>
+              {testMode && <span className="text-[10px] font-bold text-lbc-blue">Testläge</span>}
+              {gpsStatus === 'fallback' && !testMode && <span className="text-[10px] text-amber-300/80">GPS saknas</span>}
             </div>
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-[0.24em] text-white/28">Mål</div>
-              <div className="text-sm font-bold text-lbc-green">Minst 6 gods</div>
-            </div>
+            <span className="text-xs font-bold text-lbc-green">{inventory.length}/6</span>
           </div>
 
           {/* Cargo carousel */}
-          <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">
-            {nearest.slice(0, 7).map(item => (
-              <div key={item.id} className="flex-shrink-0 flex flex-col items-center gap-1 min-w-[52px]">
+          <div className="flex gap-1.5 overflow-x-auto pb-1.5 mb-1.5 scrollbar-hide">
+            {nearest.slice(0, 8).map(item => (
+              <div key={item.id} className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[44px]">
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-2xl border-2 shadow-[0_10px_24px_rgba(0,0,0,.18)]"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-xl border-2"
                   style={{ borderColor: RARITY_COLORS[item.type.rarity], background: 'rgba(255,255,255,.06)' }}
                 >
                   {item.type.emoji}
                 </div>
-                <span className="text-xs text-white/50">{Math.round(item.dist)}m</span>
+                <span className="text-[10px] text-white/45">{Math.round(item.dist)}m</span>
               </div>
             ))}
             {nearest.length === 0 && (
-              <div className="text-white/30 text-sm py-2 italic">Genererar gods...</div>
+              <div className="text-white/30 text-xs py-1 italic">Genererar gods...</div>
             )}
           </div>
 
           {/* Inventory + lasta-knapp */}
-          <div className="flex items-center gap-3">
-            <GlassCard className="flex-1 px-4 py-3">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <div className="text-xs text-white/40">Lastbilen</div>
-                <div className="text-[10px] uppercase tracking-[0.2em] text-white/24">EV Fleet</div>
-              </div>
-              <div className="flex items-center gap-1 flex-wrap">
+          <div className="flex items-center gap-2">
+            <GlassCard className="flex-1 px-3 py-2">
+              <div className="flex items-center gap-1 flex-wrap min-h-[24px]">
                 {inventory.length === 0
                   ? <span className="text-white/25 text-xs">Ingen last ännu</span>
-                  : inventory.slice(-8).map((c, i) => (
-                      <span key={i} className="text-lg">{c.emoji}</span>
+                  : inventory.slice(-10).map((c, i) => (
+                      <span key={i} className="text-base">{c.emoji}</span>
                     ))
                 }
               </div>
             </GlassCard>
             <Button
-              size="lg"
+              size="md"
               disabled={inventory.length < 6}
               onClick={() => setScreen('loading')}
             >

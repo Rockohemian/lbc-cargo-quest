@@ -320,6 +320,8 @@ export function MapScreen() {
   playerPositionRef.current = playerPosition
   const cargoItemsRef = useRef(cargoItems)
   cargoItemsRef.current = cargoItems
+  const testModeRef = useRef(testMode)
+  testModeRef.current = testMode
 
   useEffect(() => {
     // Spawn first rival after delay, then periodically
@@ -334,7 +336,7 @@ export function MapScreen() {
       })
     }
 
-    const spawnTimer = window.setTimeout(spawnRival, RIVAL_SPAWN_DELAY_MS)
+    const spawnTimer = window.setTimeout(spawnRival, testModeRef.current ? 8000 : RIVAL_SPAWN_DELAY_MS)
     const respawnTimer = window.setInterval(spawnRival, RIVAL_RESPAWN_MS)
 
     // Movement + steal tick
@@ -547,14 +549,14 @@ export function MapScreen() {
           )}
         </div>
 
-        {/* Joystick (test/fallback/sim mode) */}
+        {/* Joystick — höger sida så collect-knappar inte täcks */}
         <AnimatePresence>
           {showJoystick && (
             <motion.div
               initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.85 }}
-              className="absolute bottom-72 left-4 z-[1000]"
+              className="absolute bottom-36 right-4 z-[1000]"
               onTouchStart={e => e.stopPropagation()}
             >
               <Joystick onMove={handleJoystickMove} onStop={() => {}} />
@@ -563,14 +565,14 @@ export function MapScreen() {
           )}
         </AnimatePresence>
 
-        {/* In-range collect buttons */}
+        {/* In-range collect buttons — vänster sida, lämnar plats för joystick */}
         <AnimatePresence>
           {inRange.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="absolute bottom-64 left-4 right-4 z-[1000] space-y-2"
+              className={`absolute bottom-36 z-[1000] space-y-2 ${showJoystick ? 'left-4 right-32' : 'left-4 right-4'}`}
             >
               {inRange.slice(0, 2).map(item => (
                 <button
@@ -597,6 +599,7 @@ export function MapScreen() {
           {/* header row */}
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-2">
+              <button onClick={() => setScreen('profile')} className="text-white/50 text-sm leading-none pr-1">←</button>
               <span className="text-white font-black text-sm">Sök gods</span>
               {testMode && <span className="text-[10px] font-bold text-lbc-blue">Testläge</span>}
               {gpsStatus === 'fallback' && !testMode && <span className="text-[10px] text-amber-300/80">GPS saknas</span>}

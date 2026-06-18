@@ -631,7 +631,7 @@ export function MapScreen() {
           {/* header row */}
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-2">
-              <button onClick={() => setScreen('profile')} className="text-white/50 text-sm leading-none pr-1">â†</button>
+              <button onClick={() => setScreen('profile')} className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1 text-white/70 text-xs font-bold active:bg-white/20">👤 Profil</button>
               <span className="text-white font-black text-sm">Sök gods</span>
               {testMode && <span className="text-[10px] font-bold text-lbc-blue">Testläge</span>}
               {gpsStatus === 'fallback' && !testMode && <span className="text-[10px] text-amber-300/80">GPS saknas</span>}

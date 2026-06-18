@@ -220,6 +220,7 @@ export function MapScreen() {
   )
   const [rivals, setRivals] = useState<Rival[]>([])
   const [stolenNotice, setStolenNotice] = useState<string | null>(null)
+  const [previewItem, setPreviewItem] = useState<(CargoItem & { dist: number }) | null>(null)
   const spawnedRef = useRef(false)
   const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // Track last position for spawn engine â€” use ref to avoid effect dependency loop

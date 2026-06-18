@@ -185,16 +185,26 @@ export const useGameStore = create<GameState>()(
 
       testUnlockGarage: () => {
         const s = get()
-        if (s.garage.unlocked) return
-        set({
-          garage: {
-            ...s.garage,
-            unlocked: true,
-            stats: { ...s.garage.stats, lifetimePoints: GARAGE_UNLOCK_POINTS },
-            pendingCrates: [...s.garage.pendingCrates, 'gold'],
-            unlockQueue: [...s.garage.unlockQueue, { kind: 'garage' }],
-          },
-        })
+        if (!s.garage.unlocked) {
+          // First time: unlock garage + add welcome crate
+          set({
+            garage: {
+              ...s.garage,
+              unlocked: true,
+              stats: { ...s.garage.stats, lifetimePoints: GARAGE_UNLOCK_POINTS },
+              pendingCrates: [...s.garage.pendingCrates, 'gold'],
+              unlockQueue: [...s.garage.unlockQueue, { kind: 'garage' }],
+            },
+          })
+        } else {
+          // Already unlocked: just add another test crate
+          set({
+            garage: {
+              ...s.garage,
+              pendingCrates: [...s.garage.pendingCrates, 'gold'],
+            },
+          })
+        }
       },
     }),
     {

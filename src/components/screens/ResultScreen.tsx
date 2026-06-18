@@ -28,7 +28,7 @@ export function ResultScreen() {
   }
 
   return (
-    <div className="fixed inset-0 bg-surface-900 overflow-y-auto">
+    <div data-scroll className="fixed inset-0 bg-surface-900 overflow-y-auto">
       <div className="min-h-full flex flex-col items-center px-4 py-6 pb-10">
         <div className="w-full max-w-sm space-y-4">
 

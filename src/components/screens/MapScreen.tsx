@@ -246,6 +246,19 @@ export function MapScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // When GPS gets first real fix: regenerate cargo around actual position if far from default
+  const gpsFirstFixRef = useRef(false)
+  useEffect(() => {
+    if (gpsStatus !== 'ok' || gpsFirstFixRef.current || testMode) return
+    gpsFirstFixRef.current = true
+    const dist = getDistanceMeters(playerPosition, lastSpawnPosRef.current)
+    if (dist > 150) {
+      setCargoItems(generateCargoField(playerPosition))
+      lastSpawnPosRef.current = playerPosition
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gpsStatus])
+
   // Dynamic refill: check every 5 seconds, or when player moves > 50m from last check
   useEffect(() => {
     const timer = setInterval(() => {

@@ -459,7 +459,7 @@ export function MapScreen() {
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-[0.24em] text-white/28">Mål</div>
-              <div className="text-sm font-bold text-lbc-green">Minst 3 gods</div>
+              <div className="text-sm font-bold text-lbc-green">Minst 6 gods</div>
             </div>
           </div>
 
@@ -499,10 +499,10 @@ export function MapScreen() {
             </GlassCard>
             <Button
               size="lg"
-              disabled={inventory.length < 3}
+              disabled={inventory.length < 6}
               onClick={() => setScreen('loading')}
             >
-              {inventory.length < 3 ? `${inventory.length}/3` : '📦 Lasta!'}
+              {inventory.length < 6 ? `${inventory.length}/6` : '📦 Lasta!'}
             </Button>
           </div>
         </div>

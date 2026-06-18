@@ -106,7 +106,9 @@ function RecenterMap({ pos, follow }: { pos: LatLng; follow: boolean }) {
   return null
 }
 
-const COLLECT_RADIUS = 28
+const COLLECT_RADIUS = 20
+const LOAD_MIN = 10
+const LOAD_MIN_TEST = 3
 
 // ─── Joystick ──────────────────────────────────────────────────────────────
 interface JoystickProps {
@@ -221,6 +223,18 @@ export function MapScreen() {
   const [rivals, setRivals] = useState<Rival[]>([])
   const [stolenNotice, setStolenNotice] = useState<string | null>(null)
   const [previewItem, setPreviewItem] = useState<(CargoItem & { dist: number }) | null>(null)
+  const [showReadyToLoad, setShowReadyToLoad] = useState(false)
+  const prevInventoryLen = useRef(0)
+  // Ready-to-load popup
+  useEffect(() => {
+    const minLoad = testMode ? LOAD_MIN_TEST : LOAD_MIN
+    if (prevInventoryLen.current < minLoad && inventory.length >= minLoad) {
+      setShowReadyToLoad(true)
+      window.setTimeout(() => setShowReadyToLoad(false), 4000)
+    }
+    prevInventoryLen.current = inventory.length
+  }, [inventory.length, testMode])
+
   const spawnedRef = useRef(false)
   const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // Track last position for spawn engine — use ref to avoid effect dependency loop
@@ -625,6 +639,29 @@ export function MapScreen() {
         </AnimatePresence>
       </div>
 
+      {/* Ready-to-load popup */}
+      <AnimatePresence>
+        {showReadyToLoad && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute bottom-36 left-4 right-4 z-[1200]"
+          >
+            <button
+              onClick={() => { setShowReadyToLoad(false); setScreen('loading') }}
+              className="w-full flex items-center justify-between gap-3 bg-lbc-green rounded-2xl px-5 py-4 shadow-[0_8px_32px_rgba(26,126,52,.6)] border border-lbc-green-l active:scale-98"
+            >
+              <div className="text-left">
+                <div className="text-white font-black text-base">📦 Redo att lasta!</div>
+                <div className="text-white/75 text-xs mt-0.5">Du har {inventory.length} kolli – tryck för att lasta</div>
+              </div>
+              <span className="text-2xl">→</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom panel — kompakt */}
       <div className="bg-[linear-gradient(180deg,rgba(16,24,16,.96),rgba(8,16,10,.99))] backdrop-blur-xl border-t border-white/10 px-3 pt-2 pb-3 z-[1000] safe-area-bottom">
         <div className="max-w-lg mx-auto">
@@ -671,10 +708,10 @@ export function MapScreen() {
             </GlassCard>
             <Button
               size="md"
-              disabled={inventory.length < (testMode ? 3 : 6)}
+              disabled={inventory.length < (testMode ? LOAD_MIN_TEST : LOAD_MIN)}
               onClick={() => setScreen('loading')}
             >
-              {inventory.length < (testMode ? 3 : 6) ? `${inventory.length}/${testMode ? 3 : 6}` : '📦 Lasta!'}
+              {inventory.length < (testMode ? LOAD_MIN_TEST : LOAD_MIN) ? `${inventory.length}/${testMode ? LOAD_MIN_TEST : LOAD_MIN}` : '📦 Lasta!'}
             </Button>
           </div>
         </div>

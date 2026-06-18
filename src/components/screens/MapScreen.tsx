@@ -20,9 +20,9 @@ import { GlassCard } from '../ui/GlassCard'
 import type { CargoItem, LatLng } from '../../types'
 
 // â”€â”€â”€ Rival trucks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const RIVAL_SPEED_MPS = 1.4        // meter per sekund (~gÃ¥ng+)
-const RIVAL_STEAL_RANGE = 24       // meter frÃ¥n godset fÃ¶re stjÃ¤lning bÃ¶rjar
-const RIVAL_STEAL_SECONDS = 12     // sekunder det tar att stjÃ¤la
+const RIVAL_SPEED_MPS = 1.4        // meter per sekund (~gång+)
+const RIVAL_STEAL_RANGE = 24       // meter från godset före stjälning börjar
+const RIVAL_STEAL_SECONDS = 12     // sekunder det tar att stjäla
 const RIVAL_TICK_MS = 2000         // uppdatering var 2:a sekund
 const RIVAL_MAX = 2                // max antal rivaler samtidigt
 const RIVAL_SPAWN_DELAY_MS = 15000 // f\u00f6rsta rival efter 15s
@@ -32,7 +32,7 @@ interface Rival {
   id: string
   position: LatLng
   targetId: string | null
-  dwellSec: number   // sekunder spenderade vid mÃ¥let
+  dwellSec: number   // sekunder spenderade vid målet
 }
 
 let rivalSeq = 0
@@ -533,7 +533,7 @@ export function MapScreen() {
                   {nearestDistance !== null ? `${nearestDistance}m` : 'Tomt'}
                 </div>
                 <div className="text-xs text-white/42 mt-0.5">
-                  {nearest[0] ? nearest[0].type.name : 'VÃ¤ntar pÃ¥ gods...'}
+                  {nearest[0] ? nearest[0].type.name : 'Väntar på gods...'}
                 </div>
               </div>
               <div className="rounded-2xl border border-lbc-green/25 bg-lbc-green/12 px-2 py-1 text-xs font-bold text-lbc-green">
@@ -549,14 +549,14 @@ export function MapScreen() {
             onClick={toggleMapTheme}
             className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-surface-800/90 text-white/85 border border-white/15 backdrop-blur-lg shadow-[0_14px_34px_rgba(0,0,0,.24)]"
           >
-            {isNight ? 'â˜€ï¸ DaglÃ¤ge' : 'ðŸŒ™ NattlÃ¤ge'}
+            {isNight ? 'â˜€ï¸ Dagläge' : 'ðŸŒ™ Nattläge'}
           </button>
           {showTestTools && (
             <button
               onClick={handleNearbyTestSpawn}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-lbc-blue/14 text-lbc-blue border border-lbc-blue/25 backdrop-blur-lg opacity-70"
             >
-              ðŸ§ª NÃ¤ra
+              ðŸ§ª Nära
             </button>
           )}
           {testMode && (
@@ -581,7 +581,7 @@ export function MapScreen() {
           )}
         </div>
 
-        {/* Joystick â€” hÃ¶ger sida sÃ¥ collect-knappar inte tÃ¤cks */}
+        {/* Joystick â€” höger sida så collect-knappar inte täcks */}
         <AnimatePresence>
           {showJoystick && (
             <motion.div
@@ -596,7 +596,7 @@ export function MapScreen() {
           )}
         </AnimatePresence>
 
-        {/* In-range collect buttons â€” vÃ¤nster sida, lÃ¤mnar plats fÃ¶r joystick */}
+        {/* In-range collect buttons â€” vänster sida, lämnar plats för joystick */}
         <AnimatePresence>
           {inRange.length > 0 && (
             <motion.div
@@ -614,7 +614,7 @@ export function MapScreen() {
                   <span className="text-2xl">{item.type.emoji}</span>
                   <div className="flex-1 text-left">
                     <div>{item.type.name}</div>
-                    <div className="text-xs text-white/70">{Math.round(item.dist)}m bort Â· +{item.type.xpReward} XP</div>
+                    <div className="text-xs text-white/70">{Math.round(item.dist)}m bort · +{item.type.xpReward} XP</div>
                   </div>
                   <span className="text-lg">â†’</span>
                 </button>
@@ -631,8 +631,8 @@ export function MapScreen() {
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-2">
               <button onClick={() => setScreen('profile')} className="text-white/50 text-sm leading-none pr-1">â†</button>
-              <span className="text-white font-black text-sm">SÃ¶k gods</span>
-              {testMode && <span className="text-[10px] font-bold text-lbc-blue">TestlÃ¤ge</span>}
+              <span className="text-white font-black text-sm">Sök gods</span>
+              {testMode && <span className="text-[10px] font-bold text-lbc-blue">Testläge</span>}
               {gpsStatus === 'fallback' && !testMode && <span className="text-[10px] text-amber-300/80">GPS saknas</span>}
             </div>
             <span className="text-xs font-bold text-lbc-green">{inventory.length}/6</span>
@@ -661,7 +661,7 @@ export function MapScreen() {
             <GlassCard className="flex-1 px-3 py-2">
               <div className="flex items-center gap-1 flex-wrap min-h-[24px]">
                 {inventory.length === 0
-                  ? <span className="text-white/25 text-xs">Ingen last Ã¤nnu</span>
+                  ? <span className="text-white/25 text-xs">Ingen last ännu</span>
                   : inventory.slice(-10).map((c, i) => (
                       <span key={i} className="text-base">{c.emoji}</span>
                     ))

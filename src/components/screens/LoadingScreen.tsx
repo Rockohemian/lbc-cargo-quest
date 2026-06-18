@@ -423,7 +423,7 @@ export function LoadingScreen() {
             {/* Securing tools */}
             <div className="px-4 mt-2 grid grid-cols-3 gap-1.5">
               <ToolToggle active={strapYs.length > 0} icon="🔗" label={`Band · ${strapYs.length}`} onClick={() => {
-                setStrapYs(prev => prev.length >= 6 ? prev : [...prev, 0.3 + prev.length * 0.12])
+                setStrapYs(prev => prev.length >= 6 ? prev : [...prev, 0.88 - prev.length * 0.12])
               }} />
               <ToolToggle active={false} icon="↩️" label="Ångra" disabled={strapYs.length === 0} onClick={() => setStrapYs(prev => prev.slice(0, -1))} />
               <ToolToggle active={net} icon="🕸️" label="Lastnät" onClick={() => setNet(v => !v)} />

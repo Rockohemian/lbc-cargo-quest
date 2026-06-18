@@ -178,7 +178,7 @@ export function TransportScreen() {
         <h1 className="text-xl font-black text-white font-display">Karlstad → {destCity}</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6">
+      <div data-scroll className="flex-1 overflow-y-auto px-4 pb-6">
         <div className="grid grid-cols-[1.1fr_1fr] gap-3">
           {/* Sweden map */}
           <GlassCard className="p-3">
@@ -300,7 +300,7 @@ export function TransportScreen() {
 
 function strapsToYs(n: number): number[] {
   const ys: number[] = []
-  for (let i = 0; i < n; i++) ys.push(0.24 + (i * 0.62) / Math.max(1, n))
+  for (let i = 0; i < n; i++) ys.push(0.88 - (i * 0.62) / Math.max(1, n))
   return ys
 }
 

@@ -40,22 +40,28 @@ function rivalId() { return `rival-${++rivalSeq}` }
 
 function rivalIcon(dwellSec: number, stealTotal: number) {
   const pct = Math.min(100, Math.round((dwellSec / stealTotal) * 100))
-  const smoke = pct > 0 ? 'ðŸ’¨' : ''
-  const bg = pct > 60 ? 'rgba(180,30,10,.92)' : 'rgba(30,20,10,.92)'
-  const border = pct > 60 ? '#e04020' : '#555'
-  const glow = pct > 60 ? '0 0 18px rgba(224,64,32,.7)' : '0 0 8px rgba(0,0,0,.5)'
-  const progress = pct > 0
-    ? `<div style="position:absolute;bottom:-6px;left:0;right:0;height:3px;background:#333;border-radius:2px">
-        <div style="height:100%;width:${pct}%;background:${pct > 60 ? '#e04020' : '#d4a017'};border-radius:2px;transition:width .4s"></div>
-      </div>` : ''
+  const stealing = pct > 0
+  const bg = stealing ? 'rgba(130,10,5,.97)' : 'rgba(12,9,7,.97)'
+  const border = stealing ? '#a01808' : '#1e1e1e'
+  const glow = stealing ? '0 0 18px rgba(190,35,15,.85)' : '0 0 10px rgba(0,0,0,.9)'
+  const pctBg = pct > 60 ? '#d03010' : '#b07800'
+  const progress = stealing
+    ? '<div style="width:44px;height:3px;background:#1a1a1a;border-radius:2px;overflow:hidden;margin-top:2px">' +
+      '<div style="height:100%;width:' + pct + '%;background:' + pctBg + ';border-radius:2px"></div></div>'
+    : ''
   return L.divIcon({
     className: '',
-    html: `<div style="position:relative;width:46px;height:46px;display:flex;align-items:center;justify-content:center;
-      background:${bg};border:2.5px solid ${border};border-radius:50%;font-size:20px;
-      box-shadow:${glow}">
-      ðŸš›${smoke}${progress}
-    </div>`,
-    iconSize: [46, 46], iconAnchor: [23, 23],
+    html:
+      '<div style="display:flex;flex-direction:column;align-items:center">' +
+      '<div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center;' +
+      'background:' + bg + ';border:2px solid ' + border + ';border-radius:10px;font-size:22px;' +
+      'box-shadow:' + glow + ';filter:grayscale(0.65) brightness(0.6) sepia(0.4)">' +
+      '&#x1F69B;</div>' +
+      progress +
+      '<div style="font-size:8px;font-weight:900;letter-spacing:0.18em;color:#666;' +
+      'text-transform:uppercase;text-shadow:0 1px 4px #000;margin-top:2px">RIVAL</div>' +
+      '</div>',
+    iconSize: [46, 66], iconAnchor: [23, 23],
   })
 }
 
@@ -210,7 +216,7 @@ export function MapScreen() {
   const [simulating, setSimulating] = useState(false)
   const [followPlayer, setFollowPlayer] = useState(true)
   const [mapTheme, setMapTheme] = useState<'night' | 'day'>(
-    () => (localStorage.getItem('lcq-map-theme') as 'night' | 'day') || 'night'
+    () => (localStorage.getItem('lcq-map-theme') as 'night' | 'day') || 'day'
   )
   const [rivals, setRivals] = useState<Rival[]>([])
   const [stolenNotice, setStolenNotice] = useState<string | null>(null)
@@ -559,7 +565,6 @@ export function MapScreen() {
               onTouchStart={e => e.stopPropagation()}
             >
               <Joystick onMove={handleJoystickMove} onStop={() => {}} />
-              <div className="mt-1 text-center text-[10px] text-white/30">Joystick</div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -649,6 +654,7 @@ export function MapScreen() {
     </div>
   )
 }
+
 
 
 

@@ -92,16 +92,16 @@ export function generateCargoField(center: LatLng, count?: number): CargoItem[] 
   // Spread bearings so objects land in different directions.
   const baseBearing = Math.random() * 360
 
-  // 2 items right next to the player (immediately collectible).
+  // 2 items at short walking distance (just outside collect radius).
   for (let i = 0; i < 2; i++) {
     const bearing = (baseBearing + i * 180 + Math.random() * 60) % 360
-    items.push(generateCargoAroundPlayer(center, { minDistance: 8, maxDistance: 20, bearing }))
+    items.push(generateCargoAroundPlayer(center, { minDistance: 28, maxDistance: 45, bearing }))
   }
 
   // 3 items within easy walking distance.
   for (let i = 2; i < 5; i++) {
     const bearing = (baseBearing + i * 120 + Math.random() * 40) % 360
-    items.push(generateCargoAroundPlayer(center, { minDistance: 25, maxDistance: 80, bearing }))
+    items.push(generateCargoAroundPlayer(center, { minDistance: 50, maxDistance: 100, bearing }))
   }
 
   // Remaining objects across the full radius.

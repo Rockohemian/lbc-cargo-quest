@@ -386,7 +386,7 @@ export function MapScreen() {
 
         if (stolen) {
           setCargoItems(cargoItemsRef.current.filter(c => c.id !== stolen))
-          setStolenNotice('💨 Konkurrenten stal ett kollin!')
+          setStolenNotice('💨 Konkurrenten stal ett kolli!')
           window.setTimeout(() => setStolenNotice(null), 3500)
         }
 

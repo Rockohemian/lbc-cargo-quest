@@ -386,7 +386,7 @@ export function MapScreen() {
 
         if (stolen) {
           setCargoItems(cargoItemsRef.current.filter(c => c.id !== stolen))
-          setStolenNotice('ðŸ’¨ Konkurrenten stal ett kollin!')
+          setStolenNotice('💨 Konkurrenten stal ett kollin!')
           window.setTimeout(() => setStolenNotice(null), 3500)
         }
 
@@ -467,6 +467,20 @@ export function MapScreen() {
 
         {/* GPS status banner */}
         <AnimatePresence>
+          {gpsStatus === 'pending' && !testMode && (
+            <motion.div
+              key="gps-pending"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="absolute top-20 left-1/2 -translate-x-1/2 z-[1100] whitespace-nowrap"
+            >
+              <div className="rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl px-4 py-2 text-xs font-bold text-white/70 shadow-[0_12px_30px_rgba(0,0,0,.3)] flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-lbc-green animate-pulse" />
+                Hämtar GPS-position – tillåt plats när webbläsaren frågar
+              </div>
+            </motion.div>
+          )}
           {gpsStatus === 'fallback' && !testMode && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}

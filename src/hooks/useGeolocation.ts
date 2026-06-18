@@ -28,24 +28,33 @@ export function useGeolocation(onUpdate: (pos: LatLng) => void, options: Options
     }
 
     const opts: PositionOptions = { enableHighAccuracy: true, timeout: 14000, maximumAge: 4000 }
+    let settled = false
 
-    // If nothing comes back quickly, treat GPS as weak and fall back.
+    // Fall back after 15 s if no position has arrived.
     const fallbackTimer = window.setTimeout(() => {
-      statusRef.current?.('fallback')
-      cbRef.current(KARLSTAD)
+      if (!settled) {
+        statusRef.current?.('fallback')
+        cbRef.current(KARLSTAD)
+      }
     }, 15000)
 
     const ok = (p: GeolocationPosition) => {
+      settled = true
       window.clearTimeout(fallbackTimer)
-      // Very poor accuracy is treated as a soft fallback but still used.
-      statusRef.current?.(p.coords.accuracy && p.coords.accuracy > 120 ? 'fallback' : 'ok')
+      // Accuracy >200 m = network/cell estimate, mark as fallback but still use the real coords.
+      statusRef.current?.(p.coords.accuracy && p.coords.accuracy > 200 ? 'fallback' : 'ok')
       cbRef.current({ lat: p.coords.latitude, lng: p.coords.longitude })
     }
 
-    const err = () => {
-      window.clearTimeout(fallbackTimer)
-      statusRef.current?.('fallback')
-      cbRef.current(KARLSTAD)
+    const err = (e: GeolocationPositionError) => {
+      // Only give up immediately on explicit permission denial.
+      // Timeout / position-unavailable: let watchPosition keep trying.
+      if (e.code === e.PERMISSION_DENIED) {
+        settled = true
+        window.clearTimeout(fallbackTimer)
+        statusRef.current?.('fallback')
+        cbRef.current(KARLSTAD)
+      }
     }
 
     navigator.geolocation.getCurrentPosition(ok, err, opts)

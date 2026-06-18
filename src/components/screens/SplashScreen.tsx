@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { Button } from '../ui/Button'
 import { GlassCard } from '../ui/GlassCard'
-import { generateCargoItems, generateNearbyTestCargoItems } from '../../utils/cargoGenerator'
+import { generateCargoItems } from '../../utils/cargoGenerator'
 
-type Step = 'intro' | 'name' | 'ready'
+type Step = 'intro' | 'name' | 'ready' | 'mission'
 
 export function SplashScreen() {
-  const { setScreen, setPlayerName, player, setCargoItems, playerPosition, setTestMode } = useGameStore()
+  const { setScreen, setPlayerName, player, setCargoItems, playerPosition } = useGameStore()
   const [step, setStep] = useState<Step>(player.name ? 'ready' : 'intro')
   const [name, setName] = useState(player.name)
 
@@ -19,14 +19,7 @@ export function SplashScreen() {
   }
 
   const handlePlay = () => {
-    setTestMode(false)
     setCargoItems(generateCargoItems(playerPosition))
-    setScreen('map')
-  }
-
-  const handleTestPlay = () => {
-    setTestMode(true)
-    setCargoItems(generateNearbyTestCargoItems(playerPosition))
     setScreen('map')
   }
 
@@ -120,9 +113,6 @@ export function SplashScreen() {
               <Button fullWidth size="lg" onClick={() => setStep('name')}>
                 Börja äventyret →
               </Button>
-              <Button fullWidth size="md" variant="secondary" onClick={handleTestPlay}>
-                🧪 Testa direkt här inne
-              </Button>
             </motion.div>
           )}
 
@@ -176,14 +166,44 @@ export function SplashScreen() {
                   </div>
                 </div>
               </GlassCard>
-              <Button fullWidth size="xl" onClick={handlePlay}>
+              <Button fullWidth size="xl" onClick={() => setStep('mission')}>
                 🗺️ Hitta gods nu
-              </Button>
-              <Button fullWidth size="md" variant="secondary" onClick={handleTestPlay}>
-                🧪 Starta i testläge
               </Button>
               <Button fullWidth size="md" variant="ghost" onClick={() => setStep('name')}>
                 Byt namn
+              </Button>
+            </motion.div>
+          )}
+          {step === 'mission' && (
+            <motion.div
+              key="mission"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm space-y-4"
+            >
+              <div className="text-center">
+                <div className="inline-flex items-center gap-2 rounded-full border border-lbc-green/30 bg-lbc-green/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-lbc-green mb-4">
+                  📡 Uppdrag mottaget
+                </div>
+              </div>
+              <GlassCard className="p-6" glow>
+                <div className="text-4xl mb-4 text-center">🚛</div>
+                <p className="text-white font-bold text-base leading-relaxed text-center">
+                  Du har ett uppdrag.
+                </p>
+                <p className="text-white/70 text-sm leading-relaxed text-center mt-3">
+                  Hitta godset före dina konkurrenter och se till att det levereras{' '}
+                  <span className="text-white font-semibold">säkert</span> och{' '}
+                  <span className="text-lbc-green font-semibold">hållbart</span> till kunden.
+                </p>
+                <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-center gap-2">
+                  <span className="text-lbc-green text-lg">●</span>
+                  <span className="text-white/50 text-xs font-bold uppercase tracking-widest">Lycka till, {player.name}!</span>
+                </div>
+              </GlassCard>
+              <Button fullWidth size="xl" onClick={handlePlay}>
+                Starta uppdrag →
               </Button>
             </motion.div>
           )}

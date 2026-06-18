@@ -2,7 +2,7 @@ import { useGameStore } from '../../store/gameStore'
 import { ProgressBar } from '../ui/ProgressBar'
 
 export function HUD() {
-  const { player, screen, inventory, setScreen, testMode } = useGameStore()
+  const { player, screen, inventory, setScreen } = useGameStore()
   if (screen === 'splash') return null
 
   return (
@@ -41,11 +41,7 @@ export function HUD() {
             </div>
           )}
 
-          {testMode && (
-            <div className="flex-shrink-0 rounded-2xl border border-lbc-blue/25 bg-lbc-blue/10 px-2.5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-lbc-blue">
-              Test
-            </div>
-          )}
+
         </div>
       </div>
     </div>

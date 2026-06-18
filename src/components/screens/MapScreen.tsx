@@ -108,114 +108,15 @@ function RecenterMap({ pos, follow }: { pos: LatLng; follow: boolean }) {
 
 const COLLECT_RADIUS = 20
 const LOAD_MIN = 10
-const LOAD_MIN_TEST = 3
-
-// ─── Joystick ──────────────────────────────────────────────────────────────
-interface JoystickProps {
-  onMove: (dx: number, dy: number) => void
-  onStop: () => void
-}
-
-function Joystick({ onMove, onStop }: JoystickProps) {
-  const baseRef = useRef<HTMLDivElement>(null)
-  const stickRef = useRef<HTMLDivElement>(null)
-  const activeRef = useRef(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const vecRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 })
-
-  const getVec = (cx: number, cy: number, clientX: number, clientY: number) => {
-    const dx = clientX - cx
-    const dy = clientY - cy
-    const len = Math.sqrt(dx * dx + dy * dy)
-    const maxR = 32
-    const r = Math.min(len, maxR)
-    return { dx: len ? (dx / len) * r : 0, dy: len ? (dy / len) * r : 0, nx: len ? dx / len : 0, ny: len ? dy / len : 0 }
-  }
-
-  const startJoy = (clientX: number, clientY: number) => {
-    const base = baseRef.current
-    if (!base) return
-    const rect = base.getBoundingClientRect()
-    const cx = rect.left + rect.width / 2
-    const cy = rect.top + rect.height / 2
-    activeRef.current = true
-    const update = (x: number, y: number) => {
-      const v = getVec(cx, cy, x, y)
-      if (stickRef.current) {
-        stickRef.current.style.transform = `translate(${v.dx}px,${v.dy}px)`
-      }
-      vecRef.current = { dx: v.nx, dy: v.ny }
-    }
-    update(clientX, clientY)
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    intervalRef.current = setInterval(() => {
-      if (activeRef.current) onMove(vecRef.current.dx, vecRef.current.dy)
-    }, 150)
-    return { cx, cy }
-  }
-
-  const stopJoy = () => {
-    activeRef.current = false
-    if (stickRef.current) stickRef.current.style.transform = 'translate(0,0)'
-    vecRef.current = { dx: 0, dy: 0 }
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    onStop()
-  }
-
-  useEffect(() => () => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-  }, [])
-
-  return (
-    <div
-      ref={baseRef}
-      className="relative w-24 h-24 rounded-full border-2 border-white/20 bg-black/30 backdrop-blur-md flex items-center justify-center touch-none select-none"
-      onTouchStart={e => {
-        const t = e.touches[0]
-        startJoy(t.clientX, t.clientY)
-      }}
-      onTouchMove={e => {
-        if (!activeRef.current) return
-        const t = e.touches[0]
-        const base = baseRef.current!
-        const rect = base.getBoundingClientRect()
-        const cx = rect.left + rect.width / 2
-        const cy = rect.top + rect.height / 2
-        const v = getVec(cx, cy, t.clientX, t.clientY)
-        if (stickRef.current) stickRef.current.style.transform = `translate(${v.dx}px,${v.dy}px)`
-        vecRef.current = { dx: v.nx, dy: v.ny }
-      }}
-      onTouchEnd={stopJoy}
-      onMouseDown={e => { e.preventDefault(); startJoy(e.clientX, e.clientY) }}
-      onMouseMove={e => {
-        if (!activeRef.current) return
-        const base = baseRef.current!
-        const rect = base.getBoundingClientRect()
-        const cx = rect.left + rect.width / 2
-        const cy = rect.top + rect.height / 2
-        const v = getVec(cx, cy, e.clientX, e.clientY)
-        if (stickRef.current) stickRef.current.style.transform = `translate(${v.dx}px,${v.dy}px)`
-        vecRef.current = { dx: v.nx, dy: v.ny }
-      }}
-      onMouseUp={stopJoy}
-    >
-      <div ref={stickRef} className="w-10 h-10 rounded-full bg-lbc-green/80 border-2 border-white/40 shadow-[0_0_16px_rgba(26,126,52,.6)] transition-shadow" style={{ transition: 'box-shadow 0.1s' }} />
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-        <span className="text-white text-xl">⊕</span>
-      </div>
-    </div>
-  )
-}
 
 // ─── Main Component ────────────────────────────────────────────────────────
 export function MapScreen() {
   const {
     playerPosition, setPlayerPosition, cargoItems, setCargoItems,
-    selectCargo, setScreen, inventory, testMode, setTestMode,
+    selectCargo, setScreen, inventory,
   } = useGameStore()
 
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>('pending')
-  const [simulating, setSimulating] = useState(false)
   const [followPlayer, setFollowPlayer] = useState(true)
   const [mapTheme, setMapTheme] = useState<'night' | 'day'>(
     () => (localStorage.getItem('lcq-map-theme') as 'night' | 'day') || 'day'
@@ -227,13 +128,13 @@ export function MapScreen() {
   const prevInventoryLen = useRef(0)
   // Ready-to-load popup
   useEffect(() => {
-    const minLoad = testMode ? LOAD_MIN_TEST : LOAD_MIN
+    const minLoad = LOAD_MIN
     if (prevInventoryLen.current < minLoad && inventory.length >= minLoad) {
       setShowReadyToLoad(true)
       window.setTimeout(() => setShowReadyToLoad(false), 4000)
     }
     prevInventoryLen.current = inventory.length
-  }, [inventory.length, testMode])
+  }, [inventory.length])
 
   const spawnedRef = useRef(false)
   const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -245,18 +146,14 @@ export function MapScreen() {
     useCallback((pos: LatLng) => {
       setPlayerPosition(pos)
     }, [setPlayerPosition]),
-    { enabled: !simulating, onStatus: setGpsStatus }
+    { enabled: true, onStatus: setGpsStatus }
   )
 
   // Initial cargo field — runs once
   useEffect(() => {
     if (spawnedRef.current) return
     spawnedRef.current = true
-    if (testMode || gpsStatus === 'fallback') {
-      setCargoItems(generateNearbyTestCargoItems(playerPosition, 12))
-    } else {
-      setCargoItems(generateCargoField(playerPosition))
-    }
+    setCargoItems(generateCargoField(playerPosition))
     lastSpawnPosRef.current = playerPosition
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -264,7 +161,7 @@ export function MapScreen() {
   // When GPS gets first real fix: regenerate cargo around actual position if far from default
   const gpsFirstFixRef = useRef(false)
   useEffect(() => {
-    if (gpsStatus !== 'ok' || gpsFirstFixRef.current || testMode) return
+    if (gpsStatus !== 'ok' || gpsFirstFixRef.current) return
     gpsFirstFixRef.current = true
     const dist = getDistanceMeters(playerPosition, lastSpawnPosRef.current)
     if (dist > 150) {
@@ -282,7 +179,7 @@ export function MapScreen() {
       const moved = getDistanceMeters(pos, lastSpawnPosRef.current)
       if (moved > 30 || state.cargoItems.filter(i => !i.collected).length < 8) {
         lastSpawnPosRef.current = pos
-        const updated = ensureMinimumCargoNearby(state.cargoItems, pos, { testMode: state.testMode })
+        const updated = ensureMinimumCargoNearby(state.cargoItems, pos, {})
         // Only update if something actually changed (reference will differ)
         if (updated !== state.cargoItems) {
           setCargoItems(updated)
@@ -304,46 +201,6 @@ export function MapScreen() {
     setScreen('collect')
   }
 
-  // Simulation: auto-walk toward nearest cargo
-  const toggleSimulate = useCallback(() => {
-    if (simulating) {
-      if (simRef.current) clearInterval(simRef.current)
-      setSimulating(false)
-      return
-    }
-    setSimulating(true)
-    setFollowPlayer(true)
-    simRef.current = setInterval(() => {
-      const { playerPosition: pos, cargoItems: items } = useGameStore.getState()
-      const uncollected = items.filter(i => !i.collected)
-      if (uncollected.length === 0) { clearInterval(simRef.current!); setSimulating(false); return }
-      const target = uncollected.reduce((a, b) =>
-        getDistanceMeters(pos, a.position) < getDistanceMeters(pos, b.position) ? a : b
-      )
-      setPlayerPosition(stepToward(pos, target.position, 9))
-    }, 300)
-  }, [simulating, setPlayerPosition])
-
-  useEffect(() => () => { if (simRef.current) clearInterval(simRef.current) }, [])
-
-  // Joystick movement (test/fallback mode)
-  const handleJoystickMove = useCallback((dx: number, dy: number) => {
-    const { playerPosition: pos } = useGameStore.getState()
-    // dx/dy are normalized (-1..1); move ~4m per tick in that direction
-    const stepMeters = 5
-    const R = 6371000
-    const newLat = pos.lat + (dy * -1 * stepMeters) / R * (180 / Math.PI)
-    const newLng = pos.lng + (dx * stepMeters) / (R * Math.cos(pos.lat * Math.PI / 180)) * (180 / Math.PI)
-    setPlayerPosition({ lat: newLat, lng: newLng })
-    setFollowPlayer(true)
-  }, [setPlayerPosition])
-
-  const handleNearbyTestSpawn = () => {
-    setTestMode(true)
-    setCargoItems(generateNearbyTestCargoItems(playerPosition, 12))
-    spawnedRef.current = true
-  }
-
   const handleRespawn = () => {
     setCargoItems(generateCargoField(playerPosition))
     spawnedRef.current = true
@@ -354,8 +211,6 @@ export function MapScreen() {
   playerPositionRef.current = playerPosition
   const cargoItemsRef = useRef(cargoItems)
   cargoItemsRef.current = cargoItems
-  const testModeRef = useRef(testMode)
-  testModeRef.current = testMode
 
   useEffect(() => {
     // Spawn first rival after delay, then periodically
@@ -370,7 +225,7 @@ export function MapScreen() {
       })
     }
 
-    const spawnTimer = window.setTimeout(spawnRival, testModeRef.current ? 8000 : RIVAL_SPAWN_DELAY_MS)
+    const spawnTimer = window.setTimeout(spawnRival, RIVAL_SPAWN_DELAY_MS)
     const respawnTimer = window.setInterval(spawnRival, RIVAL_RESPAWN_MS)
 
     // Movement + steal tick
@@ -436,11 +291,9 @@ export function MapScreen() {
   )
   // ─────────────────────────────────────────────────────────────────────────
 
-  const showJoystick = testMode || gpsStatus === 'fallback' || simulating
   const uncollectedCount = nearest.length
   const nearestDistance = nearest[0] ? Math.round(nearest[0].dist) : null
 
-  const showTestTools = testMode || gpsStatus === 'fallback'
   const toggleMapTheme = useCallback(() => {
     setMapTheme(prev => {
       const next = prev === 'night' ? 'day' : 'night'
@@ -495,7 +348,7 @@ export function MapScreen() {
 
         {/* GPS status banner */}
         <AnimatePresence>
-          {gpsStatus === 'pending' && !testMode && (
+          {gpsStatus === 'pending' && (
             <motion.div
               key="gps-pending"
               initial={{ opacity: 0, y: -8 }}
@@ -509,7 +362,7 @@ export function MapScreen() {
               </div>
             </motion.div>
           )}
-          {gpsStatus === 'fallback' && !testMode && (
+          {gpsStatus === 'fallback' && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -566,59 +419,16 @@ export function MapScreen() {
           >
             {isNight ? '☀️ Dagläge' : '🌙 Nattläge'}
           </button>
-          {showTestTools && (
-            <button
-              onClick={handleNearbyTestSpawn}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-lbc-blue/14 text-lbc-blue border border-lbc-blue/25 backdrop-blur-lg opacity-70"
-            >
-              🧪 Nära
-            </button>
-          )}
-          {testMode && (
-            <button
-              onClick={toggleSimulate}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-all opacity-70 ${
-                simulating
-                  ? 'bg-lbc-green text-white border-lbc-green-d'
-                  : 'bg-surface-800/90 text-white/80 border-white/15 backdrop-blur-lg'
-              }`}
-            >
-              {simulating ? '⏸' : '🚶'}
-            </button>
-          )}
-          {showTestTools && uncollectedCount < 4 && (
-            <button
-              onClick={handleRespawn}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-surface-800/90 text-white/80 border border-white/15 backdrop-blur-lg opacity-70"
-            >
-              🔄
-            </button>
-          )}
-        </div>
+          </div>
 
-        {/* Joystick — höger sida så collect-knappar inte täcks */}
-        <AnimatePresence>
-          {showJoystick && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              className="absolute bottom-36 right-4 z-[1000]"
-              onTouchStart={e => e.stopPropagation()}
-            >
-              <Joystick onMove={handleJoystickMove} onStop={() => {}} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* In-range collect buttons — vänster sida, lämnar plats för joystick */}
+        {/* In-range collect buttons */}
         <AnimatePresence>
           {inRange.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className={`absolute bottom-36 z-[1000] space-y-2 ${showJoystick ? 'left-4 right-32' : 'left-4 right-4'}`}
+              className="absolute bottom-36 z-[1000] space-y-2 left-4 right-4"
             >
               {inRange.slice(0, 2).map(item => (
                 <button
@@ -670,8 +480,7 @@ export function MapScreen() {
             <div className="flex items-center gap-2">
               <button onClick={() => setScreen('profile')} className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1 text-white/70 text-xs font-bold active:bg-white/20">👤 Profil</button>
               <span className="text-white font-black text-sm">Sök gods</span>
-              {testMode && <span className="text-[10px] font-bold text-lbc-blue">Testläge</span>}
-              {gpsStatus === 'fallback' && !testMode && <span className="text-[10px] text-amber-300/80">GPS saknas</span>}
+              {gpsStatus === 'fallback' && <span className="text-[10px] text-amber-300/80">GPS saknas</span>}
             </div>
             <span className="text-xs font-bold text-lbc-green">{inventory.length}/6</span>
           </div>
@@ -708,10 +517,10 @@ export function MapScreen() {
             </GlassCard>
             <Button
               size="md"
-              disabled={inventory.length < (testMode ? LOAD_MIN_TEST : LOAD_MIN)}
+              disabled={inventory.length < LOAD_MIN}
               onClick={() => setScreen('loading')}
             >
-              {inventory.length < (testMode ? LOAD_MIN_TEST : LOAD_MIN) ? `${inventory.length}/${testMode ? LOAD_MIN_TEST : LOAD_MIN}` : '📦 Lasta!'}
+              {inventory.length < LOAD_MIN ? `${inventory.length}/${LOAD_MIN}` : '📦 Lasta!'}
             </Button>
           </div>
         </div>

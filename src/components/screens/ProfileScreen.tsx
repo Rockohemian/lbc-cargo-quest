@@ -139,15 +139,6 @@ export function ProfileScreen() {
             <Button fullWidth size="md" variant="ghost" onClick={() => setScreen('map')}>
               ← Tillbaka
             </Button>
-            {!garage.unlocked ? (
-              <Button fullWidth size="sm" variant="secondary" onClick={testUnlockGarage}>
-                🧪 Simulera 10 000 poäng (test)
-              </Button>
-            ) : (
-              <Button fullWidth size="sm" variant="secondary" onClick={testUnlockGarage}>
-                🧪 Lägg till testlåda
-              </Button>
-            )}
           </motion.div>
         </div>
       </div>

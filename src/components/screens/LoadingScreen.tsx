@@ -365,54 +365,55 @@ export function LoadingScreen() {
       {/* ── SECURE PHASE ── */}
       {phase === 'secure' && (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="px-4 pt-1">
-            <div ref={secureRef} className="relative touch-none"
-              onPointerDown={onSecurePointerDown}
-              onPointerUp={onSecurePointerUp}
-            >
-              <TrailerView items={placed} strapYs={strapYs} net={net} divider={divider} />
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto scrollbar-hide" data-scroll>
+            <div className="px-4 pt-1">
+              <div ref={secureRef} className="relative touch-none"
+                onPointerDown={onSecurePointerDown}
+                onPointerUp={onSecurePointerUp}
+              >
+                <TrailerView items={placed} strapYs={strapYs} net={net} divider={divider} />
+              </div>
             </div>
-          </div>
 
-          {/* Securing meter */}
-          <div className="px-4 mt-2">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-white/55">Lastsäkring</span>
-              <span className="text-sm font-black" style={{ color: metrics.securing >= 80 ? '#27a349' : metrics.securing >= 50 ? '#d4a017' : '#e04020' }}>
-                {metrics.securing}%
-              </span>
+            {/* Securing meter */}
+            <div className="px-4 mt-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-white/55">Lastsäkring</span>
+                <span className="text-sm font-black" style={{ color: metrics.securing >= 80 ? '#27a349' : metrics.securing >= 50 ? '#d4a017' : '#e04020' }}>
+                  {metrics.securing}%
+                </span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <motion.div className="h-full rounded-full"
+                  animate={{ width: `${metrics.securing}%` }}
+                  style={{ background: metrics.securing >= 80 ? '#27a349' : metrics.securing >= 50 ? '#d4a017' : '#e04020' }} />
+              </div>
             </div>
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full"
-                animate={{ width: `${metrics.securing}%` }}
-                style={{ background: metrics.securing >= 80 ? '#27a349' : metrics.securing >= 50 ? '#d4a017' : '#e04020' }} />
+
+            {/* Securing tools */}
+            <div className="px-4 mt-2 grid grid-cols-3 gap-1.5">
+              <ToolToggle active={strapYs.length > 0} icon="🔗" label={`Band · ${strapYs.length}`} onClick={() => {
+                setStrapYs(prev => prev.length >= 6 ? prev : [...prev, 0.3 + prev.length * 0.12])
+              }} />
+              <ToolToggle active={false} icon="↩️" label="Ångra" disabled={strapYs.length === 0} onClick={() => setStrapYs(prev => prev.slice(0, -1))} />
+              <ToolToggle active={net} icon="🕸️" label="Lastnät" onClick={() => setNet(v => !v)} />
+              <ToolToggle active={divider} icon="🧱" label="Mellanvägg" onClick={() => setDivider(v => !v)} />
+              <ToolToggle active={chocks} icon="🔻" label="Stoppklossar" onClick={() => setChocks(v => !v)} />
             </div>
-          </div>
 
-          {/* Securing tools */}
-          <div className="px-4 mt-2 grid grid-cols-3 gap-1.5">
-            <ToolToggle active={strapYs.length > 0} icon="🔗" label={`Band · ${strapYs.length}`} onClick={() => {
-              setStrapYs(prev => prev.length >= 6 ? prev : [...prev, 0.3 + prev.length * 0.12])
-            }} />
-            <ToolToggle active={false} icon="↩️" label="Ångra" disabled={strapYs.length === 0} onClick={() => setStrapYs(prev => prev.slice(0, -1))} />
-            <ToolToggle active={net} icon="🕸️" label="Lastnät" onClick={() => setNet(v => !v)} />
-            <ToolToggle active={divider} icon="🧱" label="Mellanvägg" onClick={() => setDivider(v => !v)} />
-            <ToolToggle active={chocks} icon="🔻" label="Stoppklossar" onClick={() => setChocks(v => !v)} />
-          </div>
-
-          {/* Feedback */}
-          <div className="px-4 mt-3 flex-1 min-h-0">
-            <GlassCard className="p-3">
+            {/* Feedback */}
+            <div className="px-4 mt-2 pb-3">
               <div className="flex flex-wrap gap-1.5">
                 {metrics.feedback.map((f, i) => (
                   <span key={i} className="text-[11px] px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-white/75">{f}</span>
                 ))}
               </div>
-            </GlassCard>
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="px-4 pb-6 pt-1 border-t border-white/8 bg-surface-900/80 space-y-2">
+          {/* Pinned action buttons – always visible */}
+          <div className="px-4 pb-6 pt-2 border-t border-white/8 bg-surface-900/95 space-y-2 shrink-0">
             <Button fullWidth size="lg" onClick={handleStartTransport}>🚚 Starta transport</Button>
             <Button fullWidth size="sm" variant="ghost" onClick={() => setPhase('place')}>← Tillbaka till lastning</Button>
           </div>

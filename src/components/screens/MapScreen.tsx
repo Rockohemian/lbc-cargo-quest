@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet'
 import { motion, AnimatePresence } from 'framer-motion'
 import L from 'leaflet'
@@ -12,11 +12,52 @@ import {
   ensureMinimumCargoNearby,
   getDistanceMeters,
   stepToward,
+  offset,
 } from '../../utils/cargoGenerator'
 import { RARITY_COLORS } from '../../data/cargoTypes'
 import { Button } from '../ui/Button'
 import { GlassCard } from '../ui/GlassCard'
 import type { CargoItem, LatLng } from '../../types'
+
+// ─── Rival trucks ───────────────────────────────────────────────────────────────
+const RIVAL_SPEED_MPS = 1.4        // meter per sekund (~gång+)
+const RIVAL_STEAL_RANGE = 24       // meter från godset före stjälning börjar
+const RIVAL_STEAL_SECONDS = 12     // sekunder det tar att stjäla
+const RIVAL_TICK_MS = 2000         // uppdatering var 2:a sekund
+const RIVAL_MAX = 2                // max antal rivaler samtidigt
+const RIVAL_SPAWN_DELAY_MS = 45000 // första rival efter 45s
+const RIVAL_RESPAWN_MS = 60000     // ny rival var 60s
+
+interface Rival {
+  id: string
+  position: LatLng
+  targetId: string | null
+  dwellSec: number   // sekunder spenderade vid målet
+}
+
+let rivalSeq = 0
+function rivalId() { return `rival-${++rivalSeq}` }
+
+function rivalIcon(dwellSec: number, stealTotal: number) {
+  const pct = Math.min(100, Math.round((dwellSec / stealTotal) * 100))
+  const smoke = pct > 0 ? '💨' : ''
+  const bg = pct > 60 ? 'rgba(180,30,10,.92)' : 'rgba(30,20,10,.92)'
+  const border = pct > 60 ? '#e04020' : '#555'
+  const glow = pct > 60 ? '0 0 18px rgba(224,64,32,.7)' : '0 0 8px rgba(0,0,0,.5)'
+  const progress = pct > 0
+    ? `<div style="position:absolute;bottom:-6px;left:0;right:0;height:3px;background:#333;border-radius:2px">
+        <div style="height:100%;width:${pct}%;background:${pct > 60 ? '#e04020' : '#d4a017'};border-radius:2px;transition:width .4s"></div>
+      </div>` : ''
+  return L.divIcon({
+    className: '',
+    html: `<div style="position:relative;width:46px;height:46px;display:flex;align-items:center;justify-content:center;
+      background:${bg};border:2.5px solid ${border};border-radius:50%;font-size:20px;
+      box-shadow:${glow}">
+      🚛${smoke}${progress}
+    </div>`,
+    iconSize: [46, 46], iconAnchor: [23, 23],
+  })
+}
 
 // ─── Leaflet icon fix ──────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,6 +212,8 @@ export function MapScreen() {
   const [mapTheme, setMapTheme] = useState<'night' | 'day'>(
     () => (localStorage.getItem('lcq-map-theme') as 'night' | 'day') || 'night'
   )
+  const [rivals, setRivals] = useState<Rival[]>([])
+  const [stolenNotice, setStolenNotice] = useState<string | null>(null)
   const spawnedRef = useRef(false)
   const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // Track last position for spawn engine — use ref to avoid effect dependency loop
@@ -272,6 +315,91 @@ export function MapScreen() {
     spawnedRef.current = true
   }
 
+  // ── Rival trucks ──────────────────────────────────────────────────────────
+  const playerPositionRef = useRef(playerPosition)
+  playerPositionRef.current = playerPosition
+  const cargoItemsRef = useRef(cargoItems)
+  cargoItemsRef.current = cargoItems
+
+  useEffect(() => {
+    // Spawn first rival after delay, then periodically
+    const spawnRival = () => {
+      setRivals(prev => {
+        if (prev.length >= RIVAL_MAX) return prev
+        const center = playerPositionRef.current
+        const bearing = Math.random() * 360
+        const dist = 220 + Math.random() * 180
+        const pos = offset(center, dist, bearing)
+        return [...prev, { id: rivalId(), position: pos, targetId: null, dwellSec: 0 }]
+      })
+    }
+
+    const spawnTimer = window.setTimeout(spawnRival, RIVAL_SPAWN_DELAY_MS)
+    const respawnTimer = window.setInterval(spawnRival, RIVAL_RESPAWN_MS)
+
+    // Movement + steal tick
+    const moveTick = window.setInterval(() => {
+      const cargo = cargoItemsRef.current
+      const uncollected = cargo.filter(i => !i.collected)
+
+      setRivals(prev => {
+        if (prev.length === 0 || uncollected.length === 0) return prev
+        let stolen: string | null = null
+
+        const next = prev.map(r => {
+          // Pick target
+          let target = r.targetId ? uncollected.find(c => c.id === r.targetId) : null
+          if (!target) {
+            // Pick closest uncollected that no other rival is already targeting
+            const taken = new Set(prev.filter(x => x.id !== r.id).map(x => x.targetId))
+            target = uncollected
+              .filter(c => !taken.has(c.id))
+              .sort((a, b) => getDistanceMeters(r.position, a.position) - getDistanceMeters(r.position, b.position))[0]
+              ?? uncollected[0]
+          }
+          if (!target) return r
+
+          const dist = getDistanceMeters(r.position, target.position)
+          const stepM = RIVAL_SPEED_MPS * (RIVAL_TICK_MS / 1000)
+
+          if (dist <= RIVAL_STEAL_RANGE) {
+            const newDwell = r.dwellSec + RIVAL_TICK_MS / 1000
+            if (newDwell >= RIVAL_STEAL_SECONDS) {
+              // Steal it!
+              stolen = target.id
+              return { ...r, targetId: null, dwellSec: 0, position: r.position }
+            }
+            return { ...r, targetId: target.id, dwellSec: newDwell }
+          }
+
+          const newPos = stepToward(r.position, target.position, stepM)
+          return { ...r, position: newPos, targetId: target.id, dwellSec: 0 }
+        })
+
+        if (stolen) {
+          setCargoItems(cargoItemsRef.current.filter(c => c.id !== stolen))
+          setStolenNotice('💨 Konkurrenten stal ett kollin!')
+          window.setTimeout(() => setStolenNotice(null), 3500)
+        }
+
+        return next
+      })
+    }, RIVAL_TICK_MS)
+
+    return () => {
+      window.clearTimeout(spawnTimer)
+      window.clearInterval(respawnTimer)
+      window.clearInterval(moveTick)
+    }
+  }, [setCargoItems])
+
+  const rivalIcons = useMemo(
+    () => rivals.map(r => ({ r, icon: rivalIcon(r.dwellSec, RIVAL_STEAL_SECONDS) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rivals.map(r => `${r.id}-${Math.round(r.dwellSec)}-${Math.round(r.position.lat * 10000)}`).join()]
+  )
+  // ─────────────────────────────────────────────────────────────────────────
+
   const showJoystick = testMode || gpsStatus === 'fallback' || simulating
   const uncollectedCount = nearest.length
   const nearestDistance = nearest[0] ? Math.round(nearest[0].dist) : null
@@ -323,6 +451,10 @@ export function MapScreen() {
           ))}
 
           <Marker position={[playerPosition.lat, playerPosition.lng]} icon={playerIcon()} />
+
+          {rivalIcons.map(({ r, icon }) => (
+            <Marker key={r.id} position={[r.position.lat, r.position.lng]} icon={icon} />
+          ))}
         </MapContainer>
 
         {/* GPS status banner */}
@@ -336,6 +468,22 @@ export function MapScreen() {
             >
               <div className="rounded-2xl border border-amber-400/25 bg-amber-500/12 backdrop-blur-xl px-4 py-2 text-xs font-bold text-amber-200 shadow-[0_12px_30px_rgba(0,0,0,.3)]">
                 📍 Svag GPS — använd joystick eller simulering
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Stolen notice */}
+        <AnimatePresence>
+          {stolenNotice && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.9 }}
+              className="absolute bottom-40 left-1/2 -translate-x-1/2 z-[1200] whitespace-nowrap"
+            >
+              <div className="rounded-2xl border border-red-500/40 bg-red-900/80 backdrop-blur-xl px-4 py-2.5 text-sm font-black text-red-200 shadow-[0_8px_24px_rgba(180,30,10,.5)]">
+                {stolenNotice}
               </div>
             </motion.div>
           )}

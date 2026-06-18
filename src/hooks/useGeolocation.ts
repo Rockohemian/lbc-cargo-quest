@@ -27,13 +27,13 @@ export function useGeolocation(onUpdate: (pos: LatLng) => void, options: Options
       return
     }
 
-    const opts: PositionOptions = { enableHighAccuracy: true, timeout: 9000, maximumAge: 4000 }
+    const opts: PositionOptions = { enableHighAccuracy: true, timeout: 14000, maximumAge: 4000 }
 
     // If nothing comes back quickly, treat GPS as weak and fall back.
     const fallbackTimer = window.setTimeout(() => {
       statusRef.current?.('fallback')
       cbRef.current(KARLSTAD)
-    }, 9500)
+    }, 15000)
 
     const ok = (p: GeolocationPosition) => {
       window.clearTimeout(fallbackTimer)

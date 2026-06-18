@@ -70,7 +70,7 @@ export function computeSecuring(items: PlacedItem[], s: SecuringState): number {
   let score = strapCoverage * 58
   if (s.net) score += 12
   if (s.divider) score += 14
-  if (s.chocks) score += 14
+
   // Tall unstable items with too few straps cap securing low.
   const tallUnstable = items.filter(it => it.rows >= 3 && !it.type.load.stackable).length
   if (tallUnstable > 0 && s.straps < tallUnstable) score = Math.min(score, 55)

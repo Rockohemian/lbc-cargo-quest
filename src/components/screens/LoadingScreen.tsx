@@ -43,15 +43,14 @@ export function LoadingScreen() {
   const [strapYs, setStrapYs] = useState<number[]>([])
   const [net, setNet] = useState(false)
   const [divider, setDivider] = useState(false)
-  const [chocks, setChocks] = useState(false)
 
   const gridRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<DragState | null>(null)
   dragRef.current = drag
 
   const securing: SecuringState = useMemo(
-    () => ({ straps: strapYs.length, net, divider, chocks }),
-    [strapYs.length, net, divider, chocks]
+    () => ({ straps: strapYs.length, net, divider }),
+    [strapYs.length, net, divider]
   )
   const metrics = useMemo(() => computeMetrics(placed, securing), [placed, securing])
 
@@ -399,7 +398,7 @@ export function LoadingScreen() {
               <ToolToggle active={false} icon="↩️" label="Ångra" disabled={strapYs.length === 0} onClick={() => setStrapYs(prev => prev.slice(0, -1))} />
               <ToolToggle active={net} icon="🕸️" label="Lastnät" onClick={() => setNet(v => !v)} />
               <ToolToggle active={divider} icon="🧱" label="Mellanvägg" onClick={() => setDivider(v => !v)} />
-              <ToolToggle active={chocks} icon="🔻" label="Stoppklossar" onClick={() => setChocks(v => !v)} />
+
             </div>
 
             {/* Feedback */}

@@ -72,7 +72,6 @@ export interface SecuringState {
   straps: number       // number of tension straps applied
   net: boolean         // rear load net
   divider: boolean     // intermediate wall
-  chocks: boolean      // stop chocks
 }
 
 export interface LoadMetrics {

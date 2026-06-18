@@ -54,6 +54,20 @@ export function LoadingScreen() {
   )
   const metrics = useMemo(() => computeMetrics(placed, securing), [placed, securing])
 
+  const loadDanger = useMemo<'critical' | 'warning' | null>(() => {
+    if (placed.length === 0) return null
+    if (metrics.weightBalance < 25 || metrics.cogHeight > 75) return 'critical'
+    if (metrics.weightBalance < 45 || metrics.cogHeight > 60) return 'warning'
+    return null
+  }, [placed.length, metrics.weightBalance, metrics.cogHeight])
+
+  const secureDanger = useMemo<'critical' | 'warning' | null>(() => {
+    if (phase !== 'secure' || placed.length === 0) return null
+    if (metrics.securing < 20) return 'critical'
+    if (metrics.securing < 45) return 'warning'
+    return null
+  }, [phase, placed.length, metrics.securing])
+
   // ─── Drag mapping ─────────────────────────────────────────────────────
   const computeGhost = useCallback((clientX: number, clientY: number, d: DragState): GhostPreview | null => {
     const el = gridRef.current
@@ -353,7 +367,23 @@ export function LoadingScreen() {
           </div>
 
           {/* Continue */}
-          <div className="px-4 pb-6 pt-1 border-t border-white/8 bg-surface-900/80">
+          <div className="px-4 pb-6 pt-1 border-t border-white/8 bg-surface-900/80 space-y-2">
+            {loadDanger && placed.length > 0 && (
+              <div className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                loadDanger === 'critical'
+                  ? 'bg-red-900/60 border border-red-500/50 text-red-200'
+                  : 'bg-amber-900/50 border border-amber-500/40 text-amber-200'
+              }`}>
+                <span className="text-base">{loadDanger === 'critical' ? '🚨' : '⚠️'}</span>
+                <span>
+                  {metrics.weightBalance < 25
+                    ? 'Kritisk viktbalans – lasten kan tippa vid bromsning!'
+                    : metrics.cogHeight > 75
+                    ? 'Tyngdpunkten är för hög – tippningsrisk i kurvor!'
+                    : 'Dålig lastfördelning – omfördela godset.'}
+                </span>
+              </div>
+            )}
             <Button fullWidth size="lg" disabled={placed.length === 0} onClick={() => { setSelectedUid(null); setPhase('secure') }}>
               {placed.length === 0 ? 'Lasta minst ett gods' : queue.length > 0 ? `Fortsätt till lastsäkring (${queue.length} kvar)` : 'Fortsätt till lastsäkring →'}
             </Button>
@@ -413,6 +443,20 @@ export function LoadingScreen() {
 
           {/* Pinned action buttons – always visible */}
           <div className="px-4 pb-6 pt-2 border-t border-white/8 bg-surface-900/95 space-y-2 shrink-0">
+            {secureDanger && (
+              <div className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                secureDanger === 'critical'
+                  ? 'bg-red-900/60 border border-red-500/50 text-red-200'
+                  : 'bg-amber-900/50 border border-amber-500/40 text-amber-200'
+              }`}>
+                <span className="text-base">{secureDanger === 'critical' ? '🚨' : '⚠️'}</span>
+                <span>
+                  {metrics.securing < 20
+                    ? 'Lasten är nästan osäkrad – livsfarligt att köra!'
+                    : 'Lasten behöver mer lastsäkring innan körning.'}
+                </span>
+              </div>
+            )}
             <Button fullWidth size="lg" onClick={handleStartTransport}>🚚 Starta transport</Button>
             <Button fullWidth size="sm" variant="ghost" onClick={() => setPhase('place')}>← Tillbaka till lastning</Button>
           </div>

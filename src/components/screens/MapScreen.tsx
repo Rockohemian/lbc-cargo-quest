@@ -638,10 +638,10 @@ export function MapScreen() {
             </GlassCard>
             <Button
               size="md"
-              disabled={inventory.length < 6}
+              disabled={inventory.length < (testMode ? 3 : 6)}
               onClick={() => setScreen('loading')}
             >
-              {inventory.length < 6 ? `${inventory.length}/6` : 'ðŸ“¦ Lasta!'}
+              {inventory.length < (testMode ? 3 : 6) ? `${inventory.length}/${testMode ? 3 : 6}` : '📦 Lasta!'}
             </Button>
           </div>
         </div>
@@ -649,6 +649,7 @@ export function MapScreen() {
     </div>
   )
 }
+
 
 
 

@@ -22,7 +22,7 @@ export function ProfileScreen() {
 
   return (
     <div className="fixed inset-0 bg-surface-900 overflow-y-auto">
-      <div className="min-h-full flex flex-col items-center px-4 pt-16 pb-10 space-y-4">
+      <div className="min-h-full flex flex-col items-center px-4 pt-16 pb-10 space-y-4" data-scroll>
         <div className="w-full max-w-sm space-y-4">
 
           {/* Avatar + name */}

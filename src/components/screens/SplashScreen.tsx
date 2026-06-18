@@ -39,7 +39,7 @@ export function SplashScreen() {
         <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-lbc-blue/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative flex-1 flex flex-col items-center justify-start px-6 gap-5 overflow-y-auto scrollbar-hide pt-8 pb-6" style={{ overscrollBehavior: 'contain' }}>
+      <div data-scroll className="relative flex-1 flex flex-col items-center justify-start px-6 gap-5 overflow-y-auto scrollbar-hide pt-8 pb-6" style={{ overscrollBehavior: 'contain' }}>
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, scale: 0.7 }}

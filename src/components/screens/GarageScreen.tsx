@@ -66,7 +66,7 @@ export function GarageScreen() {
         }}
       />
 
-      <div className="relative min-h-full flex flex-col px-4 pt-14 pb-10">
+      <div className="relative min-h-full flex flex-col px-4 pt-14 pb-10" data-scroll>
         {/* header */}
         <div className="flex items-center justify-between mb-2">
           <button onClick={() => setScreen('profile')} className="text-white/60 text-sm font-bold flex items-center gap-1">

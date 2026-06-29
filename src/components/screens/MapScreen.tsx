@@ -8,12 +8,14 @@ import { useGameStore } from '../../store/gameStore'
 import { useGeolocation, type GpsStatus } from '../../hooks/useGeolocation'
 import {
   generateCargoField,
-  generateNearbyTestCargoItems,
+  generateEventCargoField,
+  applySafetyFilter,
   ensureMinimumCargoNearby,
   getDistanceMeters,
   stepToward,
   offset,
 } from '../../utils/cargoGenerator'
+import { CURRENT_EVENT } from '../../data/events'
 import { RARITY_COLORS } from '../../data/cargoTypes'
 import { Button } from '../ui/Button'
 import { GlassCard } from '../ui/GlassCard'
@@ -120,7 +122,7 @@ const WEIGHT_LABEL: Record<string, string> = {
 export function MapScreen() {
   const {
     playerPosition, setPlayerPosition, cargoItems, setCargoItems,
-    selectCargo, setScreen, inventory,
+    selectCargo, setScreen, inventory, eventMode,
   } = useGameStore()
 
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>('pending')
@@ -147,6 +149,9 @@ export function MapScreen() {
   const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // Track last position for spawn engine — use ref to avoid effect dependency loop
   const lastSpawnPosRef = useRef<LatLng>(playerPosition)
+  // Keep eventMode accessible inside interval callbacks
+  const eventModeRef = useRef(eventMode)
+  eventModeRef.current = eventMode
 
   // GPS with status
   useGeolocation(
@@ -160,8 +165,16 @@ export function MapScreen() {
   useEffect(() => {
     if (spawnedRef.current) return
     spawnedRef.current = true
-    setCargoItems(generateCargoField(playerPosition))
-    lastSpawnPosRef.current = playerPosition
+    const isEvent = eventMode
+    const spawnCenter = isEvent ? CURRENT_EVENT.center : playerPosition
+    const maxR = isEvent ? CURRENT_EVENT.spawnRadius : 300
+    const initial = isEvent ? generateEventCargoField(CURRENT_EVENT) : generateCargoField(playerPosition)
+    setCargoItems(initial)
+    lastSpawnPosRef.current = spawnCenter
+    // Async safety pass — runs in background, removes any rail/motorway spawns
+    applySafetyFilter(initial, spawnCenter, maxR).then(safe => {
+      if (safe.length !== initial.length) setCargoItems(safe)
+    })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -170,10 +183,15 @@ export function MapScreen() {
   useEffect(() => {
     if (gpsStatus !== 'ok' || gpsFirstFixRef.current) return
     gpsFirstFixRef.current = true
+    if (eventModeRef.current) return // in event mode, cargo is pinned to venue
     const dist = getDistanceMeters(playerPosition, lastSpawnPosRef.current)
     if (dist > 150) {
-      setCargoItems(generateCargoField(playerPosition))
+      const newField = generateCargoField(playerPosition)
+      setCargoItems(newField)
       lastSpawnPosRef.current = playerPosition
+      applySafetyFilter(newField, playerPosition, 300).then(safe => {
+        if (safe.length !== newField.length) setCargoItems(safe)
+      })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gpsStatus])
@@ -186,7 +204,13 @@ export function MapScreen() {
       const moved = getDistanceMeters(pos, lastSpawnPosRef.current)
       if (moved > 30 || state.cargoItems.filter(i => !i.collected).length < 8) {
         lastSpawnPosRef.current = pos
-        const updated = ensureMinimumCargoNearby(state.cargoItems, pos, {})
+        const updated = ensureMinimumCargoNearby(
+          state.cargoItems,
+          pos,
+          eventModeRef.current
+            ? { eventBoundCenter: CURRENT_EVENT.center, eventBoundRadius: CURRENT_EVENT.spawnRadius }
+            : {}
+        )
         // Only update if something actually changed (reference will differ)
         if (updated !== state.cargoItems) {
           setCargoItems(updated)
@@ -334,6 +358,21 @@ export function MapScreen() {
             radius={COLLECT_RADIUS}
             pathOptions={{ color: '#1a7e34', fillColor: '#1a7e34', fillOpacity: 0.1, weight: 2 }}
           />
+
+          {/* Event venue boundary circle */}
+          {eventMode && (
+            <Circle
+              center={[CURRENT_EVENT.center.lat, CURRENT_EVENT.center.lng]}
+              radius={CURRENT_EVENT.displayRadius}
+              pathOptions={{
+                color: '#f59e0b',
+                fillColor: '#f59e0b',
+                fillOpacity: 0.06,
+                weight: 2,
+                dashArray: '8 6',
+              }}
+            />
+          )}
 
           {cargoItems.map(item => (
             <Marker

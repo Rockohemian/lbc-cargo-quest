@@ -4,11 +4,12 @@ import { useGameStore } from '../../store/gameStore'
 import { Button } from '../ui/Button'
 import { GlassCard } from '../ui/GlassCard'
 import { generateCargoItems } from '../../utils/cargoGenerator'
+import { CURRENT_EVENT } from '../../data/events'
 
 type Step = 'intro' | 'name' | 'ready' | 'mission'
 
 export function SplashScreen() {
-  const { setScreen, setPlayerName, player, setCargoItems, playerPosition } = useGameStore()
+  const { setScreen, setPlayerName, player, setCargoItems, playerPosition, eventMode, setEventMode } = useGameStore()
   const [step, setStep] = useState<Step>(player.name ? 'ready' : 'intro')
   const [name, setName] = useState(player.name)
 
@@ -165,6 +166,28 @@ export function SplashScreen() {
                     <div className="text-xs text-white/40 mt-0.5">XP</div>
                   </div>
                 </div>
+              </GlassCard>
+
+              {/* Mässläge-toggle */}
+              <GlassCard className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-black text-white text-sm">🏙️ Mässläge</div>
+                    <div className="text-white/45 text-xs mt-0.5">{CURRENT_EVENT.name}</div>
+                  </div>
+                  <button
+                    onClick={() => setEventMode(!eventMode)}
+                    className={'w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ' + (eventMode ? 'bg-lbc-green' : 'bg-white/20')}
+                    aria-label="Toggäla mässläge"
+                  >
+                    <div className={'absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ' + (eventMode ? 'left-7' : 'left-1')} />
+                  </button>
+                </div>
+                {eventMode && (
+                  <div className="mt-3 text-xs text-lbc-green/85 bg-lbc-green/8 rounded-xl px-3 py-2 flex items-center gap-2">
+                    <span>✓</span> Gods placeras inom travbaneområdet — du behöver inte gå ut i trafiken
+                  </div>
+                )}
               </GlassCard>
               <Button fullWidth size="xl" onClick={() => setStep('mission')}>
                 🗺️ Hitta gods nu

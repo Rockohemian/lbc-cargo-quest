@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { Button } from '../ui/Button'
@@ -5,6 +6,7 @@ import { GlassCard } from '../ui/GlassCard'
 import { ProgressBar } from '../ui/ProgressBar'
 import { TruckPreview } from '../game/TruckPreview'
 import { generateCargoItems } from '../../utils/cargoGenerator'
+import { supabase } from '../../lib/supabase'
 
 const GRADE_COLORS = { S: '#ffd700', A: '#27a349', B: '#2a8ae0', C: '#e0a020', D: '#e04020' }
 const GRADE_LABELS = { S: 'Legendarisk', A: 'Utmärkt', B: 'Bra', C: 'Godkänd', D: 'Under förväntan' }
@@ -20,6 +22,36 @@ export function ResultScreen() {
     ecoScore, safetyScore, qualityScore, badges, summary,
   } = lastResult
   const gradeColor = GRADE_COLORS[grade]
+
+  const [phoneInput, setPhoneInput] = useState('')
+  const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle')
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const handleSubmitScore = async () => {
+    const phone = phoneInput.trim()
+    if (!phone) return
+    setSubmitState('submitting')
+    setSubmitError(null)
+    const { data: scoreData, error: scoreErr } = await supabase
+      .from('scores')
+      .insert({ player_name: player.name, score: totalPoints, grade })
+      .select('id')
+      .single()
+    if (scoreErr || !scoreData) {
+      setSubmitState('error')
+      setSubmitError('Kunde inte skicka in. Kontrollera anslutning.')
+      return
+    }
+    const { error: contactErr } = await supabase
+      .from('contacts')
+      .insert({ score_id: scoreData.id, phone_number: phone })
+    if (contactErr) {
+      setSubmitState('error')
+      setSubmitError('Poängen sparades men telefonnumret misslyckades.')
+      return
+    }
+    setSubmitState('done')
+  }
 
   const handlePlayAgain = () => {
     resetRound()
@@ -132,6 +164,43 @@ export function ResultScreen() {
               </div>
             </GlassCard>
           )}
+
+          {/* Tävling: skicka in poäng */}
+          <GlassCard className="p-4" delay={0.4}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">🏆</span>
+              <span className="text-sm font-black text-white">Tävla om priset</span>
+            </div>
+            {submitState === 'done' ? (
+              <div className="text-center py-3">
+                <div className="text-3xl mb-1">✅</div>
+                <p className="text-lbc-green font-black text-sm">Inlämnat!</p>
+                <p className="text-white/40 text-xs mt-1">Du är med i tävlingen. Lycka till!</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-white/50 text-xs mb-3 leading-relaxed">
+                  Ange ditt mobilnummer för att delta. Vi kontaktar vinnaren!
+                </p>
+                <input
+                  type="tel"
+                  value={phoneInput}
+                  onChange={e => setPhoneInput(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-lbc-green mb-3"
+                  placeholder="07X XXX XX XX"
+                />
+                {submitError && <p className="text-red-400 text-xs mb-2 font-bold">{submitError}</p>}
+                <Button
+                  fullWidth
+                  size="md"
+                  onClick={handleSubmitScore}
+                  disabled={submitState === 'submitting' || !phoneInput.trim()}
+                >
+                  {submitState === 'submitting' ? 'Skickar...' : 'Skicka in mitt resultat →'}
+                </Button>
+              </>
+            )}
+          </GlassCard>
 
           {/* Actions */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="space-y-2">

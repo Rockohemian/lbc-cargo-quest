@@ -136,6 +136,9 @@ export function ProfileScreen() {
             <Button fullWidth size="lg" onClick={handleNewRound}>
               🗺️ Hitta gods
             </Button>
+            <Button fullWidth size="md" variant="secondary" onClick={() => setScreen('leaderboard')}>
+              🏆 Dagens topplista
+            </Button>
             <Button fullWidth size="md" variant="ghost" onClick={() => setScreen('map')}>
               ← Tillbaka
             </Button>

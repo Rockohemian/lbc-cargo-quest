@@ -178,21 +178,21 @@ export function MapScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // When GPS gets first real fix: regenerate cargo around actual position if far from default
+  // When GPS gets first real fix: regenerate cargo around actual position.
+  // Always regen (no distance threshold) as long as player hasn't collected anything yet.
   const gpsFirstFixRef = useRef(false)
   useEffect(() => {
     if (gpsStatus !== 'ok' || gpsFirstFixRef.current) return
     gpsFirstFixRef.current = true
     if (eventModeRef.current) return // in event mode, cargo is pinned to venue
-    const dist = getDistanceMeters(playerPosition, lastSpawnPosRef.current)
-    if (dist > 150) {
-      const newField = generateCargoField(playerPosition)
-      setCargoItems(newField)
-      lastSpawnPosRef.current = playerPosition
-      applySafetyFilter(newField, playerPosition, 300).then(safe => {
-        if (safe.length !== newField.length) setCargoItems(safe)
-      })
-    }
+    const currentInventory = useGameStore.getState().inventory
+    if (currentInventory.length > 0) return // don't disrupt ongoing round
+    const newField = generateCargoField(playerPosition)
+    setCargoItems(newField)
+    lastSpawnPosRef.current = playerPosition
+    applySafetyFilter(newField, playerPosition, 300).then(safe => {
+      if (safe.length !== newField.length) setCargoItems(safe)
+    })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gpsStatus])
 
@@ -410,10 +410,15 @@ export function MapScreen() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="absolute top-20 left-1/2 -translate-x-1/2 z-[1100] whitespace-nowrap"
+              className="absolute top-20 left-4 right-4 z-[1100]"
             >
-              <div className="rounded-2xl border border-amber-400/25 bg-amber-500/12 backdrop-blur-xl px-4 py-2 text-xs font-bold text-amber-200 shadow-[0_12px_30px_rgba(0,0,0,.3)]">
-                📍 GPS ej tillgänglig – tillåt plats i webbläsaren</div>
+              <div className="rounded-2xl border border-amber-400/40 bg-amber-900/80 backdrop-blur-xl px-4 py-3 text-sm font-bold text-amber-200 shadow-[0_12px_30px_rgba(0,0,0,.4)] flex items-start gap-2">
+                <span className="text-xl leading-none mt-0.5">📍</span>
+                <div>
+                  <div className="font-black">GPS saknas – gods visas på fel plats</div>
+                  <div className="text-amber-300/70 text-xs mt-0.5 font-normal">Tillåt plats i webbläsarens inställningar, sedan ladda om sidan</div>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

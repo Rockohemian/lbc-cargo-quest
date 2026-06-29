@@ -109,6 +109,13 @@ function RecenterMap({ pos, follow }: { pos: LatLng; follow: boolean }) {
 const COLLECT_RADIUS = 20
 const LOAD_MIN = 10
 
+const RARITY_LABEL: Record<string, string> = {
+  common: 'Vanlig', uncommon: 'Ovanlig', rare: 'Sällsynt', epic: 'Episk',
+}
+const WEIGHT_LABEL: Record<string, string> = {
+  light: 'Lätt', medium: 'Medelvikt', heavy: 'Tung',
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────
 export function MapScreen() {
   const {
@@ -457,13 +464,17 @@ export function MapScreen() {
               <span className="text-white font-black text-sm">Sök gods</span>
               {gpsStatus === 'fallback' && <span className="text-[10px] text-amber-300/80">GPS saknas</span>}
             </div>
-            <span className="text-xs font-bold text-lbc-green">{inventory.length}/6</span>
+            <span className="text-xs font-bold text-lbc-green">{inventory.length}/{LOAD_MIN}</span>
           </div>
 
           {/* Cargo carousel */}
           <div className="flex gap-1.5 overflow-x-auto pb-1.5 mb-1.5 scrollbar-hide">
             {nearest.slice(0, 8).map(item => (
-              <div key={item.id} className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[44px]">
+              <button
+                key={item.id}
+                onClick={() => setPreviewItem(item)}
+                className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[44px] active:scale-90 transition-transform"
+              >
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-xl border-2"
                   style={{ borderColor: RARITY_COLORS[item.type.rarity], background: 'rgba(255,255,255,.06)' }}
@@ -471,7 +482,7 @@ export function MapScreen() {
                   {item.type.emoji}
                 </div>
                 <span className="text-[10px] text-white/45">{Math.round(item.dist)}m</span>
-              </div>
+              </button>
             ))}
             {nearest.length === 0 && (
               <div className="text-white/30 text-xs py-1 italic">Genererar gods...</div>
@@ -500,6 +511,102 @@ export function MapScreen() {
           </div>
         </div>
       </div>
+
+      {/* Cargo preview modal */}
+      <AnimatePresence>
+        {previewItem && (
+          <>
+            <motion.div
+              key="preview-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPreviewItem(null)}
+              className="absolute inset-0 z-[1090] bg-black/50"
+            />
+            <motion.div
+              key="preview-sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 z-[1095] bg-[#0e1810] border-t border-white/12 rounded-t-3xl px-5 pt-5 pb-10"
+            >
+              {/* Drag handle */}
+              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
+
+              {/* Header */}
+              <div className="flex items-start gap-4 mb-5">
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 border-2"
+                  style={{ borderColor: RARITY_COLORS[previewItem.type.rarity], background: 'rgba(255,255,255,.05)' }}
+                >
+                  {previewItem.type.emoji}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="font-black text-lg text-white leading-tight">{previewItem.type.name}</span>
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+                      style={{ color: RARITY_COLORS[previewItem.type.rarity], background: RARITY_COLORS[previewItem.type.rarity] + '22' }}
+                    >
+                      {RARITY_LABEL[previewItem.type.rarity]}
+                    </span>
+                  </div>
+                  <p className="text-white/50 text-xs leading-relaxed">{previewItem.type.description}</p>
+                </div>
+              </div>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {([
+                  ['Avstånd', Math.round(previewItem.dist) + 'm'],
+                  ['XP', '+' + previewItem.type.xpReward],
+                  ['Värde', previewItem.type.value + ' kr'],
+                  ['Vikt', previewItem.type.weight + ' kg'],
+                  ['Volym', previewItem.type.volume + ' m³'],
+                  ['Storlek', previewItem.type.load.cols + '×' + previewItem.type.load.rows],
+                ] as [string, string][]).map(([label, value]) => (
+                  <div key={label} className="bg-white/5 rounded-xl px-3 py-2 text-center">
+                    <div className="text-white/40 text-[9px] uppercase tracking-widest">{label}</div>
+                    <div className="text-white font-bold text-sm mt-0.5">{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tags */}
+              <div className="flex gap-2 mb-5 flex-wrap">
+                {previewItem.type.load.fragile && (
+                  <span className="text-xs bg-red-500/15 text-red-300 border border-red-500/25 px-2 py-1 rounded-lg">⚠️ Ömtåligt</span>
+                )}
+                {previewItem.type.load.stackable && (
+                  <span className="text-xs bg-white/8 text-white/50 border border-white/10 px-2 py-1 rounded-lg">📦 Stapelbart</span>
+                )}
+                <span className="text-xs bg-white/8 text-white/50 border border-white/10 px-2 py-1 rounded-lg">
+                  {WEIGHT_LABEL[previewItem.type.load.weightClass]}
+                </span>
+              </div>
+
+              {/* CTA button */}
+              {previewItem.dist <= COLLECT_RADIUS ? (
+                <button
+                  onClick={() => { handleCollect(previewItem); setPreviewItem(null) }}
+                  className="w-full bg-lbc-green rounded-2xl py-4 font-black text-white text-base shadow-[0_8px_24px_rgba(26,126,52,.5)] active:scale-98 transition-transform"
+                >
+                  Samla in → +{previewItem.type.xpReward} XP
+                </button>
+              ) : (
+                <button
+                  onClick={() => setPreviewItem(null)}
+                  className="w-full bg-white/8 border border-white/12 rounded-2xl py-3.5 font-bold text-white/60 text-sm"
+                >
+                  Gå dit ({Math.round(previewItem.dist)}m bort)
+                </button>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { TrailerView, type GhostPreview } from '../game/TrailerView'
 import {
   TRAILER_COLS, TRAILER_ROWS, settleRow, computeMetrics,
 } from '../../utils/loadEngine'
+import { CARGO_TYPES } from '../../data/cargoTypes'
 import type { CargoType, PlacedItem, SecuringState } from '../../types'
 
 let uidSeq = 0
@@ -213,6 +214,31 @@ export function LoadingScreen() {
     setScreen('delivery')
   }
 
+  // Dev-genväg: auto-lasta allt kvar + hoppa direkt till transport.
+  // Synlig alltid — enkelt sätt att komma vidare utan drag-and-drop.
+  const handleDevAutoLoadAndGo = () => {
+    const all: CargoType[] = [...placed.map(p => p.type), ...queue.map(q => q.type)]
+    if (all.length === 0) {
+      // ingen inventory — lägg till 6 slumpade så nåt syns
+      for (let i = 0; i < 6; i++) all.push(CARGO_TYPES[Math.floor(Math.random() * CARGO_TYPES.length)])
+    }
+    const sorted = [...all].sort((a, b) => (b.load.cols * b.load.rows) - (a.load.cols * a.load.rows) || b.weight - a.weight)
+    const result: PlacedItem[] = []
+    for (const type of sorted) {
+      for (let c = 0; c <= TRAILER_COLS - type.load.cols; c++) {
+        const s = settleRow(result, c, type.load.cols, type.load.rows)
+        if (s !== null) {
+          result.push({ uid: newUid(), type, col: c, row: s, cols: type.load.cols, rows: type.load.rows, rotated: false })
+          break
+        }
+      }
+    }
+    const sec = { straps: 4, net: true, divider: false }
+    const met = computeMetrics(result, sec)
+    setLoadPlan({ items: result, securing: sec, metrics: met })
+    setScreen('delivery')
+  }
+
   return (
     <div className="fixed inset-0 bg-surface-900 flex flex-col overflow-hidden">
       {/* Header */}
@@ -387,6 +413,12 @@ export function LoadingScreen() {
             <Button fullWidth size="lg" disabled={placed.length === 0} onClick={() => { setSelectedUid(null); setPhase('secure') }}>
               {placed.length === 0 ? 'Lasta minst ett gods' : queue.length > 0 ? `Fortsätt till lastsäkring (${queue.length} kvar)` : 'Fortsätt till lastsäkring →'}
             </Button>
+            <button
+              onClick={handleDevAutoLoadAndGo}
+              className="w-full h-10 mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-white/70 bg-white/5 hover:bg-white/10 active:bg-lbc-green/30 border border-white/10 rounded-lg transition-colors"
+            >
+              ⚡ Auto-lasta &amp; hoppa till Transport (dev)
+            </button>
           </div>
         </div>
       )}

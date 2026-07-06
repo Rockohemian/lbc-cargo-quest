@@ -4,7 +4,8 @@ import { CARGO_TYPES, RARITY_COLORS } from '../../data/cargoTypes'
 import { TRUCK_PARTS, PART_RARITY_COLORS, PART_RARITY_LABELS, CATEGORY_LABELS } from '../../data/garageParts'
 import { CURRENT_EVENT } from '../../data/events'
 import { generateCargoItems, generateEventCargoField, getDistanceMeters } from '../../utils/cargoGenerator'
-import type { GameScreen, LatLng } from '../../types'
+import { TRAILER_COLS, settleRow, computeMetrics } from '../../utils/loadEngine'
+import type { GameScreen, LatLng, PlacedItem, RoundResult, Badge } from '../../types'
 
 // Byt lösenord här vid behov. Enkel klient-sida-gate — sifferkod räcker för mässan.
 const ADMIN_CODE = 'lbc2026'
@@ -30,7 +31,7 @@ export function DevConsoleScreen() {
     setScreen, setTestMode, setEventMode, setPlayerName, setPlayerPosition,
     setCargoItems, collectCargo, resetRound, awardXP, addInventory,
     clearInventory, unlockAllGarageParts, resetPlayerProfile, resetEverything,
-    testUnlockGarage,
+    testUnlockGarage, setLoadPlan, finishRound,
   } = useGameStore()
 
   const [authed, setAuthed] = useState<boolean>(() => sessionStorage.getItem(AUTH_KEY) === '1')
@@ -94,6 +95,95 @@ export function DevConsoleScreen() {
   const teleport = (pos: LatLng, label: string) => {
     setPlayerPosition(pos)
     showToast(`Teleporterade till ${label}`)
+  }
+
+  // ─── Flödessimulator: bygg valid last utan att dra-och-släppa ─
+  const buildAutoLoadPlan = () => {
+    // Se till att inventory har minst 6 kolli så lasten känns full
+    let inv = inventory
+    if (inv.length < 6) {
+      const extras = Array.from({ length: 6 - inv.length }, () => CARGO_TYPES[Math.floor(Math.random() * CARGO_TYPES.length)])
+      addInventory(extras)
+      inv = [...inv, ...extras]
+    }
+    // Sortera efter storlek för bättre packning
+    const sorted = [...inv].sort((a, b) => (b.load.cols * b.load.rows) - (a.load.cols * a.load.rows) || b.weight - a.weight)
+    const result: PlacedItem[] = []
+    let uid = 0
+    for (const type of sorted) {
+      let placed = false
+      for (let c = 0; c <= TRAILER_COLS - type.load.cols; c++) {
+        const s = settleRow(result, c, type.load.cols, type.load.rows)
+        if (s !== null) {
+          result.push({
+            uid: `dev-${++uid}`,
+            type,
+            col: c, row: s,
+            cols: type.load.cols, rows: type.load.rows,
+            rotated: false,
+          })
+          placed = true
+          break
+        }
+      }
+      if (!placed) break // trailer is full
+    }
+    const securing = { straps: 4, net: true, divider: false }
+    const metrics = computeMetrics(result, securing)
+    setLoadPlan({ items: result, securing, metrics })
+    return { items: result, metrics }
+  }
+
+  const simFillAndOpenLoading = () => {
+    const needed = Math.max(0, 8 - inventory.length)
+    if (needed > 0) {
+      const picks = Array.from({ length: needed }, () => CARGO_TYPES[Math.floor(Math.random() * CARGO_TYPES.length)])
+      addInventory(picks)
+    }
+    setScreen('loading')
+    showToast('Fyllde last + öppnade Lastning')
+  }
+
+  const simAutoLoadAndTransport = () => {
+    const { items } = buildAutoLoadPlan()
+    setScreen('delivery')
+    showToast(`Auto-lastade ${items.length} kolli → Transport`)
+  }
+
+  const simFullDelivery = (grade: RoundResult['grade'] = 'A') => {
+    // Bygg last om det saknas
+    if (!useGameStore.getState().loadPlan) buildAutoLoadPlan()
+    const plan = useGameStore.getState().loadPlan!
+    const cargoCount = Math.max(1, plan.items.length)
+    const gradeMap: Record<RoundResult['grade'], { total: number; xp: number; eco: number; safety: number; quality: number }> = {
+      S: { total: 2400, xp: 800, eco: 95, safety: 96, quality: 98 },
+      A: { total: 1800, xp: 600, eco: 85, safety: 88, quality: 90 },
+      B: { total: 1300, xp: 420, eco: 72, safety: 75, quality: 78 },
+      C: { total: 900,  xp: 260, eco: 55, safety: 58, quality: 60 },
+      D: { total: 500,  xp: 120, eco: 30, safety: 35, quality: 40 },
+    }
+    const g = gradeMap[grade]
+    const badges: Badge[] = grade === 'S' || grade === 'A'
+      ? [{ id: 'sim-eco', icon: '🌱', title: 'Ekoförare', description: 'Simulerad leverans', color: '#1a7e34' }]
+      : []
+    const result: RoundResult = {
+      cargoCount,
+      fillPercent: plan.metrics.fillPercent,
+      weightBalance: plan.metrics.weightBalance,
+      securing: plan.metrics.securing,
+      cargoDamage: grade === 'S' ? 0 : grade === 'D' ? 25 : 5,
+      ecoScore: g.eco,
+      safetyScore: g.safety,
+      qualityScore: g.quality,
+      totalXP: g.xp,
+      totalPoints: g.total,
+      grade,
+      badges,
+      summary: `Simulerad leverans (betyg ${grade}). ${cargoCount} kolli levererade utan att lämna kontoret.`,
+    }
+    finishRound(result)
+    setScreen('result')
+    showToast(`Simulerade leverans – betyg ${grade}`)
   }
 
   const gotoScreen = (s: GameScreen) => {
@@ -208,6 +298,15 @@ export function DevConsoleScreen() {
           <Row label="Rensa lasten" onClick={() => { clearInventory(); showToast('Lasten tömd') }} enabled={inventory.length > 0} />
           <Row label="Generera nya gods (nuvarande position)" onClick={() => respawnCargo('here')} />
           <Row label="Generera nya gods (Färjestad)" onClick={() => respawnCargo('event')} />
+        </Section>
+
+        {/* Flödessimulator */}
+        <Section title="Flödessimulator (ingen gång-runt)">
+          <Row label="1. Fyll last + öppna Lastning" onClick={simFillAndOpenLoading} />
+          <Row label="2. Auto-lasta + hoppa till Transport" onClick={simAutoLoadAndTransport} />
+          <Row label="3. Simulera hel leverans → Resultat (betyg A)" onClick={() => simFullDelivery('A')} />
+          <Row label="3b. Simulera leverans → Resultat (betyg S)" onClick={() => simFullDelivery('S')} />
+          <Row label="3c. Simulera leverans → Resultat (betyg D)" onClick={() => simFullDelivery('D')} />
         </Section>
 
         {/* Navigera */}

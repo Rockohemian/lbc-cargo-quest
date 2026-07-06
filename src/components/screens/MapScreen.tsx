@@ -382,6 +382,12 @@ export function MapScreen() {
               key={item.id}
               position={[item.position.lat, item.position.lng]}
               icon={cargoIcon(item.type.emoji, item.type.rarity, item.collected)}
+              eventHandlers={{
+                click: () => {
+                  if (item.collected) return
+                  setPreviewItem({ ...item, dist: getDistanceMeters(playerPosition, item.position) })
+                },
+              }}
             />
           ))}
 
@@ -490,27 +496,12 @@ export function MapScreen() {
             <span className="text-[11px] font-bold text-white/50">{inventory.length}/{LOAD_MIN} kolli</span>
           </div>
 
-          {/* Cargo carousel */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1.5 mb-1.5 scrollbar-hide">
-            {nearest.slice(0, 8).map(item => (
-              <button
-                key={item.id}
-                onClick={() => setPreviewItem(item)}
-                className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[44px] active:scale-90 transition-transform"
-              >
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-xl border-2"
-                  style={{ borderColor: RARITY_COLORS[item.type.rarity], background: 'rgba(255,255,255,.06)' }}
-                >
-                  {item.type.emoji}
-                </div>
-                <span className="text-[10px] text-white/45">{Math.round(item.dist)}m</span>
-              </button>
-            ))}
-            {nearest.length === 0 && (
-              <div className="text-white/30 text-xs py-1 italic">Genererar gods...</div>
-            )}
-          </div>
+          {/* Tips: tryck på gods på kartan för info */}
+          {nearest.length > 0 && inventory.length < LOAD_MIN && (
+            <p className="text-[10px] text-white/35 mb-2 text-center">
+              Tryck på en godsikon på kartan för att se detaljer
+            </p>
+          )}
 
           {/* Inventory + lasta-knapp */}
           <div className="flex items-center gap-2">

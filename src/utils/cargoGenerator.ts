@@ -87,31 +87,31 @@ export function generateCargoAroundPlayer(playerLocation: LatLng, opts: SpawnOpt
  * guaranteeing at least 3 within easy walking distance.
  */
 export function generateCargoField(center: LatLng, count?: number): CargoItem[] {
-  const total = count ?? 12 + Math.floor(Math.random() * 9) // 12–20
+  const total = count ?? 12 + Math.floor(Math.random() * 5) // 12–16
   const items: CargoItem[] = []
 
   // Spread bearings so objects land in different directions.
   const baseBearing = Math.random() * 360
 
-  // 2 items at short walking distance (just outside collect radius).
-  for (let i = 0; i < 2; i++) {
-    const bearing = (baseBearing + i * 180 + Math.random() * 60) % 360
-    items.push(generateCargoAroundPlayer(center, { minDistance: 28, maxDistance: 45, bearing }))
-  }
-
-  // 3 items within easy walking distance.
-  for (let i = 2; i < 5; i++) {
+  // 3 items very close (right outside collect radius).
+  for (let i = 0; i < 3; i++) {
     const bearing = (baseBearing + i * 120 + Math.random() * 40) % 360
-    items.push(generateCargoAroundPlayer(center, { minDistance: 50, maxDistance: 100, bearing }))
+    items.push(generateCargoAroundPlayer(center, { minDistance: 22, maxDistance: 40, bearing }))
   }
 
-  // Remaining objects across the full radius.
-  for (let i = 5; i < total; i++) {
+  // 4 items short walk away.
+  for (let i = 3; i < 7; i++) {
+    const bearing = (baseBearing + i * 90 + Math.random() * 30) % 360
+    items.push(generateCargoAroundPlayer(center, { minDistance: 40, maxDistance: 75, bearing }))
+  }
+
+  // Rest — medium range for exploration.
+  for (let i = 7; i < total; i++) {
     const bearing = (baseBearing + (i * 360) / total + Math.random() * 30) % 360
-    items.push(generateCargoAroundPlayer(center, { minDistance: 60, maxDistance: 300, bearing }))
+    items.push(generateCargoAroundPlayer(center, { minDistance: 55, maxDistance: 140, bearing }))
   }
 
-  return dedupeByProximity(items, 18)
+  return dedupeByProximity(items, 14)
 }
 
 /** Backwards-compatible alias used across the app. */
@@ -258,10 +258,13 @@ export function generateEventCargoField(venue: EventVenue): CargoItem[] {
 }
 
 /**
- * Async safety filter: removes cargo that is too close to railways or
- * major motorways (queried from Overpass API). Replaces removed items
- * with safe alternatives. Fails open — if Overpass is unavailable the
- * original array is returned unchanged.
+ * Async safety filter: removes cargo that lies on/inside danger zones —
+ *   • buildings (must not require walking inside)
+ *   • water (rivers, lakes, sea)
+ *   • significant roads (motorway → residential/service) — buffered
+ *   • railways / tram lines — buffered
+ * Replaces removed items with safe candidates. Fails open — if Overpass
+ * is unavailable the original array is returned unchanged.
  */
 export async function applySafetyFilter(
   items: CargoItem[],
@@ -269,7 +272,18 @@ export async function applySafetyFilter(
   maxRadius: number
 ): Promise<CargoItem[]> {
   if (items.length === 0) return items
-  const BUFFER_M = 12
+
+  // Per-type buffer (metres) — how far from a linear hazard cargo must sit
+  const ROAD_BUFFER = {
+    motorway: 18, trunk: 15,
+    primary: 10, secondary: 8, tertiary: 7,
+    unclassified: 5, residential: 5, service: 4,
+    motorway_link: 12, trunk_link: 10, primary_link: 8,
+    secondary_link: 6, tertiary_link: 5,
+  } as const
+  const RAIL_BUFFER = 12
+  const BUILDING_PAD = 2   // metres of padding around building polygon
+  const WATER_PAD    = 3
 
   const lats = items.map(i => i.position.lat)
   const lngs = items.map(i => i.position.lng)
@@ -277,19 +291,31 @@ export async function applySafetyFilter(
   const west  = (Math.min(...lngs) - 0.001).toFixed(6)
   const north = (Math.max(...lats) + 0.001).toFixed(6)
   const east  = (Math.max(...lngs) + 0.001).toFixed(6)
+  const bbox = south + ',' + west + ',' + north + ',' + east
 
   const query =
-    '[out:json][timeout:12];' +
+    '[out:json][timeout:20];' +
     '(' +
-    'way["railway"~"^(rail|tram|light_rail|subway|narrow_gauge)$"](' + south + ',' + west + ',' + north + ',' + east + ');' +
-    'way["highway"~"^(motorway|trunk|motorway_link|trunk_link)$"](' + south + ',' + west + ',' + north + ',' + east + ');' +
-    ');out geom;'
+      // Roads (any drivable street)
+      'way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$"](' + bbox + ');' +
+      // Rail
+      'way["railway"~"^(rail|tram|light_rail|subway|narrow_gauge)$"](' + bbox + ');' +
+      // Buildings
+      'way["building"](' + bbox + ');' +
+      // Water
+      'way["natural"="water"](' + bbox + ');' +
+      'way["waterway"~"^(river|stream|canal)$"](' + bbox + ');' +
+    ');out geom tags;'
 
-  let dangerNodes: Array<Array<{ lat: number; lon: number }>> = []
+  type OverpassWay = {
+    tags?: Record<string, string>
+    geometry?: Array<{ lat: number; lon: number }>
+  }
 
+  let elements: OverpassWay[] = []
   try {
     const controller = new AbortController()
-    const timer = window.setTimeout(() => controller.abort(), 10000)
+    const timer = window.setTimeout(() => controller.abort(), 15000)
     const resp = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -298,17 +324,51 @@ export async function applySafetyFilter(
     })
     window.clearTimeout(timer)
     if (!resp.ok) return items
-    const data = await resp.json() as { elements?: Array<{ geometry?: Array<{ lat: number; lon: number }> }> }
-    dangerNodes = (data.elements ?? [])
-      .filter(el => Array.isArray(el.geometry) && el.geometry.length > 0)
-      .map(el => el.geometry!)
+    const data = await resp.json() as { elements?: OverpassWay[] }
+    elements = (data.elements ?? []).filter(el => Array.isArray(el.geometry) && el.geometry.length > 0)
   } catch {
-    return items // fail open: keep all items when offline
+    return items // fail open when offline
   }
 
-  if (dangerNodes.length === 0) return items
+  if (elements.length === 0) return items
 
-  // Point-to-segment distance (flat-earth approximation, fine for <1 km)
+  // Classify elements into line hazards (with buffer) and polygon hazards
+  const lineHazards: Array<{ nodes: Array<{ lat: number; lon: number }>; buffer: number }> = []
+  const polygonHazards: Array<{ ring: Array<{ lat: number; lon: number }>; padM: number }> = []
+
+  for (const el of elements) {
+    const tags = el.tags ?? {}
+    const geom = el.geometry!
+
+    // Building polygon (closed way)
+    if (tags.building) {
+      polygonHazards.push({ ring: geom, padM: BUILDING_PAD })
+      continue
+    }
+    // Water polygon (natural=water is closed)
+    if (tags.natural === 'water') {
+      polygonHazards.push({ ring: geom, padM: WATER_PAD })
+      continue
+    }
+    // Waterway (line — rivers, streams, canals)
+    if (tags.waterway) {
+      lineHazards.push({ nodes: geom, buffer: WATER_PAD + 3 })
+      continue
+    }
+    // Railway
+    if (tags.railway) {
+      lineHazards.push({ nodes: geom, buffer: RAIL_BUFFER })
+      continue
+    }
+    // Highway
+    if (tags.highway) {
+      const b = (ROAD_BUFFER as Record<string, number>)[tags.highway] ?? 6
+      lineHazards.push({ nodes: geom, buffer: b })
+      continue
+    }
+  }
+
+  // Point-to-segment distance (flat-earth approximation, fine for < 1 km)
   function ptSegDist(p: LatLng, a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
     const dlat = b.lat - a.lat
     const dlng = b.lon - a.lon
@@ -320,23 +380,53 @@ export async function applySafetyFilter(
     return getDistanceMeters(p, { lat: a.lat + t * dlat, lng: a.lon + t * dlng })
   }
 
+  // Ray casting point-in-polygon (lon = x, lat = y)
+  function pointInRing(p: LatLng, ring: Array<{ lat: number; lon: number }>): boolean {
+    let inside = false
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i].lon, yi = ring[i].lat
+      const xj = ring[j].lon, yj = ring[j].lat
+      const intersect = ((yi > p.lat) !== (yj > p.lat)) &&
+        (p.lng < ((xj - xi) * (p.lat - yi)) / (yj - yi + 1e-15) + xi)
+      if (intersect) inside = !inside
+    }
+    return inside
+  }
+
   function isSafe(pos: LatLng): boolean {
-    return !dangerNodes.some(nodes =>
-      nodes.some((node, idx) => {
-        if (idx === 0) return getDistanceMeters(pos, { lat: node.lat, lng: node.lon }) < BUFFER_M
-        return ptSegDist(pos, nodes[idx - 1], node) < BUFFER_M
-      })
-    )
+    // Inside a polygon hazard? unsafe
+    for (const poly of polygonHazards) {
+      if (pointInRing(pos, poly.ring)) return false
+      // Even if not inside, keep a small pad from ring edge
+      if (poly.padM > 0) {
+        for (let i = 0; i < poly.ring.length; i++) {
+          const a = poly.ring[i]
+          const b = poly.ring[(i + 1) % poly.ring.length]
+          if (ptSegDist(pos, a, b) < poly.padM) return false
+        }
+      }
+    }
+    // Too close to a line hazard?
+    for (const line of lineHazards) {
+      for (let i = 0; i < line.nodes.length; i++) {
+        if (i === 0) {
+          if (getDistanceMeters(pos, { lat: line.nodes[0].lat, lng: line.nodes[0].lon }) < line.buffer) return false
+        } else {
+          if (ptSegDist(pos, line.nodes[i - 1], line.nodes[i]) < line.buffer) return false
+        }
+      }
+    }
+    return true
   }
 
   const safe = items.filter(item => isSafe(item.position))
   const toReplace = items.length - safe.length
   if (toReplace === 0) return items
 
-  // Batch-generate replacement candidates and keep the safe ones
+  // Generate replacement candidates and keep the safe ones
   const candidates: CargoItem[] = []
-  for (let i = 0; i < toReplace * 6; i++) {
-    candidates.push(generateCargoAroundPlayer(center, { minDistance: 28, maxDistance: maxRadius }))
+  for (let i = 0; i < toReplace * 10; i++) {
+    candidates.push(generateCargoAroundPlayer(center, { minDistance: 22, maxDistance: maxRadius }))
   }
   const safeReplacements = candidates.filter(c => isSafe(c.position)).slice(0, toReplace)
 

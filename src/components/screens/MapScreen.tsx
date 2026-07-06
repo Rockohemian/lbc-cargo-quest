@@ -338,7 +338,7 @@ export function MapScreen() {
   return (
     <div
       className="fixed inset-x-0 bottom-0 bg-surface-900 flex flex-col"
-      style={{ top: 'calc(2.75rem + env(safe-area-inset-top, 0px))' }}
+      style={{ top: 'calc(3rem + 3px + env(safe-area-inset-top, 0px))' }}
     >
       {/* Map */}
       <div className={`flex-1 relative ${isNight ? 'map-night' : 'map-day'}`}>

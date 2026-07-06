@@ -17,7 +17,10 @@ export function HUD() {
       className="fixed top-0 left-0 right-0 z-50"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
-      <div className="h-11 bg-[#060d07]/96 backdrop-blur-md border-b border-white/[0.07] px-4 flex items-center gap-3 max-w-full">
+      {/* Tunn grön accent — signaturrända som markerar toppen */}
+      <div className="h-[3px] bg-lbc-green" />
+
+      <div className="h-12 bg-[#050a06]/98 backdrop-blur-md border-b border-lbc-green/20 px-4 flex items-center gap-3 max-w-full shadow-[0_6px_18px_rgba(0,0,0,.4)]">
 
         {/* Level badge → profil */}
         <button

@@ -12,6 +12,15 @@
 @layer base {
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body, #root { height: 100%; }
+
+  /* Drag-and-drop targets (mobile): förhindra iOS native drag ghost + text-selektion */
+  [data-drag-source], .cursor-grab, [class*="touch-none"] {
+    -webkit-user-drag: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+  [data-drag-source] img, [data-drag-source] * { -webkit-user-drag: none !important; }
   html, body {
     overflow: hidden;
     overscroll-behavior: none;

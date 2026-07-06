@@ -277,6 +277,7 @@ export function LoadingScreen() {
                   return (
                     <div
                       key={it.uid}
+                      data-drag-source
                       onPointerDown={e => startPlacedDrag(it.uid, e)}
                       onClick={() => setSelectedUid(it.uid)}
                       className="absolute overflow-hidden touch-none"
@@ -284,7 +285,11 @@ export function LoadingScreen() {
                         left: `${pctX(it.col)}%`, top: `${pctY(it.row)}%`,
                         width: `${pctX(it.cols)}%`, height: `${pctY(it.rows)}%`,
                         padding: 2, zIndex: selected ? 30 : 10, cursor: 'grab',
-                      }}
+                        WebkitUserDrag: 'none',
+                        WebkitTouchCallout: 'none',
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none',
+                      } as React.CSSProperties}
                     >
                       <div className="w-full h-full relative flex flex-col items-center justify-center"
                         style={{
@@ -373,20 +378,43 @@ export function LoadingScreen() {
               {queue.length === 0 && (
                 <div className="text-black/40 text-[12px] py-3 font-bold">Allt gods är lastat.</div>
               )}
-              {queue.map(q => (
-                <div
-                  key={q.qid}
-                  onPointerDown={e => startPaletteDrag(q, e)}
-                  className="flex-shrink-0 w-[86px] border border-black/12 bg-white p-2 touch-none active:scale-95 transition-transform cursor-grab"
-                >
-                  <div className="flex items-center justify-center h-9 mb-1"
-                    style={{ background: `linear-gradient(150deg, ${q.type.color2}, ${q.type.color})` }}>
-                    <span className="text-xl">{q.type.emoji}</span>
+              {queue.map(q => {
+                const isDragging = drag?.source === 'palette' && drag.qid === q.qid
+                const isOtherDrag = drag?.source === 'palette' && drag.qid !== q.qid
+                return (
+                  <div
+                    key={q.qid}
+                    data-drag-source
+                    onPointerDown={e => startPaletteDrag(q, e)}
+                    className="flex-shrink-0 w-[92px] touch-none active:scale-95 transition-all cursor-grab"
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid rgba(0,0,0,0.12)',
+                      padding: 8,
+                      opacity: isOtherDrag ? 0.35 : isDragging ? 0.5 : 1,
+                      WebkitUserDrag: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none',
+                    } as React.CSSProperties}
+                  >
+                    <div
+                      className="flex items-center justify-center h-10 mb-1.5"
+                      style={{ background: `linear-gradient(150deg, ${q.type.color2}, ${q.type.color})` }}
+                    >
+                      <span className="text-2xl select-none pointer-events-none" style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.35))' }}>
+                        {q.type.emoji}
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-black leading-tight line-clamp-1 pointer-events-none" style={{ color: '#0a0a0a' }}>
+                      {q.type.name}
+                    </div>
+                    <div className="text-[9px] font-bold tracking-wide pointer-events-none" style={{ color: 'rgba(0,0,0,0.5)' }}>
+                      {q.type.weight}kg · {q.type.load.cols}×{q.type.load.rows}
+                    </div>
                   </div>
-                  <div className="text-[10px] font-black text-[#0a0a0a] leading-tight line-clamp-1">{q.type.name}</div>
-                  <div className="text-[9px] text-black/50 font-bold tracking-wide">{q.type.weight}kg · {q.type.load.cols}×{q.type.load.rows}</div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 

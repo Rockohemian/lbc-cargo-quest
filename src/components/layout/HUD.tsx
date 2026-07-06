@@ -17,15 +17,12 @@ export function HUD() {
       className="fixed top-0 left-0 right-0 z-50"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
-      {/* Tunn grön accent — signaturrända som markerar toppen */}
-      <div className="h-[3px] bg-lbc-green" />
-
-      <div className="h-12 bg-[#050a06]/98 backdrop-blur-md border-b border-lbc-green/20 px-4 flex items-center gap-3 max-w-full shadow-[0_6px_18px_rgba(0,0,0,.4)]">
+      <div className="h-12 bg-[#f6f4ef]/95 backdrop-blur-md border-b border-black/8 px-4 flex items-center gap-3 max-w-full">
 
         {/* Level badge → profil */}
         <button
           onClick={() => setScreen('profile')}
-          className="flex-shrink-0 w-8 h-8 rounded-full bg-lbc-green flex items-center justify-center text-white font-black text-xs active:opacity-70 transition-opacity"
+          className="flex-shrink-0 w-8 h-8 rounded-none bg-[#0a0a0a] text-white flex items-center justify-center font-black text-xs active:bg-[#1a7e34] transition-colors"
           aria-label="Min profil"
         >
           {player.level}
@@ -33,29 +30,34 @@ export function HUD() {
 
         {/* Rang + XP-stapel */}
         <div className="flex-1 min-w-0">
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40 block mb-[3px] truncate">
-            {player.rank}
-          </span>
-          <div className="h-[3px] bg-white/10 rounded-full overflow-hidden">
+          <div className="flex items-baseline gap-2 mb-[3px]">
+            <span className="text-[9px] font-black uppercase tracking-[0.28em] text-black/55 truncate">
+              {player.rank}
+            </span>
+            <span className="text-[9px] font-bold text-black/30 flex-shrink-0">
+              {xpPct}%
+            </span>
+          </div>
+          <div className="h-[3px] bg-black/8 overflow-hidden">
             <div
-              className="h-full bg-lbc-green rounded-full transition-all duration-700"
+              className="h-full bg-[#1a7e34] transition-all duration-700"
               style={{ width: xpPct + '%' }}
             />
           </div>
         </div>
 
-        {/* Antal kolli — visas bara på kartskärmen */}
+        {/* Antal kolli — bara på karta */}
         {screen === 'map' && (
-          <div className="flex-shrink-0 text-right mr-1">
-            <span className="text-sm font-black text-white leading-none">{inventory.length}</span>
-            <span className="text-[11px] text-white/30 leading-none"> kolli</span>
+          <div className="flex-shrink-0 text-right leading-none">
+            <span className="text-[15px] font-black text-[#0a0a0a] tabular-nums">{inventory.length}</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-black/40"> Kolli</span>
           </div>
         )}
 
         {/* Avsluta → startsida */}
         <button
           onClick={handleExit}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-white/30 active:text-white/70 transition-colors text-base"
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-black/40 active:text-[#1a7e34] text-base transition-colors"
           aria-label="Gå till startsidan"
         >
           ✕

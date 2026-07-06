@@ -4,202 +4,289 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LBC Cargo Quest QR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800;900&display=swap" />
     <style>
       :root {
+        --bg: #f6f4ef;
+        --ink: #0a0a0a;
         --green: #1a7e34;
-        --green-light: #27a349;
-        --surface: #08100a;
-        --surface-soft: #101810;
-        --text: #f7faf8;
-        --muted: rgba(247, 250, 248, 0.62);
-        --line: rgba(255, 255, 255, 0.1);
+        --muted: rgba(10, 10, 10, 0.55);
+        --line: rgba(10, 10, 10, 0.08);
+        --surface: #ffffff;
+      }
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; margin: 0; }
+      body {
+        font-family: Manrope, ui-sans-serif, system-ui, Arial, sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+        letter-spacing: -0.005em;
+        -webkit-font-smoothing: antialiased;
       }
 
-      * { box-sizing: border-box; }
-      html, body { min-height: 100%; }
-      body {
-        margin: 0;
-        font-family: Manrope, Arial, sans-serif;
-        color: var(--text);
-        background:
-          radial-gradient(circle at top, rgba(39, 163, 73, 0.22), transparent 24%),
-          linear-gradient(180deg, #09100a 0%, #071009 45%, #050a06 100%);
+      /* Top rail */
+      .rail {
         display: flex;
         align-items: center;
-        justify-content: center;
-        padding: 24px;
+        justify-content: space-between;
+        padding: 0 24px;
+        height: 56px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(6px);
       }
-
-      .card {
-        width: min(100%, 460px);
-        background: linear-gradient(180deg, rgba(16, 24, 16, 0.95), rgba(8, 16, 10, 0.92));
-        border: 1px solid var(--line);
-        border-radius: 28px;
-        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
-        padding: 28px;
-        text-align: center;
+      .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
       }
-
-      .eyebrow {
+      .brand .word { font-size: 17px; font-weight: 900; letter-spacing: -0.02em; line-height: 1; }
+      .brand .word em { font-style: normal; color: var(--green); }
+      .brand .sub { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted); }
+      .status {
         display: inline-flex;
         gap: 8px;
         align-items: center;
-        padding: 6px 12px;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--muted);
+        font-size: 10px;
+        font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.22em;
-        font-size: 11px;
-        font-weight: 800;
-      }
-
-      .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--green-light);
-        box-shadow: 0 0 12px rgba(39, 163, 73, 0.9);
-      }
-
-      h1 {
-        margin: 18px 0 8px;
-        font-size: 40px;
-        line-height: 0.94;
-        letter-spacing: -0.04em;
-      }
-
-      h1 span { color: var(--green-light); }
-
-      p.lead {
-        margin: 0 0 22px;
         color: var(--muted);
-        line-height: 1.55;
+      }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
+      /* Layout */
+      main.wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 32px 24px 24px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 40px;
+        align-items: stretch;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      .col {
+        padding: 40px 32px;
+      }
+      .col.left { border-right: 1px solid var(--line); }
+
+      /* Left column — hero */
+      .eyebrow {
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.32em;
+        color: var(--green);
+        margin-bottom: 20px;
+      }
+      h1.display {
+        margin: 0 0 24px;
+        font-size: clamp(56px, 8vw, 96px);
+        line-height: 0.88;
+        letter-spacing: -0.03em;
+        font-weight: 900;
+      }
+      h1.display em { font-style: normal; color: var(--green); }
+      .lead {
+        max-width: 30rem;
         font-size: 15px;
+        line-height: 1.6;
+        color: var(--muted);
+        margin: 0 0 32px;
       }
-
-      .qr-wrap {
-        background: #ffffff;
-        border-radius: 22px;
-        padding: 16px;
-        margin: 0 auto 18px;
-        width: fit-content;
-        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border-top: 1px solid var(--line);
       }
+      .stat { padding: 18px 4px 0; border-right: 1px solid var(--line); }
+      .stat:last-child { border-right: none; }
+      .stat .label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.28em; color: var(--muted); margin-bottom: 6px; }
+      .stat .value { font-size: 22px; font-weight: 900; letter-spacing: -0.01em; line-height: 1; }
 
-      .qr-wrap img {
+      /* Right column — QR + steps */
+      .qr-panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        padding: 28px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+      }
+      .qr-panel img {
         display: block;
-        width: 260px;
+        width: 280px;
         max-width: 100%;
         height: auto;
       }
-
       .url {
-        margin: 0 0 18px;
+        width: 100%;
         padding: 12px 14px;
-        border-radius: 18px;
         border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.04);
-        color: var(--green-light);
-        font-size: 14px;
+        background: var(--bg);
+        color: var(--ink);
+        font-size: 12px;
         font-weight: 800;
+        letter-spacing: 0.02em;
         overflow-wrap: anywhere;
+        text-align: center;
       }
 
       .steps {
+        margin-top: 28px;
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-        margin: 0 0 18px;
+        grid-template-columns: 1fr;
+        border-top: 1px solid var(--line);
       }
-
       .step {
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        padding: 12px 10px;
-        background: rgba(255, 255, 255, 0.04);
+        display: grid;
+        grid-template-columns: 48px 1fr;
+        gap: 16px;
+        align-items: baseline;
+        padding: 18px 4px;
+        border-bottom: 1px solid var(--line);
       }
-
-      .step strong {
-        display: inline-flex;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(180deg, var(--green-light), var(--green));
-        margin-bottom: 8px;
-      }
-
-      .step div {
-        font-size: 12px;
+      .step:last-child { border-bottom: none; }
+      .step .n {
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.24em;
         color: var(--muted);
-        line-height: 1.45;
       }
-
-      .note {
-        font-size: 12px;
+      .step .body strong {
+        display: block;
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        margin-bottom: 2px;
+      }
+      .step .body span {
+        font-size: 13px;
         color: var(--muted);
         line-height: 1.5;
       }
 
+      /* Footer */
+      .foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 8px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.22em;
+        color: var(--muted);
+      }
+
       .warning {
         display: none;
-        margin-top: 14px;
-        padding: 12px 14px;
-        border-radius: 16px;
-        background: rgba(255, 200, 0, 0.12);
-        border: 1px solid rgba(255, 200, 0, 0.28);
-        color: #ffe08a;
-        text-align: left;
+        margin: 16px 0 0;
+        padding: 14px 18px;
+        border: 1px solid rgba(217, 119, 6, 0.35);
+        background: rgba(255, 244, 214, 0.9);
+        color: #7a4a00;
         font-size: 13px;
         line-height: 1.55;
       }
-
       .warning.show { display: block; }
 
-      @media print {
-        body { background: #ffffff; padding: 0; }
-        .card { box-shadow: none; border: 2px solid #111; color: #111; }
-        .note, .warning { color: #333; }
+      @media (max-width: 840px) {
+        .grid { grid-template-columns: 1fr; }
+        .col { padding: 32px 20px; }
+        .col.left { border-right: none; border-bottom: 1px solid var(--line); }
       }
 
-      @media (max-width: 520px) {
-        .steps { grid-template-columns: 1fr; }
-        h1 { font-size: 34px; }
+      @media print {
+        body { background: #ffffff; }
+        .rail { border-bottom-color: #000; background: #fff; }
+        .foot, .status { color: #333; }
       }
     </style>
   </head>
   <body>
-    <main class="card">
-      <div class="eyebrow"><span class="dot"></span> Mässläge</div>
-      <h1>LBC Cargo <span>Quest</span></h1>
-      <p class="lead">Scanna koden och spela direkt i mobilen. Ingen app, inget OneDrive, bara en publik länk till spelet.</p>
-
-      <div class="qr-wrap">
-        <img id="qr" src="./fair-qr.svg" alt="QR-kod till LBC Cargo Quest" />
+    <div class="rail">
+      <div class="brand">
+        <span class="word">LBC<em>frakt</em></span>
+        <span class="sub">Sedan 1994</span>
       </div>
+      <div class="status">
+        <span class="dot"></span>
+        Cargo Quest · Mässläge
+      </div>
+    </div>
 
-      <div class="url" id="game-url">Konfigureras...</div>
+    <main class="wrap">
+      <section class="grid">
+        <div class="col left">
+          <div class="eyebrow">— LBC Cargo Quest</div>
+          <h1 class="display">SPELA<br/>DIREKT<em>.</em></h1>
+          <p class="lead">
+            Scanna QR-koden med mobilkameran. Spelet öppnas i webbläsaren —
+            ingen app, ingen inloggning. Bara på god väg.
+          </p>
+          <div class="stats">
+            <div class="stat">
+              <div class="label">Format</div>
+              <div class="value">Web</div>
+            </div>
+            <div class="stat">
+              <div class="label">Åldrar</div>
+              <div class="value">10+</div>
+            </div>
+            <div class="stat">
+              <div class="label">Speltid</div>
+              <div class="value">5 min</div>
+            </div>
+          </div>
+        </div>
 
-      <section class="steps">
-        <article class="step">
-          <strong>1</strong>
-          <div>Öppna kameran och scanna QR-koden</div>
-        </article>
-        <article class="step">
-          <strong>2</strong>
-          <div>Spelet öppnas direkt i webbläsaren</div>
-        </article>
-        <article class="step">
-          <strong>3</strong>
-          <div>Samla gods, lasta och leverera</div>
-        </article>
+        <div class="col">
+          <div class="qr-panel">
+            <img id="qr" src="./fair-qr.svg" alt="QR-kod till LBC Cargo Quest" />
+            <div class="url" id="game-url">Konfigureras…</div>
+          </div>
+
+          <div class="steps">
+            <div class="step">
+              <span class="n">01</span>
+              <div class="body">
+                <strong>Öppna kameran</strong>
+                <span>Rikta mot QR-koden — länken visas automatiskt.</span>
+              </div>
+            </div>
+            <div class="step">
+              <span class="n">02</span>
+              <div class="body">
+                <strong>Tryck på länken</strong>
+                <span>Spelet öppnas direkt i din webbläsare.</span>
+              </div>
+            </div>
+            <div class="step">
+              <span class="n">03</span>
+              <div class="body">
+                <strong>Samla &amp; leverera</strong>
+                <span>Hitta gods, lasta lastbilen, kör hem poäng.</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="warning" class="warning"></div>
+        </div>
       </section>
 
-      <div class="note">Tips: öppna denna sida som affisch på skärm eller skriv ut den från den publika adressen <strong id="qr-page-url">qr.html</strong>.</div>
-      <div id="warning" class="warning"></div>
+      <div class="foot">
+        <span>LBC Frakt i Värmland AB</span>
+        <span id="qr-page-url">qr.html</span>
+        <span>På god väg</span>
+      </div>
     </main>
 
     <script>
@@ -207,11 +294,9 @@
         const gameUrlEl = document.getElementById('game-url')
         const qrPageUrlEl = document.getElementById('qr-page-url')
         const warningEl = document.getElementById('warning')
-
         try {
           const res = await fetch('./fair-config.json', { cache: 'no-store' })
           if (!res.ok) throw new Error('fair-config.json saknas')
-
           const config = await res.json()
           if (!config.publicGameUrl || config.publicGameUrl.includes('example.com')) {
             throw new Error('placeholder-url upptäckt')
@@ -220,12 +305,11 @@
           qrPageUrlEl.textContent = config.qrPageUrl
         } catch (err) {
           warningEl.classList.add('show')
-          warningEl.textContent = 'QR-filen är inte färdigkonfigurerad ännu. Kör build:fair med PUBLIC_GAME_URL satt till den publika adress där spelet ska ligga, till exempel https://cargoquest.dindoman.se/'
+          warningEl.textContent = 'QR-filen är inte färdigkonfigurerad ännu. Kör build:fair med PUBLIC_GAME_URL satt till den publika adress där spelet ska ligga.'
           gameUrlEl.textContent = 'Publik URL saknas'
         }
       }
-
       boot()
     </script>
   </body>
-  </html>
+</html>

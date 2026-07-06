@@ -2,9 +2,6 @@ import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { RANKS } from '../../data/cargoTypes'
 import { GARAGE_UNLOCK_POINTS } from '../../data/garageParts'
-import { GlassCard } from '../ui/GlassCard'
-import { ProgressBar } from '../ui/ProgressBar'
-import { Button } from '../ui/Button'
 import { TruckPreview } from '../game/TruckPreview'
 import { generateCargoItems } from '../../utils/cargoGenerator'
 
@@ -13,6 +10,8 @@ export function ProfileScreen() {
 
   const rankIdx = RANKS.indexOf(player.rank)
   const nextRank = RANKS[Math.min(rankIdx + 1, RANKS.length - 1)]
+  const xpPct = Math.min(100, Math.round((player.xp / player.xpToNext) * 100))
+  const garagePct = Math.min(100, Math.round((garage.stats.lifetimePoints / GARAGE_UNLOCK_POINTS) * 100))
 
   const handleNewRound = () => {
     resetRound()
@@ -20,160 +19,178 @@ export function ProfileScreen() {
     setScreen('map')
   }
 
-  return (
-    <div className="fixed inset-0 bg-surface-900 overflow-y-auto">
-      <div className="min-h-full flex flex-col items-center px-4 pb-10" data-scroll>
-        <div className="w-full max-w-sm space-y-4">
+  const handleExitToSplash = () => {
+    resetRound()
+    setEventMode(false)
+    setScreen('splash')
+  }
 
-          {/* Top nav bar */}
-          <div className="flex items-center justify-between pt-12 pb-2">
-            <button
-              onClick={() => setScreen('map')}
-              className="flex items-center gap-1.5 text-white/50 text-sm font-bold active:text-white/80"
-            >
-              ← Kartan
-            </button>
-            <span className="text-white/30 text-xs font-bold uppercase tracking-widest">Min Profil</span>
-            <button
-              onClick={() => setScreen('splash')}
-              className="flex items-center gap-1 text-white/40 text-xs font-bold active:text-white/70"
-            >
-              ⚙️ Start
-            </button>
+  return (
+    <div
+      className="fixed inset-0 bg-[#f6f4ef] text-[#0a0a0a] overflow-y-auto"
+      style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui' }}
+      data-scroll
+    >
+      {/* Top rail */}
+      <div
+        className="sticky top-0 z-10 flex items-center justify-between px-5 h-12 border-b border-black/8 bg-[#f6f4ef]/95 backdrop-blur-sm"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <button
+          onClick={() => setScreen('map')}
+          className="text-[10px] font-black uppercase tracking-[0.22em] text-black/55 active:text-[#0a0a0a] inline-flex items-center gap-1"
+        >
+          ← Kartan
+        </button>
+        <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/45">— Profil</span>
+        <button
+          onClick={handleExitToSplash}
+          className="text-[10px] font-black uppercase tracking-[0.22em] text-black/55 active:text-[#1a7e34]"
+        >
+          Avsluta ✕
+        </button>
+      </div>
+
+      <div className="max-w-md mx-auto">
+
+        {/* Hero */}
+        <section className="px-5 pt-8 pb-6 border-b border-black/8">
+          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#1a7e34] mb-3">— Min profil</div>
+          <h1 className="font-black leading-[0.9] tracking-tight text-[48px]">{player.name || '—'}<span className="text-[#1a7e34]">.</span></h1>
+          <p className="mt-3 text-[13px] text-black/60">
+            {player.rank} · Nivå {player.level} · {player.company}
+          </p>
+        </section>
+
+        {/* Stats */}
+        <section className="grid grid-cols-3 border-b border-black/8">
+          <StatCell label="Leveranser" value={String(player.totalDeliveries)} />
+          <StatCell label="XP" value={String(player.xp)} accent />
+          <StatCell label="Poäng" value={garage.stats.lifetimePoints.toLocaleString('sv-SE')} last />
+        </section>
+
+        {/* Nästa rang */}
+        <section className="px-5 py-5 border-b border-black/8">
+          <div className="flex items-baseline justify-between mb-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/50">Nästa rang</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/45 tabular-nums">{xpPct}%</span>
+          </div>
+          <div className="h-[3px] bg-black/8 mb-2">
+            <div className="h-full bg-[#1a7e34] transition-all duration-700" style={{ width: xpPct + '%' }} />
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-[13px] font-black">{nextRank}</span>
+            <span className="text-[11px] text-black/50">{player.xpToNext - player.xp} XP kvar</span>
+          </div>
+        </section>
+
+        {/* Lastbil / Garage */}
+        <section className="px-5 py-5 border-b border-black/8">
+          <div className="flex items-baseline justify-between mb-3">
+            <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/50">Din lastbil</span>
+            {garage.unlocked
+              ? <span className="text-[10px] font-bold uppercase tracking-widest text-[#1a7e34]">{garage.ownedPartIds.length} delar</span>
+              : <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Låst</span>}
+          </div>
+          <div className="bg-white border border-black/10 mb-3">
+            <TruckPreview equipped={garage.equipped} view="side" className="w-full" />
           </div>
 
-          {/* Avatar + name */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center"
+          {garage.unlocked ? (
+            <button
+              onClick={() => setScreen('garage')}
+              className="w-full h-12 bg-[#0a0a0a] text-white flex items-center justify-between px-5 active:bg-[#1a7e34] transition-colors"
+            >
+              <span className="text-[12px] font-black uppercase tracking-[0.22em]">Anpassa i garaget</span>
+              <span className="text-lg">→</span>
+            </button>
+          ) : (
+            <>
+              <div className="h-[3px] bg-black/8 mb-2">
+                <div className="h-full bg-[#0a0a0a] transition-all duration-700" style={{ width: garagePct + '%' }} />
+              </div>
+              <p className="text-[11px] text-black/55">
+                {Math.max(0, GARAGE_UNLOCK_POINTS - garage.stats.lifetimePoints).toLocaleString('sv-SE')} poäng kvar för att låsa upp garaget
+              </p>
+            </>
+          )}
+        </section>
+
+        {/* Rangstege */}
+        <section className="px-5 py-5 border-b border-black/8">
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-black/50 mb-4">— Rangstege</div>
+          <ol className="space-y-1">
+            {RANKS.map((rank, i) => {
+              const isCurrent = i === rankIdx
+              const isPast = i < rankIdx
+              return (
+                <li key={rank} className="flex items-center gap-3 py-1.5">
+                  <span className={
+                    'text-[10px] font-black tracking-widest w-6 tabular-nums ' +
+                    (isCurrent ? 'text-[#1a7e34]' : isPast ? 'text-black/50' : 'text-black/25')
+                  }>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className={
+                    'text-[13px] flex-1 ' +
+                    (isCurrent ? 'font-black text-[#0a0a0a]' : isPast ? 'font-medium text-black/55' : 'font-medium text-black/30')
+                  }>
+                    {rank}
+                  </span>
+                  {isCurrent && (
+                    <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a7e34]">← Du</span>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+        </section>
+
+        {/* Åtgärder */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="border-b border-black/8"
+        >
+          <button
+            onClick={() => setScreen('map')}
+            className="w-full h-14 bg-[#0a0a0a] text-white flex items-center justify-between px-5 active:bg-[#1a7e34] transition-colors"
           >
-            <div className="w-20 h-20 rounded-full bg-lbc-green mx-auto flex items-center justify-center text-4xl mb-3 shadow-[0_0_32px_rgba(26,126,52,.4)]">
-              🚛
-            </div>
-            <h1 className="text-2xl font-black text-white">{player.name}</h1>
-            <p className="text-lbc-green font-bold text-sm">{player.rank}</p>
-            <p className="text-white/35 text-xs">{player.company}</p>
-          </motion.div>
-
-          {/* Stats — 3 siffror */}
-          <GlassCard className="p-5" delay={0.05}>
-            <p className="text-[10px] text-white/35 font-bold uppercase tracking-widest mb-3">Din statistik</p>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <div className="text-3xl font-black text-white">{player.level}</div>
-                <div className="text-xs text-white/40 mt-0.5">Nivå</div>
-              </div>
-              <div>
-                <div className="text-3xl font-black text-lbc-green">{player.totalDeliveries}</div>
-                <div className="text-xs text-white/40 mt-0.5">Leveranser</div>
-              </div>
-              <div>
-                <div className="text-3xl font-black" style={{color:'#2a8ae0'}}>{player.xp}</div>
-                <div className="text-xs text-white/40 mt-0.5">XP</div>
-              </div>
-            </div>
-          </GlassCard>
-
-          {/* XP progress */}
-          <GlassCard className="p-5" delay={0.1}>
-            <p className="text-[10px] text-white/35 font-bold uppercase tracking-widest mb-3">Nästa rang</p>
-            <ProgressBar
-              value={player.xp}
-              max={player.xpToNext}
-              label={nextRank}
-              showPct
-              color="#1a7e34"
-            />
-            <p className="text-white/40 text-xs text-center mt-2">
-              {player.xpToNext - player.xp} XP kvar till ”{nextRank}”
-            </p>
-          </GlassCard>
-
-          {/* Din lastbil / Garage */}
-          <GlassCard className="p-4" delay={0.15} glow>
-            <div className="flex items-center justify-between mb-1">
-              <div>
-                <p className="text-[10px] text-white/35 font-bold uppercase tracking-widest">Din lastbil — anpassa &amp; uppgradera</p>
-                <p className="text-xs text-white/45 mt-0.5">
-                  {garage.unlocked
-                    ? 'Anpassa lastbilen med delar du tjänat in'
-                    : 'Lås upp garaget genom att spela fler omgångar'}
-                </p>
-              </div>
-              {garage.unlocked && (
-                <span className="text-xs text-lbc-green font-bold">{garage.ownedPartIds.length} delar</span>
-              )}
-            </div>
-            <div className="rounded-2xl overflow-hidden my-2" style={{ background: 'linear-gradient(180deg,#0a1410,#06100b)' }}>
-              <TruckPreview equipped={garage.equipped} view="side" className="w-full" />
-            </div>
-            {garage.unlocked ? (
-              <Button fullWidth size="md" onClick={() => setScreen('garage')}>
-                🔧 Anpassa lastbilen i garaget →
-              </Button>
-            ) : (
-              <div className="mt-1">
-                <ProgressBar
-                  value={Math.min(garage.stats.lifetimePoints, GARAGE_UNLOCK_POINTS)}
-                  max={GARAGE_UNLOCK_POINTS}
-                  label="🔒 Garage låst"
-                  showPct
-                  color="#2a8ae0"
-                />
-                <p className="text-white/40 text-xs text-center mt-1.5">
-                  {Math.max(0, GARAGE_UNLOCK_POINTS - garage.stats.lifetimePoints).toLocaleString('sv-SE')} poäng kvar
-                </p>
-              </div>
-            )}
-          </GlassCard>
-
-          {/* Rang-stege */}
-          <GlassCard className="p-5" delay={0.2}>
-            <p className="text-[10px] text-white/35 font-bold uppercase tracking-widest mb-3">Rangstegen — var befinner du dig?</p>
-            <div className="space-y-2">
-              {RANKS.map((rank, i) => {
-                const isCurrentOrBelow = i <= rankIdx
-                const isCurrent = i === rankIdx
-                return (
-                  <div key={rank} className="flex items-center gap-3">
-                    <div
-                      className={'w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ' +
-                        (isCurrent ? 'bg-lbc-green text-white' : isCurrentOrBelow ? 'bg-white/20 text-white/60' : 'bg-white/5 text-white/20')}
-                    >
-                      {i + 1}
-                    </div>
-                    <span className={'text-sm font-medium ' + (isCurrent ? 'text-white font-black' : isCurrentOrBelow ? 'text-white/60' : 'text-white/20')}>
-                      {rank}
-                    </span>
-                    {isCurrent && <span className="ml-auto text-lbc-green text-xs font-bold">← Du</span>}
-                  </div>
-                )
-              })}
-            </div>
-          </GlassCard>
-
-          {/* Knappar */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="space-y-2 pb-4"
+            <span className="text-[12px] font-black uppercase tracking-[0.22em]">Tillbaka till kartan</span>
+            <span className="text-lg">→</span>
+          </button>
+          <button
+            onClick={handleNewRound}
+            className="w-full h-12 bg-white border-t border-black/8 flex items-center justify-between px-5 active:bg-black/[0.03]"
           >
-            <Button fullWidth size="lg" onClick={() => setScreen('map')}>
-              ← Tillbaka till kartan
-            </Button>
-            <Button fullWidth size="md" variant="secondary" onClick={handleNewRound}>
-              🗺️ Ny omgång
-            </Button>
-            <Button fullWidth size="md" variant="secondary" onClick={() => setScreen('leaderboard')}>
-              🏆 Dagens topplista
-            </Button>
-            <Button fullWidth size="md" variant="ghost" onClick={() => { resetRound(); setEventMode(false); setScreen('splash') }}>
-              ✕ Avsluta → Startsida
-            </Button>
-          </motion.div>
+            <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#0a0a0a]">Ny omgång</span>
+            <span className="text-black/40">↻</span>
+          </button>
+          <button
+            onClick={() => setScreen('leaderboard')}
+            className="w-full h-12 bg-white border-t border-black/8 flex items-center justify-between px-5 active:bg-black/[0.03]"
+          >
+            <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#0a0a0a]">Dagens topplista</span>
+            <span className="text-black/40">↗</span>
+          </button>
+        </motion.div>
+
+        <div className="py-6 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-black/35">
+          LBC Frakt i Värmland AB · På god väg
         </div>
+
+      </div>
+    </div>
+  )
+}
+
+function StatCell({ label, value, accent, last }: { label: string; value: string; accent?: boolean; last?: boolean }) {
+  return (
+    <div className={'px-5 py-4 ' + (last ? '' : 'border-r border-black/8')}>
+      <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45 mb-1 truncate">{label}</div>
+      <div className={'text-[20px] font-black leading-none tracking-tight tabular-nums ' + (accent ? 'text-[#1a7e34]' : 'text-[#0a0a0a]')}>
+        {value}
       </div>
     </div>
   )

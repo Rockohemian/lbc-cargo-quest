@@ -77,24 +77,28 @@ L.Icon.Default.mergeOptions({
 })
 
 function cargoIcon(emoji: string, rarity: string, collected: boolean) {
-  const c = collected ? '#333' : (RARITY_COLORS[rarity] ?? '#9EA3A5')
+  const c = collected ? '#9ca3af' : (RARITY_COLORS[rarity] ?? '#9EA3A5')
+  const op = collected ? 0.35 : 1
   return L.divIcon({
     className: '',
-    html: `<div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center;
-      background:rgba(8,16,10,.9);border:2.5px solid ${c};border-radius:50%;font-size:22px;
-      box-shadow:0 0 14px ${c}55;opacity:${collected ? .25 : 1}">${emoji}</div>`,
-    iconSize: [46, 46], iconAnchor: [23, 23],
+    html: `<div style="width:44px;height:52px;display:flex;flex-direction:column;align-items:center;opacity:${op}">` +
+      `<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;` +
+      `background:#ffffff;border:1.5px solid #0a0a0a;font-size:20px;` +
+      `box-shadow:0 4px 12px rgba(0,0,0,.18)">${emoji}</div>` +
+      `<div style="width:24px;height:3px;background:${c};margin-top:2px"></div>` +
+      `</div>`,
+    iconSize: [44, 52], iconAnchor: [22, 26],
   })
 }
 
 function playerIcon() {
   return L.divIcon({
     className: '',
-    html: `<div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center;position:relative">
-      <div style="position:absolute;inset:0;background:rgba(26,126,52,.2);border-radius:50%;animation:pulse 2s infinite"></div>
-      <div style="width:26px;height:26px;background:#1a7e34;border:3px solid #fff;border-radius:50%;
-        box-shadow:0 0 20px rgba(26,126,52,.7)"></div></div>`,
-    iconSize: [50, 50], iconAnchor: [25, 25],
+    html: `<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;position:relative">
+      <div style="position:absolute;inset:0;background:rgba(26,126,52,.22);border-radius:50%;animation:pulse 2s infinite"></div>
+      <div style="width:20px;height:20px;background:#1a7e34;border:3px solid #fff;border-radius:50%;
+        box-shadow:0 2px 8px rgba(10,10,10,.35)"></div></div>`,
+    iconSize: [44, 44], iconAnchor: [22, 22],
   })
 }
 
@@ -337,8 +341,8 @@ export function MapScreen() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 bg-surface-900 flex flex-col"
-      style={{ top: 'calc(3rem + 3px + env(safe-area-inset-top, 0px))' }}
+      className="fixed inset-x-0 bottom-0 bg-[#f6f4ef] flex flex-col"
+      style={{ top: 'calc(3rem + env(safe-area-inset-top, 0px))' }}
     >
       {/* Map */}
       <div className={`flex-1 relative ${isNight ? 'map-night' : 'map-day'}`}>
@@ -416,35 +420,39 @@ export function MapScreen() {
           )}
         </AnimatePresence>
 
-        {/* Day/night toggle — small corner button */}
+        {/* Day/night toggle — diskret nere till höger */}
         <button
           onClick={toggleMapTheme}
-          className="absolute bottom-36 right-3 z-[1000] px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-black/50 text-white/70 border border-white/15 backdrop-blur-md"
+          className="absolute bottom-36 right-3 z-[1000] w-9 h-9 flex items-center justify-center bg-white text-[#0a0a0a] border border-black/12 shadow-[0_2px_8px_rgba(0,0,0,.12)] active:bg-[#f6f4ef]"
+          aria-label="Växla kart-tema"
         >
           {isNight ? '☀️' : '🌙'}
         </button>
 
-        {/* In-range collect buttons */}
+        {/* In-range collect button — svart platt CTA */}
         <AnimatePresence>
           {inRange.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="absolute bottom-36 z-[1000] space-y-2 left-4 right-4"
+              className="absolute bottom-36 z-[1000] left-4 right-4"
             >
               {inRange.slice(0, 1).map(item => (
                 <button
                   key={item.id}
                   onClick={() => handleCollect(item)}
-                  className="w-full flex items-center gap-3 bg-lbc-green/90 backdrop-blur-sm border border-lbc-green-d rounded-xl px-4 py-3 text-white font-bold text-sm active:scale-95 transition-transform"
+                  className="w-full flex items-center gap-3 bg-[#0a0a0a] text-white px-5 h-14 active:bg-[#1a7e34] transition-colors"
                 >
-                  <span className="text-2xl">{item.type.emoji}</span>
+                  <span className="text-2xl leading-none">{item.type.emoji}</span>
                   <div className="flex-1 text-left">
-                    <div>{item.type.name}</div>
-                    <div className="text-xs text-white/70">{Math.round(item.dist)}m bort · +{item.type.xpReward} XP</div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.22em] text-white/60">Samla in</div>
+                    <div className="text-sm font-black leading-tight">{item.type.name}</div>
                   </div>
-                  <span className="text-lg">→</span>
+                  <div className="text-right">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-white/50">{Math.round(item.dist)}m</div>
+                    <div className="text-[13px] font-black text-[#27a349]">+{item.type.xpReward} XP</div>
+                  </div>
                 </button>
               ))}
             </motion.div>
@@ -452,22 +460,22 @@ export function MapScreen() {
         </AnimatePresence>
       </div>
 
-      {/* Ready-to-load popup */}
+      {/* Ready-to-load popup — svart platt CTA */}
       <AnimatePresence>
         {showReadyToLoad && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.92 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
             className="absolute bottom-36 left-4 right-4 z-[1200]"
           >
             <button
               onClick={() => { setShowReadyToLoad(false); setScreen('loading') }}
-              className="w-full flex items-center justify-between gap-3 bg-lbc-green rounded-2xl px-5 py-4 shadow-[0_8px_32px_rgba(26,126,52,.6)] border border-lbc-green-l active:scale-98"
+              className="w-full flex items-center justify-between gap-3 bg-[#0a0a0a] text-white px-5 h-16 active:bg-[#1a7e34] transition-colors shadow-[0_8px_24px_rgba(0,0,0,.25)]"
             >
               <div className="text-left">
-                <div className="text-white font-black text-base">📦 Redo att lasta!</div>
-                <div className="text-white/75 text-xs mt-0.5">Du har {inventory.length} kolli – tryck för att lasta</div>
+                <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[#27a349]">Redo att lasta</div>
+                <div className="text-sm font-black leading-tight mt-0.5">Du har {inventory.length} kolli — tryck för att lasta</div>
               </div>
               <span className="text-2xl">→</span>
             </button>
@@ -475,58 +483,70 @@ export function MapScreen() {
         )}
       </AnimatePresence>
 
-      {/* Bottenpanel */}
-      <div className="bg-[#060d07]/98 border-t border-white/[0.07] px-3 pt-2.5 pb-3 z-[1000] safe-area-bottom">
+      {/* Bottenpanel — ljus, verksamhetssystem */}
+      <div className="bg-[#f6f4ef] border-t border-black/10 z-[1000] safe-area-bottom">
         <div className="max-w-lg mx-auto">
           {/* Statusrad */}
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2.5">
-              <span className="text-[11px] font-black text-white/70 uppercase tracking-widest">Sök gods</span>
+          <div className="flex items-center justify-between gap-2 px-5 h-11 border-b border-black/8">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black text-[#0a0a0a] uppercase tracking-[0.28em]">Sök gods</span>
               <span className={[
-                'text-[10px] font-bold',
-                gpsStatus === 'ok'       ? 'text-lbc-green/60' :
-                gpsStatus === 'fallback' ? 'text-amber-400'    :
-                                           'text-white/30',
+                'text-[10px] font-bold uppercase tracking-[0.22em] inline-flex items-center gap-1.5',
+                gpsStatus === 'ok'       ? 'text-[#1a7e34]' :
+                gpsStatus === 'fallback' ? 'text-amber-700' :
+                                           'text-black/40',
               ].join(' ')}>
-                {gpsStatus === 'ok'       ? '● GPS' :
-                 gpsStatus === 'fallback' ? '⚠ GPS saknas – ladda om' :
-                                           '○ Hämtar GPS…'}
+                <span className={[
+                  'w-1.5 h-1.5 rounded-full',
+                  gpsStatus === 'ok'       ? 'bg-[#1a7e34]' :
+                  gpsStatus === 'fallback' ? 'bg-amber-600' :
+                                             'bg-black/25',
+                ].join(' ')} />
+                {gpsStatus === 'ok' ? 'GPS' : gpsStatus === 'fallback' ? 'GPS saknas' : 'Hämtar GPS'}
               </span>
             </div>
-            <span className="text-[11px] font-bold text-white/50">{inventory.length}/{LOAD_MIN} kolli</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50 tabular-nums">{inventory.length}/{LOAD_MIN} kolli</span>
           </div>
 
-          {/* Tips: tryck på gods på kartan för info */}
-          {nearest.length > 0 && inventory.length < LOAD_MIN && (
-            <p className="text-[10px] text-white/35 mb-2 text-center">
+          {/* Hjälptext */}
+          {inventory.length < LOAD_MIN && cargoItems.length > 0 && (
+            <div className="px-5 py-2 text-[11px] text-black/50 text-center border-b border-black/8">
               Tryck på en godsikon på kartan för att se detaljer
-            </p>
+            </div>
           )}
 
-          {/* Inventory + lasta-knapp */}
-          <div className="flex items-center gap-2">
-            <GlassCard className="flex-1 px-3 py-2">
-              <div className="flex items-center gap-1 flex-wrap min-h-[24px]">
-                {inventory.length === 0
-                  ? <span className="text-white/25 text-xs">Ingen last ännu</span>
-                  : inventory.slice(-10).map((c, i) => (
-                      <span key={i} className="text-base">{c.emoji}</span>
-                    ))
-                }
-              </div>
-            </GlassCard>
-            <Button
-              size="md"
-              disabled={inventory.length < LOAD_MIN}
+          {/* Inventory + lasta-knapp — två celler i grid */}
+          <div className="grid grid-cols-[1fr_auto]">
+            <div className="px-5 py-3 border-r border-black/8 min-h-[56px] flex items-center">
+              {inventory.length === 0 ? (
+                <span className="text-black/35 text-[12px] font-medium">Ingen last ännu</span>
+              ) : (
+                <div className="flex items-center gap-1 flex-wrap">
+                  {inventory.slice(-10).map((c, i) => (
+                    <span key={i} className="text-lg">{c.emoji}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
               onClick={() => setScreen('loading')}
+              disabled={inventory.length < LOAD_MIN}
+              className={
+                'px-6 h-14 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.22em] transition-colors ' +
+                (inventory.length < LOAD_MIN
+                  ? 'bg-black/5 text-black/35 cursor-not-allowed'
+                  : 'bg-[#0a0a0a] text-white active:bg-[#1a7e34]')
+              }
             >
-              {inventory.length < LOAD_MIN ? `${inventory.length}/${LOAD_MIN}` : '📦 Lasta!'}
-            </Button>
+              {inventory.length < LOAD_MIN
+                ? <span>{inventory.length}/{LOAD_MIN}</span>
+                : <><span>Lasta</span><span className="text-lg">→</span></>}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Cargo preview modal */}
+      {/* Cargo preview modal — ljus, verksamhetssystem */}
       <AnimatePresence>
         {previewItem && (
           <>
@@ -536,7 +556,7 @@ export function MapScreen() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setPreviewItem(null)}
-              className="absolute inset-0 z-[1090] bg-black/50"
+              className="absolute inset-0 z-[1090] bg-black/35"
             />
             <motion.div
               key="preview-sheet"
@@ -544,79 +564,100 @@ export function MapScreen() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="absolute bottom-0 left-0 right-0 z-[1095] bg-[#0e1810] border-t border-white/12 rounded-t-3xl px-5 pt-5 pb-10"
+              className="absolute bottom-0 left-0 right-0 z-[1095] bg-[#f6f4ef] border-t border-black/10"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
             >
               {/* Drag handle */}
-              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
+              <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mt-3 mb-2" />
+
+              {/* Eyebrow + close */}
+              <div className="flex items-center justify-between px-5 h-9 border-b border-black/8">
+                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1a7e34]">— Godsinformation</span>
+                <button onClick={() => setPreviewItem(null)} className="text-black/40 active:text-[#0a0a0a] text-lg" aria-label="Stäng">✕</button>
+              </div>
 
               {/* Header */}
-              <div className="flex items-start gap-4 mb-5">
+              <div className="px-5 pt-5 pb-4 border-b border-black/8 flex items-start gap-4">
                 <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 border-2"
-                  style={{ borderColor: RARITY_COLORS[previewItem.type.rarity], background: 'rgba(255,255,255,.05)' }}
+                  className="w-16 h-16 flex items-center justify-center text-3xl flex-shrink-0 bg-white border border-[#0a0a0a]"
                 >
                   {previewItem.type.emoji}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="font-black text-lg text-white leading-tight">{previewItem.type.name}</span>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-[22px] font-black leading-tight tracking-tight text-[#0a0a0a]">{previewItem.type.name}</h2>
+                  <div className="mt-1 flex items-center gap-2">
                     <span
-                      className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
-                      style={{ color: RARITY_COLORS[previewItem.type.rarity], background: RARITY_COLORS[previewItem.type.rarity] + '22' }}
+                      className="text-[10px] font-black uppercase tracking-[0.22em] px-2 py-0.5"
+                      style={{ color: RARITY_COLORS[previewItem.type.rarity], background: RARITY_COLORS[previewItem.type.rarity] + '18' }}
                     >
                       {RARITY_LABEL[previewItem.type.rarity]}
                     </span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/45">
+                      {WEIGHT_LABEL[previewItem.type.load.weightClass]}
+                    </span>
                   </div>
-                  <p className="text-white/50 text-xs leading-relaxed">{previewItem.type.description}</p>
+                  <p className="mt-2 text-[12px] text-black/60 leading-relaxed">{previewItem.type.description}</p>
                 </div>
               </div>
 
-              {/* Stats grid */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              {/* Stats grid — 3 kolumner med tunna avdelare */}
+              <div className="grid grid-cols-3 border-b border-black/8">
                 {([
-                  ['Avstånd', Math.round(previewItem.dist) + 'm'],
+                  ['Avstånd', Math.round(previewItem.dist) + ' m'],
                   ['XP', '+' + previewItem.type.xpReward],
                   ['Värde', previewItem.type.value + ' kr'],
+                ] as [string, string][]).map(([label, value], i) => (
+                  <div key={label} className={'px-4 py-3 ' + (i < 2 ? 'border-r border-black/8' : '')}>
+                    <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45 mb-0.5">{label}</div>
+                    <div className="text-[16px] font-black tracking-tight text-[#0a0a0a]">{value}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 border-b border-black/8">
+                {([
                   ['Vikt', previewItem.type.weight + ' kg'],
                   ['Volym', previewItem.type.volume + ' m³'],
                   ['Storlek', previewItem.type.load.cols + '×' + previewItem.type.load.rows],
-                ] as [string, string][]).map(([label, value]) => (
-                  <div key={label} className="bg-white/5 rounded-xl px-3 py-2 text-center">
-                    <div className="text-white/40 text-[9px] uppercase tracking-widest">{label}</div>
-                    <div className="text-white font-bold text-sm mt-0.5">{value}</div>
+                ] as [string, string][]).map(([label, value], i) => (
+                  <div key={label} className={'px-4 py-3 ' + (i < 2 ? 'border-r border-black/8' : '')}>
+                    <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45 mb-0.5">{label}</div>
+                    <div className="text-[14px] font-black tracking-tight text-[#0a0a0a]">{value}</div>
                   </div>
                 ))}
               </div>
 
               {/* Tags */}
-              <div className="flex gap-2 mb-5 flex-wrap">
-                {previewItem.type.load.fragile && (
-                  <span className="text-xs bg-red-500/15 text-red-300 border border-red-500/25 px-2 py-1 rounded-lg">⚠️ Ömtåligt</span>
-                )}
-                {previewItem.type.load.stackable && (
-                  <span className="text-xs bg-white/8 text-white/50 border border-white/10 px-2 py-1 rounded-lg">📦 Stapelbart</span>
-                )}
-                <span className="text-xs bg-white/8 text-white/50 border border-white/10 px-2 py-1 rounded-lg">
-                  {WEIGHT_LABEL[previewItem.type.load.weightClass]}
-                </span>
-              </div>
-
-              {/* CTA button */}
-              {previewItem.dist <= COLLECT_RADIUS ? (
-                <button
-                  onClick={() => { handleCollect(previewItem); setPreviewItem(null) }}
-                  className="w-full bg-lbc-green rounded-2xl py-4 font-black text-white text-base shadow-[0_8px_24px_rgba(26,126,52,.5)] active:scale-98 transition-transform"
-                >
-                  Samla in → +{previewItem.type.xpReward} XP
-                </button>
-              ) : (
-                <button
-                  onClick={() => setPreviewItem(null)}
-                  className="w-full bg-white/8 border border-white/12 rounded-2xl py-3.5 font-bold text-white/60 text-sm"
-                >
-                  Gå dit ({Math.round(previewItem.dist)}m bort)
-                </button>
+              {(previewItem.type.load.fragile || previewItem.type.load.stackable) && (
+                <div className="flex gap-2 px-5 py-3 border-b border-black/8 flex-wrap">
+                  {previewItem.type.load.fragile && (
+                    <span className="text-[10px] font-black uppercase tracking-[0.22em] bg-red-50 text-red-700 border border-red-200 px-2 py-1">⚠ Ömtåligt</span>
+                  )}
+                  {previewItem.type.load.stackable && (
+                    <span className="text-[10px] font-black uppercase tracking-[0.22em] bg-black/5 text-black/55 border border-black/10 px-2 py-1">Stapelbart</span>
+                  )}
+                </div>
               )}
+
+              {/* CTA */}
+              <div className="px-5 pt-4">
+                {previewItem.dist <= COLLECT_RADIUS ? (
+                  <button
+                    onClick={() => { handleCollect(previewItem); setPreviewItem(null) }}
+                    className="w-full bg-[#0a0a0a] text-white h-14 flex items-center justify-between px-5 active:bg-[#1a7e34] transition-colors"
+                  >
+                    <span className="text-[12px] font-black uppercase tracking-[0.22em]">Samla in</span>
+                    <span className="text-[12px] font-black text-[#27a349]">+{previewItem.type.xpReward} XP →</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setPreviewItem(null)}
+                    className="w-full bg-white border border-black/15 h-14 flex items-center justify-between px-5 active:bg-black/[0.03] transition-colors"
+                  >
+                    <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#0a0a0a]">Gå dit</span>
+                    <span className="text-[12px] font-bold text-black/60">{Math.round(previewItem.dist)} m bort</span>
+                  </button>
+                )}
+              </div>
             </motion.div>
           </>
         )}

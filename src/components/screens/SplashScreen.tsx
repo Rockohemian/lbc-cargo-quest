@@ -35,7 +35,7 @@ export function SplashScreen() {
 
   // Backup triggers:
   //  1) URL hash #dev opens direct
-  //  2) Keyboard: Ctrl+Shift+D
+  //  2) Keyboard: Ctrl+Alt+D (Ctrl+Shift+D är bokmärken i Chrome/Edge)
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (window.location.hash === '#dev') {
@@ -43,7 +43,7 @@ export function SplashScreen() {
       setScreen('dev')
     }
     const onKey = (ev: KeyboardEvent) => {
-      if (ev.ctrlKey && ev.shiftKey && (ev.key === 'D' || ev.key === 'd')) {
+      if (ev.ctrlKey && ev.altKey && (ev.key === 'D' || ev.key === 'd')) {
         ev.preventDefault()
         setScreen('dev')
       }
@@ -80,10 +80,16 @@ export function SplashScreen() {
         className="flex items-center justify-between px-5 h-12 border-b border-black/8 bg-white/60 backdrop-blur-sm flex-shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="flex items-baseline gap-2">
+        <button
+          type="button"
+          onClick={handleSecretTap}
+          className="flex items-baseline gap-2 cursor-default select-none"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+          aria-label="Logo"
+        >
           <span className="text-[15px] font-black tracking-tight leading-none">LBC<span className="text-[#1a7e34]">frakt</span></span>
           <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-black/45 leading-none">Sedan 1994</span>
-        </div>
+        </button>
         <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-black/45">
           <span className="w-1.5 h-1.5 rounded-full bg-[#1a7e34]" />
           Karlstad · {clock}
@@ -111,8 +117,8 @@ export function SplashScreen() {
             </span>
           </h1>
           {devTaps > 0 && (
-            <div className="mt-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#1a7e34]">
-              {devTaps}/5
+            <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[9999] bg-[#0a0a0a] text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] shadow-lg pointer-events-none">
+              Dev {devTaps}/5
             </div>
           )}
           <p className="mt-5 text-[13px] text-black/60 leading-relaxed max-w-[24rem]">

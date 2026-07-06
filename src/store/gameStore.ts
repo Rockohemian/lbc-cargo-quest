@@ -7,7 +7,7 @@ import type {
 import { RANKS } from '../data/cargoTypes'
 import {
   ACHIEVEMENTS, GARAGE_UNLOCK_POINTS,
-  crateForLevel, rollCratePart,
+  crateForLevel, rollCratePart, TRUCK_PARTS,
 } from '../data/garageParts'
 
 interface GameState {
@@ -39,6 +39,14 @@ interface GameState {
   unequipPart: (category: PartCategory) => void
   dismissUnlockNotice: () => void
   testUnlockGarage: () => void
+
+  // Dev/admin actions (used only from DevConsoleScreen)
+  awardXP: (amount: number) => void
+  addInventory: (types: CargoType[]) => void
+  clearInventory: () => void
+  unlockAllGarageParts: () => void
+  resetPlayerProfile: () => void
+  resetEverything: () => void
 }
 
 const DEFAULT_GARAGE: GarageState = {
@@ -210,6 +218,63 @@ export const useGameStore = create<GameState>()(
           })
         }
       },
+
+      // ─── Dev / admin actions ───────────────────────────────────────
+      awardXP: (amount) => set((s) => {
+        let xp = s.player.xp + amount
+        let level = s.player.level
+        let xpToNext = s.player.xpToNext
+        while (xp >= xpToNext) {
+          xp -= xpToNext
+          level++
+          xpToNext = Math.floor(500 * Math.pow(1.3, level - 1))
+        }
+        const rank = RANKS[Math.min(level - 1, RANKS.length - 1)]
+        return { player: { ...s.player, xp, level, xpToNext, rank } }
+      }),
+
+      addInventory: (types) => set((s) => ({ inventory: [...s.inventory, ...types] })),
+
+      clearInventory: () => set({ inventory: [], selectedCargo: null }),
+
+      unlockAllGarageParts: () => set((s) => {
+        const allIds = TRUCK_PARTS.map((p) => p.id)
+        return {
+          garage: {
+            ...s.garage,
+            unlocked: true,
+            ownedPartIds: allIds,
+            stats: {
+              ...s.garage.stats,
+              lifetimePoints: Math.max(s.garage.stats.lifetimePoints, GARAGE_UNLOCK_POINTS),
+            },
+          },
+        }
+      }),
+
+      resetPlayerProfile: () => set({
+        player: DEFAULT_PLAYER,
+        garage: DEFAULT_GARAGE,
+        inventory: [],
+        cargoItems: [],
+        selectedCargo: null,
+        loadPlan: null,
+        lastResult: null,
+      }),
+
+      resetEverything: () => set({
+        screen: 'splash',
+        testMode: false,
+        eventMode: false,
+        player: DEFAULT_PLAYER,
+        playerPosition: DEFAULT_POS,
+        cargoItems: [],
+        inventory: [],
+        selectedCargo: null,
+        loadPlan: null,
+        lastResult: null,
+        garage: DEFAULT_GARAGE,
+      }),
     }),
     {
       name: 'lcq-v1',

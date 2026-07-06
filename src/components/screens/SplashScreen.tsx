@@ -11,6 +11,24 @@ export function SplashScreen() {
   const [step, setStep] = useState<Step>(player.name ? 'ready' : 'name')
   const [name, setName] = useState(player.name)
   const [now, setNow] = useState(new Date())
+  const [devTaps, setDevTaps] = useState(0)
+
+  // Reset tap counter after 2s of inactivity
+  useEffect(() => {
+    if (devTaps === 0) return
+    const t = setTimeout(() => setDevTaps(0), 2000)
+    return () => clearTimeout(t)
+  }, [devTaps])
+
+  const handleSecretTap = () => {
+    const next = devTaps + 1
+    if (next >= 5) {
+      setDevTaps(0)
+      setScreen('dev')
+    } else {
+      setDevTaps(next)
+    }
+  }
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30_000)
@@ -57,7 +75,11 @@ export function SplashScreen() {
         <div className="px-5 pt-8 pb-6 border-b border-black/8">
           <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#1a7e34] mb-4">— LBC Cargo Quest</div>
           <h1 className="font-black leading-[0.88] tracking-[-0.02em] text-[64px] sm:text-[76px]">
-            PÅ GOD<br />VÄG<span className="text-[#1a7e34]">.</span>
+            PÅ GOD<br />VÄG<span
+              onClick={handleSecretTap}
+              className="text-[#1a7e34] cursor-default select-none"
+              aria-hidden="true"
+            >.</span>
           </h1>
           <p className="mt-5 text-[13px] text-black/60 leading-relaxed max-w-[24rem]">
             Sveriges smartaste transportäventyr — hitta gods i verkligheten, lasta smart, leverera hållbart.

@@ -1,4 +1,4 @@
-export type GameScreen = 'splash' | 'map' | 'collect' | 'loading' | 'delivery' | 'result' | 'profile' | 'garage' | 'leaderboard' | 'admin'
+export type GameScreen = 'splash' | 'map' | 'collect' | 'loading' | 'delivery' | 'result' | 'profile' | 'garage' | 'leaderboard' | 'admin' | 'dev'
 
 export interface LatLng { lat: number; lng: number }
 

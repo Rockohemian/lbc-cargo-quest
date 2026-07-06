@@ -2,7 +2,7 @@ import { useGameStore } from '../../store/gameStore'
 
 export function HUD() {
   const { player, screen, inventory, setScreen, resetRound, setEventMode } = useGameStore()
-  if (screen === 'splash') return null
+  if (screen === 'splash' || screen === 'dev') return null
 
   const xpPct = Math.min(100, Math.round((player.xp / player.xpToNext) * 100))
 

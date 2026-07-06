@@ -11,6 +11,7 @@ import { ProfileScreen }      from './components/screens/ProfileScreen'
 import { GarageScreen }       from './components/screens/GarageScreen'
 import { LeaderboardScreen }  from './components/screens/LeaderboardScreen'
 import { AdminScreen }        from './components/screens/AdminScreen'
+import { DevConsoleScreen }   from './components/screens/DevConsoleScreen'
 import { GarageUnlockOverlay } from './components/garage/GarageUnlockOverlay'
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
         {screen === 'garage'       && <GarageScreen       key="garage" />}
         {screen === 'leaderboard'  && <LeaderboardScreen  key="leaderboard" />}
         {screen === 'admin'        && <AdminScreen        key="admin" />}
+        {screen === 'dev'          && <DevConsoleScreen   key="dev" />}
       </AnimatePresence>
 
       <GarageUnlockOverlay />

@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
-import { GlassCard } from '../ui/GlassCard'
 import { TrailerView, type ItemFx } from '../game/TrailerView'
 import { calcRoundResult, simulateDamage } from '../../utils/scoring'
 
-// Stylised Sweden silhouette (approximate, for atmosphere).
 const SWEDEN_PATH =
   'M96 8 C104 14 102 26 108 34 C116 44 112 56 118 66 C126 78 120 92 126 104 ' +
   'C134 118 128 134 132 150 C138 168 150 178 150 196 C150 214 138 226 140 244 ' +
@@ -13,7 +11,6 @@ const SWEDEN_PATH =
   'C76 276 84 262 78 246 C70 226 58 220 56 200 C54 180 64 170 60 152 ' +
   'C56 132 44 124 46 104 C48 86 60 80 64 64 C68 48 62 34 72 22 C80 12 88 6 96 8 Z'
 
-// Route waypoints in the SVG coordinate space (Karlstad → destination).
 const ROUTE = [
   { x: 70, y: 232, city: 'Karlstad' },
   { x: 86, y: 210 },
@@ -22,15 +19,16 @@ const ROUTE = [
 ]
 
 const WEATHERS = [
-  { icon: '☀️', label: 'Klart väder', risk: 0 },
-  { icon: '🌧️', label: 'Regn', risk: 0.12 },
-  { icon: '🌨️', label: 'Snöfall', risk: 0.2 },
-  { icon: '🌫️', label: 'Dimma', risk: 0.08 },
+  { icon: '☀', label: 'Klart väder', risk: 0 },
+  { icon: '☁', label: 'Molnigt', risk: 0.05 },
+  { icon: '☂', label: 'Regn', risk: 0.12 },
+  { icon: '❄', label: 'Snöfall', risk: 0.2 },
+  { icon: '≡', label: 'Dimma', risk: 0.08 },
 ]
 const TRAFFICS = [
-  { icon: '🟢', label: 'Lugn trafik', risk: 0 },
-  { icon: '🟡', label: 'Medeltät trafik', risk: 0.05 },
-  { icon: '🔴', label: 'Tät trafik', risk: 0.1 },
+  { icon: '●', label: 'Lugn trafik', risk: 0, color: '#00843e' },
+  { icon: '●', label: 'Medeltät trafik', risk: 0.05, color: '#c98a00' },
+  { icon: '●', label: 'Tät trafik', risk: 0.1, color: '#c93820' },
 ]
 const DEST_CITIES = ['Stockholm', 'Göteborg', 'Örebro', 'Falun', 'Gävle', 'Sundsvall']
 
@@ -66,12 +64,10 @@ export function TransportScreen() {
   const rafRef = useRef<number | null>(null)
   const firedRef = useRef<Set<number>>(new Set())
 
-  // Fixed conditions for this run
   const weather = useMemo(() => WEATHERS[Math.floor(Math.random() * WEATHERS.length)], [])
   const traffic = useMemo(() => TRAFFICS[Math.floor(Math.random() * TRAFFICS.length)], [])
   const destCity = useMemo(() => DEST_CITIES[Math.floor(Math.random() * DEST_CITIES.length)], [])
 
-  // Final damage target (load quality + conditions)
   const targetDamage = useMemo(() => {
     if (!loadPlan) return 0
     const base = simulateDamage(loadPlan)
@@ -79,7 +75,6 @@ export function TransportScreen() {
     return Math.min(100, Math.round(base * factor))
   }, [loadPlan, weather.risk, traffic.risk])
 
-  // Which items will visibly move (the riskiest ones)
   const unstableUids = useMemo(() => {
     if (!loadPlan) return [] as string[]
     const count = Math.ceil(targetDamage / 18)
@@ -115,9 +110,7 @@ export function TransportScreen() {
     setItemFx(fx)
 
     window.setTimeout(() => {
-      setTilt(0)
-      setEventLabel(null)
-      // Good loads snap back fully; damaged items keep a residual offset
+      setTilt(0); setEventLabel(null)
       if (severity <= 0.35) setItemFx({})
       else {
         setItemFx(prev => {
@@ -146,16 +139,12 @@ export function TransportScreen() {
           applyEvent(ev)
         }
       })
-      if (p >= 100) {
-        setPhase('done')
-        return
-      }
+      if (p >= 100) { setPhase('done'); return }
       rafRef.current = requestAnimationFrame(loop)
     }
     rafRef.current = requestAnimationFrame(loop)
   }
 
-  // Finish → result
   useEffect(() => {
     if (phase !== 'done' || !loadPlan) return
     const t = window.setTimeout(() => {
@@ -170,37 +159,51 @@ export function TransportScreen() {
 
   if (!loadPlan) return null
   const truck = lerpRoute(progress / 100)
+  const cargoState = liveDamage <= 8 ? 'Stabilt' : liveDamage <= 25 ? 'Viss förskjutning' : 'Lasten rör sig'
+  const cargoStateColor = liveDamage <= 8 ? '#00843e' : liveDamage <= 25 ? '#c98a00' : '#c93820'
 
   return (
-    <div className="fixed inset-0 bg-surface-900 flex flex-col overflow-hidden">
-      <div className="px-4 pt-14 pb-2">
-        <div className="text-[10px] uppercase tracking-[0.24em] text-white/30">Transport</div>
-        <h1 className="text-xl font-black text-white font-display">Karlstad → {destCity}</h1>
+    <div
+      className="fixed inset-0 bg-[#f6f4ef] text-[#0a0a0a] flex flex-col overflow-hidden"
+      style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui' }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-5 pt-14 pb-3 border-b border-black/8"
+        style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top))' }}
+      >
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e]">— Transport</div>
+          <h1 className="text-[26px] font-black leading-none tracking-tight mt-1">
+            {phase === 'briefing' ? 'Nästa uppdrag' : phase === 'running' ? 'På väg' : 'Framme'}
+            <span className="text-[#00843e]">.</span>
+          </h1>
+        </div>
+        <div className="text-right">
+          <div className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45">Rutt</div>
+          <div className="text-[13px] font-black">Karlstad → {destCity}</div>
+        </div>
       </div>
 
-      <div data-scroll className="flex-1 overflow-y-auto px-4 pb-6">
-        <div className="grid grid-cols-[1.1fr_1fr] gap-3">
-          {/* Sweden map */}
-          <GlassCard className="p-3">
-            <svg viewBox="0 0 200 330" className="w-full h-auto">
+      <div data-scroll className="flex-1 overflow-y-auto scrollbar-hide">
+        {/* ── Sverigekarta ── */}
+        <div className="px-5 pt-4">
+          <div className="border border-black/12 bg-white p-3">
+            <svg viewBox="0 0 200 330" className="w-full h-auto max-h-[240px]">
               <defs>
-                <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="#0b1620" />
-                  <stop offset="1" stopColor="#0a1218" />
-                </linearGradient>
                 <linearGradient id="landG" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stopColor="#16321f" />
-                  <stop offset="1" stopColor="#0e2417" />
+                  <stop offset="0" stopColor="#e8ece8" />
+                  <stop offset="1" stopColor="#d0d6d0" />
                 </linearGradient>
               </defs>
-              <rect x="0" y="0" width="200" height="330" fill="url(#seaG)" />
-              <path d={SWEDEN_PATH} fill="url(#landG)" stroke="#2b6b3c" strokeWidth="1.5" />
-              {/* route */}
+              <rect x="0" y="0" width="200" height="330" fill="#f6f4ef" />
+              <path d={SWEDEN_PATH} fill="url(#landG)" stroke="#0a0a0a" strokeWidth="1" />
+              {/* Planerad rutt */}
               <polyline
                 points={ROUTE.map(p => `${p.x},${p.y}`).join(' ')}
-                fill="none" stroke="#1a7e34" strokeWidth="2.5" strokeDasharray="5 4" opacity="0.7"
+                fill="none" stroke="#0a0a0a" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.35"
               />
-              {/* travelled */}
+              {/* Redan körd rutt */}
               <polyline
                 points={(() => {
                   const pts: string[] = []
@@ -212,85 +215,95 @@ export function TransportScreen() {
                   }
                   return pts.join(' ')
                 })()}
-                fill="none" stroke="#27ff80" strokeWidth="2.5"
+                fill="none" stroke="#00843e" strokeWidth="2.5"
               />
               {ROUTE.filter(p => p.city).map((p, i) => (
                 <g key={i}>
-                  <circle cx={p.x} cy={p.y} r="3.5" fill="#fff" />
-                  <text x={p.x + 6} y={p.y + 3} fontSize="9" fill="#cdd6cd" fontWeight="bold">{p.city}</text>
+                  <circle cx={p.x} cy={p.y} r="3" fill="#0a0a0a" />
+                  <text x={p.x + 6} y={p.y + 3} fontSize="8" fill="#0a0a0a" fontWeight="900" letterSpacing="0.3">{p.city?.toUpperCase()}</text>
                 </g>
               ))}
-              {/* truck */}
+              {/* Lastbil */}
               <g transform={`translate(${truck.x},${truck.y})`}>
-                <circle r="7" fill="#1a7e34" opacity="0.3" />
-                <text x="0" y="4" fontSize="13" textAnchor="middle">🚚</text>
+                <circle r="6" fill="#00843e" opacity="0.25" />
+                <circle r="3.5" fill="#00843e" stroke="#fff" strokeWidth="1.5" />
               </g>
             </svg>
-          </GlassCard>
-
-          {/* Conditions */}
-          <div className="space-y-2">
-            <Condition icon={weather.icon} label="Väder" value={weather.label} />
-            <Condition icon={traffic.icon} label="Trafikläge" value={traffic.label} />
-            <Condition icon="🌱" label="Hållbarhet"
-              value={`${loadPlan.metrics.fillPercent}% fyllt`} />
-            <Condition icon="⚖️" label="Viktbalans" value={`${loadPlan.metrics.weightBalance}%`} />
           </div>
         </div>
 
-        {/* Live trailer under stress */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] uppercase tracking-[0.2em] text-white/30">Lasten under färd</span>
+        {/* ── Villkor ── */}
+        <div className="grid grid-cols-2 border-y border-black/8 mt-4">
+          <CondCell label="Väder" value={weather.label} icon={weather.icon} />
+          <CondCell label="Trafik" value={traffic.label} icon={traffic.icon} iconColor={traffic.color} divider />
+          <CondCell label="Fyllnad" value={`${loadPlan.metrics.fillPercent}%`} icon="■" />
+          <CondCell label="Viktbalans" value={`${loadPlan.metrics.weightBalance}%`} icon="⚖" divider />
+        </div>
+
+        {/* ── Live-lasten ── */}
+        <div className="px-5 mt-4">
+          <div className="flex items-baseline justify-between mb-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55">— Lasten under färd</span>
             {eventLabel && (
-              <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                className="text-xs font-bold text-amber-300">⚠ {eventLabel}</motion.span>
+              <motion.span
+                key={eventLabel}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-[10px] font-black uppercase tracking-[0.22em] text-[#c98a00]"
+              >
+                ⚠ {eventLabel}
+              </motion.span>
             )}
           </div>
-          <div className="rounded-2xl bg-surface-800/40 p-3 border border-white/8">
-            <TrailerView items={loadPlan.items} tilt={tilt} itemFx={itemFx}
-              strapYs={strapsToYs(loadPlan.securing.straps)} net={loadPlan.securing.net} divider={loadPlan.securing.divider} />
+          <div className="border border-black/15 bg-[#0e1310] p-2">
+            <TrailerView
+              items={loadPlan.items} tilt={tilt} itemFx={itemFx}
+              strapYs={strapsToYs(loadPlan.securing.straps)}
+              net={loadPlan.securing.net} divider={loadPlan.securing.divider}
+            />
           </div>
         </div>
 
-        {/* Progress + status */}
-        <div className="mt-4">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-xs text-white/50">Leveransförlopp</span>
-            <span className="text-xs font-black text-lbc-green">{Math.round(progress)}%</span>
+        {/* ── Progress ── */}
+        <div className="px-5 mt-4">
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55">— Leveransförlopp</span>
+            <span className="text-[18px] font-black tabular-nums text-[#00843e]">{Math.round(progress)}%</span>
           </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-lbc-green rounded-full" style={{ width: `${progress}%` }} />
+          <div className="h-[3px] bg-black/8 overflow-hidden">
+            <div className="h-full bg-[#00843e] transition-[width] duration-100" style={{ width: `${progress}%` }} />
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs">
-            <span className="text-white/45">Godsskick</span>
-            <span className="font-bold" style={{ color: liveDamage <= 8 ? '#27a349' : liveDamage <= 25 ? '#d4a017' : '#e04020' }}>
-              {liveDamage <= 8 ? 'Stabilt' : liveDamage <= 25 ? 'Viss förskjutning' : 'Lasten rör sig!'}
-            </span>
+          <div className="flex items-center justify-between mt-2 text-[11px] font-bold">
+            <span className="uppercase tracking-widest text-black/50">Godsskick</span>
+            <span style={{ color: cargoStateColor }}>{cargoState}</span>
           </div>
         </div>
 
-        {/* Briefing / start */}
+        {/* ── Briefing eller Klar ── */}
         {phase === 'briefing' && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mt-5">
-            <GlassCard className="p-4 mb-3">
-              <p className="text-white/75 text-sm leading-relaxed">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="px-5 mt-5 pb-6">
+            <div className="border border-black/12 bg-white p-4 mb-3">
+              <div className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55 mb-2">— Uppdragsbeskrivning</div>
+              <p className="text-[13px] leading-relaxed text-black/70">
                 Transporten testar din last genom acceleration, kurvor, inbromsning och ojämn väg.
-                Är lasten välbyggd och säkrad ligger godset stabilt – annars kan det förskjutas och skadas.
+                Är lasten välbyggd och säkrad ligger godset stabilt — annars kan det förskjutas och skadas.
               </p>
-            </GlassCard>
-            <button onClick={startSim}
-              className="w-full py-4 rounded-xl bg-lbc-green text-white font-black text-lg shadow-[0_10px_30px_rgba(26,126,52,.4)] active:scale-95 transition-transform">
-              ▶ Kör transporten
+            </div>
+            <button
+              onClick={startSim}
+              className="w-full h-14 bg-[#0a0a0a] text-white flex items-center justify-between px-5 text-[12px] font-black uppercase tracking-[0.22em] active:bg-[#00843e] transition-colors"
+            >
+              <span>Kör transporten</span>
+              <span className="text-base">▶</span>
             </button>
           </motion.div>
         )}
 
         {phase === 'done' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-5 text-center">
-            <div className="text-4xl mb-1">🏁</div>
-            <div className="text-white font-black text-lg">Framme i {destCity}!</div>
-            <div className="text-white/40 text-sm animate-pulse mt-1">Sammanställer leveransrapport…</div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 mt-6 pb-6 text-center">
+            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e] mb-2">— Leverans klar</div>
+            <div className="text-[32px] font-black leading-tight tracking-tight">Framme i<br/>{destCity}<span className="text-[#00843e]">.</span></div>
+            <div className="mt-3 text-[11px] font-bold uppercase tracking-widest text-black/45 animate-pulse">Sammanställer leveransrapport…</div>
           </motion.div>
         )}
       </div>
@@ -298,19 +311,22 @@ export function TransportScreen() {
   )
 }
 
+// ─── Helpers ───────────────────────────────────────────
 function strapsToYs(n: number): number[] {
   const ys: number[] = []
   for (let i = 0; i < n; i++) ys.push(0.88 - (i * 0.62) / Math.max(1, n))
   return ys
 }
 
-function Condition({ icon, label, value }: { icon: string; label: string; value: string }) {
+function CondCell({ label, value, icon, iconColor, divider }: {
+  label: string; value: string; icon: string; iconColor?: string; divider?: boolean
+}) {
   return (
-    <div className="flex items-center gap-2.5 rounded-2xl bg-white/6 border border-white/10 px-3 py-2.5">
-      <span className="text-xl">{icon}</span>
-      <div className="min-w-0">
-        <div className="text-[9px] uppercase tracking-wider text-white/40">{label}</div>
-        <div className="text-sm font-bold text-white truncate">{value}</div>
+    <div className={'px-4 py-3 ' + (divider ? 'border-l border-black/8' : '')}>
+      <div className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45 mb-1">{label}</div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-[14px]" style={{ color: iconColor ?? '#0a0a0a' }}>{icon}</span>
+        <span className="text-[13px] font-black tracking-tight truncate">{value}</span>
       </div>
     </div>
   )

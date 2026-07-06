@@ -22,7 +22,7 @@ export function HUD() {
         {/* Level badge → profil */}
         <button
           onClick={() => setScreen('profile')}
-          className="flex-shrink-0 w-8 h-8 rounded-none bg-[#0a0a0a] text-white flex items-center justify-center font-black text-xs active:bg-[#1a7e34] transition-colors"
+          className="flex-shrink-0 w-8 h-8 rounded-none bg-[#0a0a0a] text-white flex items-center justify-center font-black text-xs active:bg-[#00843e] transition-colors"
           aria-label="Min profil"
         >
           {player.level}
@@ -40,7 +40,7 @@ export function HUD() {
           </div>
           <div className="h-[3px] bg-black/8 overflow-hidden">
             <div
-              className="h-full bg-[#1a7e34] transition-all duration-700"
+              className="h-full bg-[#00843e] transition-all duration-700"
               style={{ width: xpPct + '%' }}
             />
           </div>
@@ -57,7 +57,7 @@ export function HUD() {
         {/* Avsluta → startsida */}
         <button
           onClick={handleExit}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-black/40 active:text-[#1a7e34] text-base transition-colors"
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-black/40 active:text-[#00843e] text-base transition-colors"
           aria-label="Gå till startsidan"
         >
           ✕

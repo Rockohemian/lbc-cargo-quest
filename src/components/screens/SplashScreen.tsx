@@ -87,11 +87,11 @@ export function SplashScreen() {
           style={{ WebkitTapHighlightColor: 'transparent' }}
           aria-label="Logo"
         >
-          <span className="text-[15px] font-black tracking-tight leading-none">LBC<span className="text-[#1a7e34]">frakt</span></span>
+          <span className="text-[15px] font-black tracking-tight leading-none">LBC<span className="text-[#00843e]">frakt</span></span>
           <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-black/45 leading-none">Sedan 1994</span>
         </button>
         <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-black/45">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#1a7e34]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#00843e]" />
           Karlstad · {clock}
         </div>
       </div>
@@ -101,9 +101,9 @@ export function SplashScreen() {
 
         {/* Hero */}
         <div className="px-5 pt-8 pb-6 border-b border-black/8">
-          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#1a7e34] mb-4">— LBC Cargo Quest</div>
+          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#00843e] mb-4">— LBC Cargo Quest</div>
           <h1 className="font-black leading-[0.88] tracking-[-0.02em] text-[64px] sm:text-[76px] relative inline-block">
-            PÅ GOD<br />VÄG<span className="text-[#1a7e34] relative">
+            PÅ GOD<br />VÄG<span className="text-[#00843e] relative">
               .
               {/* Invisible larger tap target over the period */}
               <button
@@ -144,7 +144,7 @@ export function SplashScreen() {
               <div
                 className={
                   'w-9 h-5 rounded-full transition-colors relative flex-shrink-0 ' +
-                  (eventMode ? 'bg-[#1a7e34]' : 'bg-black/15')
+                  (eventMode ? 'bg-[#00843e]' : 'bg-black/15')
                 }
               >
                 <div
@@ -193,7 +193,7 @@ export function SplashScreen() {
         <button
           onClick={handlePlay}
           disabled={!player.name}
-          className="w-full px-5 h-14 bg-[#0a0a0a] text-white flex items-center justify-between active:bg-[#1a7e34] transition-colors disabled:bg-black/30 disabled:cursor-not-allowed"
+          className="w-full px-5 h-14 bg-[#0a0a0a] text-white flex items-center justify-between active:bg-[#00843e] transition-colors disabled:bg-black/30 disabled:cursor-not-allowed"
         >
           <span className="text-[13px] font-black uppercase tracking-[0.24em]">
             {player.name ? 'Hitta gods nu' : 'Ange namn för att starta'}
@@ -225,7 +225,7 @@ export function SplashScreen() {
               className="w-full sm:max-w-sm bg-[#f6f4ef] rounded-t-3xl sm:rounded-3xl border-t sm:border border-black/10 p-6"
               style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)' }}
             >
-              <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1a7e34] mb-2">— Registrering</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e] mb-2">— Registrering</div>
               <h2 className="text-[28px] font-black leading-none tracking-tight mb-1">Vad ska vi kalla dig?</h2>
               <p className="text-[13px] text-black/55 mb-5">Ditt namn visas på topplistan när du levererar.</p>
               <input
@@ -236,7 +236,7 @@ export function SplashScreen() {
                 placeholder="Skriv namn…"
                 maxLength={20}
                 autoFocus
-                className="w-full bg-white border border-black/15 rounded-none px-4 h-12 text-[16px] font-bold placeholder-black/25 focus:outline-none focus:border-[#1a7e34] transition-colors"
+                className="w-full bg-white border border-black/15 rounded-none px-4 h-12 text-[16px] font-bold placeholder-black/25 focus:outline-none focus:border-[#00843e] transition-colors"
               />
               <div className="mt-4 flex gap-2">
                 {player.name && (
@@ -250,7 +250,7 @@ export function SplashScreen() {
                 <button
                   onClick={handleSaveName}
                   disabled={!name.trim()}
-                  className="flex-1 h-12 bg-[#0a0a0a] text-white text-[12px] font-black uppercase tracking-[0.22em] active:bg-[#1a7e34] disabled:bg-black/25"
+                  className="flex-1 h-12 bg-[#0a0a0a] text-white text-[12px] font-black uppercase tracking-[0.22em] active:bg-[#00843e] disabled:bg-black/25"
                 >
                   Spara →
                 </button>
@@ -267,7 +267,7 @@ function StatCell({ label, value, accent, last }: { label: string; value: string
   return (
     <div className={'px-5 py-4 ' + (last ? '' : 'border-r border-black/8')}>
       <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45 mb-1">{label}</div>
-      <div className={'text-[22px] font-black leading-none tracking-tight truncate ' + (accent ? 'text-[#1a7e34]' : '')}>
+      <div className={'text-[22px] font-black leading-none tracking-tight truncate ' + (accent ? 'text-[#00843e]' : '')}>
         {value}
       </div>
     </div>

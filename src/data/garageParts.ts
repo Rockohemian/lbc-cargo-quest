@@ -2,7 +2,7 @@ import type { TruckPart, PartCategory, PartRarity, CrateTier, Achievement } from
 
 // ─── Rarity styling ─────────────────────────────────────────────────────────
 export const PART_RARITY_COLORS: Record<PartRarity, string> = {
-  common: '#9EA3A5', uncommon: '#27a349', rare: '#2a8ae0', epic: '#9b30f0', legendary: '#f5a623',
+  common: '#9EA3A5', uncommon: '#00a34c', rare: '#2a8ae0', epic: '#9b30f0', legendary: '#f5a623',
 }
 export const PART_RARITY_LABELS: Record<PartRarity, string> = {
   common: 'Vanlig', uncommon: 'Ovanlig', rare: 'Sällsynt', epic: 'Episk', legendary: 'Legendarisk',

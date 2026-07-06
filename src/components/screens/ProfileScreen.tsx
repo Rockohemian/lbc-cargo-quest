@@ -45,7 +45,7 @@ export function ProfileScreen() {
         <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/45">— Profil</span>
         <button
           onClick={handleExitToSplash}
-          className="text-[10px] font-black uppercase tracking-[0.22em] text-black/55 active:text-[#1a7e34]"
+          className="text-[10px] font-black uppercase tracking-[0.22em] text-black/55 active:text-[#00843e]"
         >
           Avsluta ✕
         </button>
@@ -55,8 +55,8 @@ export function ProfileScreen() {
 
         {/* Hero */}
         <section className="px-5 pt-8 pb-6 border-b border-black/8">
-          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#1a7e34] mb-3">— Min profil</div>
-          <h1 className="font-black leading-[0.9] tracking-tight text-[48px]">{player.name || '—'}<span className="text-[#1a7e34]">.</span></h1>
+          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#00843e] mb-3">— Min profil</div>
+          <h1 className="font-black leading-[0.9] tracking-tight text-[48px]">{player.name || '—'}<span className="text-[#00843e]">.</span></h1>
           <p className="mt-3 text-[13px] text-black/60">
             {player.rank} · Nivå {player.level} · {player.company}
           </p>
@@ -76,7 +76,7 @@ export function ProfileScreen() {
             <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/45 tabular-nums">{xpPct}%</span>
           </div>
           <div className="h-[3px] bg-black/8 mb-2">
-            <div className="h-full bg-[#1a7e34] transition-all duration-700" style={{ width: xpPct + '%' }} />
+            <div className="h-full bg-[#00843e] transition-all duration-700" style={{ width: xpPct + '%' }} />
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-[13px] font-black">{nextRank}</span>
@@ -89,7 +89,7 @@ export function ProfileScreen() {
           <div className="flex items-baseline justify-between mb-3">
             <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/50">Din lastbil</span>
             {garage.unlocked
-              ? <span className="text-[10px] font-bold uppercase tracking-widest text-[#1a7e34]">{garage.ownedPartIds.length} delar</span>
+              ? <span className="text-[10px] font-bold uppercase tracking-widest text-[#00843e]">{garage.ownedPartIds.length} delar</span>
               : <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Låst</span>}
           </div>
           <div className="bg-white border border-black/10 mb-3">
@@ -99,7 +99,7 @@ export function ProfileScreen() {
           {garage.unlocked ? (
             <button
               onClick={() => setScreen('garage')}
-              className="w-full h-12 bg-[#0a0a0a] text-white flex items-center justify-between px-5 active:bg-[#1a7e34] transition-colors"
+              className="w-full h-12 bg-[#0a0a0a] text-white flex items-center justify-between px-5 active:bg-[#00843e] transition-colors"
             >
               <span className="text-[12px] font-black uppercase tracking-[0.22em]">Anpassa i garaget</span>
               <span className="text-lg">→</span>
@@ -127,7 +127,7 @@ export function ProfileScreen() {
                 <li key={rank} className="flex items-center gap-3 py-1.5">
                   <span className={
                     'text-[10px] font-black tracking-widest w-6 tabular-nums ' +
-                    (isCurrent ? 'text-[#1a7e34]' : isPast ? 'text-black/50' : 'text-black/25')
+                    (isCurrent ? 'text-[#00843e]' : isPast ? 'text-black/50' : 'text-black/25')
                   }>
                     {String(i + 1).padStart(2, '0')}
                   </span>
@@ -138,7 +138,7 @@ export function ProfileScreen() {
                     {rank}
                   </span>
                   {isCurrent && (
-                    <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a7e34]">← Du</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#00843e]">← Du</span>
                   )}
                 </li>
               )
@@ -155,7 +155,7 @@ export function ProfileScreen() {
         >
           <button
             onClick={() => setScreen('map')}
-            className="w-full h-14 bg-[#0a0a0a] text-white flex items-center justify-between px-5 active:bg-[#1a7e34] transition-colors"
+            className="w-full h-14 bg-[#0a0a0a] text-white flex items-center justify-between px-5 active:bg-[#00843e] transition-colors"
           >
             <span className="text-[12px] font-black uppercase tracking-[0.22em]">Tillbaka till kartan</span>
             <span className="text-lg">→</span>
@@ -189,7 +189,7 @@ function StatCell({ label, value, accent, last }: { label: string; value: string
   return (
     <div className={'px-5 py-4 ' + (last ? '' : 'border-r border-black/8')}>
       <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45 mb-1 truncate">{label}</div>
-      <div className={'text-[20px] font-black leading-none tracking-tight tabular-nums ' + (accent ? 'text-[#1a7e34]' : 'text-[#0a0a0a]')}>
+      <div className={'text-[20px] font-black leading-none tracking-tight tabular-nums ' + (accent ? 'text-[#00843e]' : 'text-[#0a0a0a]')}>
         {value}
       </div>
     </div>

@@ -209,7 +209,7 @@ export function GarageScreen() {
             const reward = PART_BY_ID[a.rewardPartId]
             return (
               <div key={a.id} className="rounded-2xl p-3 border"
-                style={{ background: done ? 'rgba(39,163,73,.12)' : 'rgba(255,255,255,.04)', borderColor: done ? '#27a34955' : 'rgba(255,255,255,.07)' }}>
+                style={{ background: done ? 'rgba(39,163,73,.12)' : 'rgba(255,255,255,.04)', borderColor: done ? '#00a34c55' : 'rgba(255,255,255,.07)' }}>
                 <div className="flex items-center gap-3">
                   <div className="text-2xl">{a.icon}</div>
                   <div className="flex-1 min-w-0">
@@ -219,7 +219,7 @@ export function GarageScreen() {
                     </div>
                     <div className="text-[11px] text-white/45 leading-tight">{a.description}</div>
                     <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: done ? '#27a349' : '#2a8ae0' }} />
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: done ? '#00a34c' : '#2a8ae0' }} />
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-[10px] text-white/40">{cur} / {a.goal}</span>

@@ -15,7 +15,7 @@ interface AdminEntry {
 }
 
 const GRADE_COLORS: Record<string, string> = {
-  S: '#ffd700', A: '#27a349', B: '#2a8ae0', C: '#e0a020', D: '#e04020',
+  S: '#ffd700', A: '#00a34c', B: '#2a8ae0', C: '#e0a020', D: '#e04020',
 }
 
 export function AdminScreen() {

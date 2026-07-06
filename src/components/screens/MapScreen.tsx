@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet'
 import { motion, AnimatePresence } from 'framer-motion'
 import L from 'leaflet'
@@ -96,7 +96,7 @@ function playerIcon() {
     className: '',
     html: `<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;position:relative">
       <div style="position:absolute;inset:0;background:rgba(26,126,52,.22);border-radius:50%;animation:pulse 2s infinite"></div>
-      <div style="width:20px;height:20px;background:#1a7e34;border:3px solid #fff;border-radius:50%;
+      <div style="width:20px;height:20px;background:#00843e;border:3px solid #fff;border-radius:50%;
         box-shadow:0 2px 8px rgba(10,10,10,.35)"></div></div>`,
     iconSize: [44, 44], iconAnchor: [22, 22],
   })
@@ -363,7 +363,7 @@ export function MapScreen() {
           <Circle
             center={[playerPosition.lat, playerPosition.lng]}
             radius={COLLECT_RADIUS}
-            pathOptions={{ color: '#1a7e34', fillColor: '#1a7e34', fillOpacity: 0.1, weight: 2 }}
+            pathOptions={{ color: '#00843e', fillColor: '#00843e', fillOpacity: 0.1, weight: 2 }}
           />
 
           {/* Event venue boundary circle */}
@@ -442,7 +442,7 @@ export function MapScreen() {
                 <button
                   key={item.id}
                   onClick={() => handleCollect(item)}
-                  className="w-full flex items-center gap-3 bg-[#0a0a0a] text-white px-5 h-14 active:bg-[#1a7e34] transition-colors"
+                  className="w-full flex items-center gap-3 bg-[#0a0a0a] text-white px-5 h-14 active:bg-[#00843e] transition-colors"
                 >
                   <span className="text-2xl leading-none">{item.type.emoji}</span>
                   <div className="flex-1 text-left">
@@ -451,7 +451,7 @@ export function MapScreen() {
                   </div>
                   <div className="text-right">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-white/50">{Math.round(item.dist)}m</div>
-                    <div className="text-[13px] font-black text-[#27a349]">+{item.type.xpReward} XP</div>
+                    <div className="text-[13px] font-black text-[#00a34c]">+{item.type.xpReward} XP</div>
                   </div>
                 </button>
               ))}
@@ -471,10 +471,10 @@ export function MapScreen() {
           >
             <button
               onClick={() => { setShowReadyToLoad(false); setScreen('loading') }}
-              className="w-full flex items-center justify-between gap-3 bg-[#0a0a0a] text-white px-5 h-16 active:bg-[#1a7e34] transition-colors shadow-[0_8px_24px_rgba(0,0,0,.25)]"
+              className="w-full flex items-center justify-between gap-3 bg-[#0a0a0a] text-white px-5 h-16 active:bg-[#00843e] transition-colors shadow-[0_8px_24px_rgba(0,0,0,.25)]"
             >
               <div className="text-left">
-                <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[#27a349]">Redo att lasta</div>
+                <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[#00a34c]">Redo att lasta</div>
                 <div className="text-sm font-black leading-tight mt-0.5">Du har {inventory.length} kolli — tryck för att lasta</div>
               </div>
               <span className="text-2xl">→</span>
@@ -492,13 +492,13 @@ export function MapScreen() {
               <span className="text-[10px] font-black text-[#0a0a0a] uppercase tracking-[0.28em]">Sök gods</span>
               <span className={[
                 'text-[10px] font-bold uppercase tracking-[0.22em] inline-flex items-center gap-1.5',
-                gpsStatus === 'ok'       ? 'text-[#1a7e34]' :
+                gpsStatus === 'ok'       ? 'text-[#00843e]' :
                 gpsStatus === 'fallback' ? 'text-amber-700' :
                                            'text-black/40',
               ].join(' ')}>
                 <span className={[
                   'w-1.5 h-1.5 rounded-full',
-                  gpsStatus === 'ok'       ? 'bg-[#1a7e34]' :
+                  gpsStatus === 'ok'       ? 'bg-[#00843e]' :
                   gpsStatus === 'fallback' ? 'bg-amber-600' :
                                              'bg-black/25',
                 ].join(' ')} />
@@ -535,7 +535,7 @@ export function MapScreen() {
                 'px-6 h-14 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.22em] transition-colors ' +
                 (inventory.length < LOAD_MIN
                   ? 'bg-black/5 text-black/35 cursor-not-allowed'
-                  : 'bg-[#0a0a0a] text-white active:bg-[#1a7e34]')
+                  : 'bg-[#0a0a0a] text-white active:bg-[#00843e]')
               }
             >
               {inventory.length < LOAD_MIN
@@ -572,7 +572,7 @@ export function MapScreen() {
 
               {/* Eyebrow + close */}
               <div className="flex items-center justify-between px-5 h-9 border-b border-black/8">
-                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1a7e34]">— Godsinformation</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e]">— Godsinformation</span>
                 <button onClick={() => setPreviewItem(null)} className="text-black/40 active:text-[#0a0a0a] text-lg" aria-label="Stäng">✕</button>
               </div>
 
@@ -643,10 +643,10 @@ export function MapScreen() {
                 {previewItem.dist <= COLLECT_RADIUS ? (
                   <button
                     onClick={() => { handleCollect(previewItem); setPreviewItem(null) }}
-                    className="w-full bg-[#0a0a0a] text-white h-14 flex items-center justify-between px-5 active:bg-[#1a7e34] transition-colors"
+                    className="w-full bg-[#0a0a0a] text-white h-14 flex items-center justify-between px-5 active:bg-[#00843e] transition-colors"
                   >
                     <span className="text-[12px] font-black uppercase tracking-[0.22em]">Samla in</span>
-                    <span className="text-[12px] font-black text-[#27a349]">+{previewItem.type.xpReward} XP →</span>
+                    <span className="text-[12px] font-black text-[#00a34c]">+{previewItem.type.xpReward} XP →</span>
                   </button>
                 ) : (
                   <button

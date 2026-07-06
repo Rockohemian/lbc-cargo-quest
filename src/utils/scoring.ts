@@ -70,11 +70,11 @@ export function calcRoundResult(plan: LoadPlan, cargoDamage: number): RoundResul
   const g = grade(Math.max(0, totalPoints))
 
   const badges: Badge[] = []
-  if (m.fillPercent >= 80) badges.push({ id: 'full', icon: '📦', title: 'Maxad last', description: 'Hög fyllnadsgrad', color: '#1a7e34' })
+  if (m.fillPercent >= 80) badges.push({ id: 'full', icon: '📦', title: 'Maxad last', description: 'Hög fyllnadsgrad', color: '#00843e' })
   if (m.weightBalance >= 88) badges.push({ id: 'balance', icon: '⚖️', title: 'Perfekt balans', description: 'Optimal viktfördelning', color: '#d4a017' })
   if (m.securing >= 85) badges.push({ id: 'secured', icon: '🔗', title: 'Lastsäkrare', description: 'Föredömlig säkring', color: '#2a8ae0' })
   if (damage <= 4) badges.push({ id: 'intact', icon: '✨', title: 'Skadefritt', description: 'Inget gods skadades', color: '#9b30f0' })
-  if (ecoScore >= 85) badges.push({ id: 'eco', icon: '🌱', title: 'Hållbarhetshjälte', description: 'Låg miljöpåverkan', color: '#27a349' })
+  if (ecoScore >= 85) badges.push({ id: 'eco', icon: '🌱', title: 'Hållbarhetshjälte', description: 'Låg miljöpåverkan', color: '#00a34c' })
 
   const summary = buildSummary({
     fillPercent: m.fillPercent, weightBalance: m.weightBalance, securing: m.securing,

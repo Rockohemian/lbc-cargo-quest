@@ -108,7 +108,7 @@ export const CARGO_TYPES: CargoType[] = [
 ]
 
 export const RARITY_COLORS: Record<string, string> = {
-  common: '#9EA3A5', uncommon: '#27a349', rare: '#2a8ae0', epic: '#9b30f0',
+  common: '#9EA3A5', uncommon: '#00a34c', rare: '#2a8ae0', epic: '#9b30f0',
 }
 export const RARITY_LABELS: Record<string, string> = {
   common: 'Vanlig', uncommon: 'Ovanlig', rare: 'Sällsynt', epic: 'Episk',

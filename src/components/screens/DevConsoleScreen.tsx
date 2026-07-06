@@ -164,7 +164,7 @@ export function DevConsoleScreen() {
     }
     const g = gradeMap[grade]
     const badges: Badge[] = grade === 'S' || grade === 'A'
-      ? [{ id: 'sim-eco', icon: '🌱', title: 'Ekoförare', description: 'Simulerad leverans', color: '#1a7e34' }]
+      ? [{ id: 'sim-eco', icon: '🌱', title: 'Ekoförare', description: 'Simulerad leverans', color: '#00843e' }]
       : []
     const result: RoundResult = {
       cargoCount,
@@ -210,15 +210,15 @@ export function DevConsoleScreen() {
           className="flex items-center justify-between px-5 h-12 border-b border-black/8"
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         >
-          <span className="text-[15px] font-black tracking-tight">LBC<span className="text-[#1a7e34]">frakt</span></span>
+          <span className="text-[15px] font-black tracking-tight">LBC<span className="text-[#00843e]">frakt</span></span>
           <button onClick={() => setScreen('splash')} className="text-[10px] font-black uppercase tracking-[0.22em] text-black/55">
             Avbryt ✕
           </button>
         </div>
 
         <form onSubmit={handleLogin} className="flex-1 flex flex-col items-center justify-center px-6 max-w-md mx-auto w-full">
-          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#1a7e34] mb-3">— Behörighet krävs</div>
-          <h1 className="text-[42px] font-black leading-none tracking-tight text-center mb-1">Dev-konsol<span className="text-[#1a7e34]">.</span></h1>
+          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#00843e] mb-3">— Behörighet krävs</div>
+          <h1 className="text-[42px] font-black leading-none tracking-tight text-center mb-1">Dev-konsol<span className="text-[#00843e]">.</span></h1>
           <p className="text-[13px] text-black/55 text-center mb-6 max-w-xs">
             Ange adminkod för att styra spelet utan att fysiskt gå och samla gods.
           </p>
@@ -230,13 +230,13 @@ export function DevConsoleScreen() {
             autoFocus
             className={
               'w-full h-12 px-4 bg-white border text-[16px] font-bold placeholder-black/25 focus:outline-none transition-colors ' +
-              (codeError ? 'border-red-500' : 'border-black/15 focus:border-[#1a7e34]')
+              (codeError ? 'border-red-500' : 'border-black/15 focus:border-[#00843e]')
             }
           />
           {codeError && <div className="mt-2 text-[11px] text-red-700 font-bold uppercase tracking-widest">Fel kod</div>}
           <button
             type="submit"
-            className="mt-4 w-full h-12 bg-[#0a0a0a] text-white text-[12px] font-black uppercase tracking-[0.22em] active:bg-[#1a7e34]"
+            className="mt-4 w-full h-12 bg-[#0a0a0a] text-white text-[12px] font-black uppercase tracking-[0.22em] active:bg-[#00843e]"
           >
             Logga in →
           </button>
@@ -265,7 +265,7 @@ export function DevConsoleScreen() {
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex items-baseline gap-2">
-          <span className="text-[15px] font-black tracking-tight">LBC<span className="text-[#1a7e34]">frakt</span></span>
+          <span className="text-[15px] font-black tracking-tight">LBC<span className="text-[#00843e]">frakt</span></span>
           <span className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45">Dev-konsol</span>
         </div>
         <button onClick={() => setScreen('splash')} className="text-[10px] font-black uppercase tracking-[0.22em] text-black/55 active:text-[#0a0a0a]">
@@ -277,8 +277,8 @@ export function DevConsoleScreen() {
 
         {/* Hero */}
         <section className="px-5 pt-8 pb-6 border-b border-black/8">
-          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#1a7e34] mb-3">— Adminvy</div>
-          <h1 className="text-[44px] font-black leading-[0.9] tracking-tight">Testa hela<br/>spelet<span className="text-[#1a7e34]">.</span></h1>
+          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#00843e] mb-3">— Adminvy</div>
+          <h1 className="text-[44px] font-black leading-[0.9] tracking-tight">Testa hela<br/>spelet<span className="text-[#00843e]">.</span></h1>
           <p className="mt-3 text-[13px] text-black/60">Styr spelet utan att lämna kontoret — samla gods, jumpa mellan skärmar, lås upp allt.</p>
         </section>
 
@@ -404,7 +404,7 @@ export function DevConsoleScreen() {
                   >
                     {PART_RARITY_LABELS[p.rarity]}
                   </span>
-                  <span className={'text-[10px] font-black uppercase tracking-widest ' + (owned ? 'text-[#1a7e34]' : 'text-black/30')}>
+                  <span className={'text-[10px] font-black uppercase tracking-widest ' + (owned ? 'text-[#00843e]' : 'text-black/30')}>
                     {owned ? '✓ Äger' : '— Låst'}
                   </span>
                 </div>
@@ -473,7 +473,7 @@ function ToggleRow({ label, enabled, onClick }: { label: string; enabled: boolea
       <div
         className={
           'w-9 h-5 rounded-full transition-colors relative flex-shrink-0 ' +
-          (enabled ? 'bg-[#1a7e34]' : 'bg-black/15')
+          (enabled ? 'bg-[#00843e]' : 'bg-black/15')
         }
       >
         <div
@@ -491,7 +491,7 @@ function StatCell({ label, value, accent, last }: { label: string; value: string
   return (
     <div className={'px-3 py-4 text-center ' + (last ? '' : 'border-r border-black/8')}>
       <div className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45 mb-1 truncate">{label}</div>
-      <div className={'text-[18px] font-black leading-none tracking-tight tabular-nums ' + (accent ? 'text-[#1a7e34]' : 'text-[#0a0a0a]')}>
+      <div className={'text-[18px] font-black leading-none tracking-tight tabular-nums ' + (accent ? 'text-[#00843e]' : 'text-[#0a0a0a]')}>
         {value}
       </div>
     </div>

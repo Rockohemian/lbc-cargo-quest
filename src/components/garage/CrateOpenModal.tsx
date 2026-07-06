@@ -26,7 +26,7 @@ export function CrateOpenModal({ tier, onClose }: Props) {
       y: -(120 + Math.random() * 260),
       rot: Math.random() * 720 - 360,
       delay: Math.random() * 0.18,
-      color: ['#27a349', '#f5c518', '#2a8ae0', '#9b30f0', '#f5a623', '#ffffff'][i % 6],
+      color: ['#00a34c', '#f5c518', '#2a8ae0', '#9b30f0', '#f5a623', '#ffffff'][i % 6],
       size: 6 + Math.random() * 8,
     })),
     [],

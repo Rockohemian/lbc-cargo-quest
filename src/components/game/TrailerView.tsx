@@ -143,7 +143,7 @@ function TrailerViewBase({
               top: `${pctY(ghost.row)}%`,
               width: `${pctX(ghost.cols)}%`,
               height: `${pctY(ghost.rows)}%`,
-              border: `2px dashed ${ghost.valid ? '#27a349' : '#e04020'}`,
+              border: `2px dashed ${ghost.valid ? '#00a34c' : '#e04020'}`,
               background: ghost.valid ? 'rgba(39,163,73,.18)' : 'rgba(224,64,32,.16)',
               zIndex: 40,
             }}

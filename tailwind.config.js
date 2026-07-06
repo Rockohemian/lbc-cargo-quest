@@ -5,8 +5,8 @@ module.exports = {
     extend: {
       colors: {
         lbc: {
-          green:        '#1a7e34',
-          'green-l':    '#27a349',
+          green:        '#00843e',
+          'green-l':    '#00a34c',
           'green-d':    '#0e5a24',
           grey:         '#9EA3A5',
           'grey-d':     '#6a7070',
@@ -22,7 +22,7 @@ module.exports = {
       },
       backgroundImage: {
         'glass': 'linear-gradient(135deg,rgba(255,255,255,.07) 0%,rgba(255,255,255,.02) 100%)',
-        'lbc-g': 'linear-gradient(135deg,#0e5a24 0%,#1a7e34 60%,#27a349 100%)',
+        'lbc-g': 'linear-gradient(135deg,#0e5a24 0%,#00843e 60%,#00a34c 100%)',
       },
       animation: {
         'pulse-glow': 'pulseGlow 2s ease-in-out infinite',

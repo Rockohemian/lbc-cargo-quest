@@ -30,7 +30,7 @@ export function GarageUnlockOverlay() {
       badge: '🔧',
       title: 'Grattis! Du har låst upp LBC Garage.',
       subtitle: 'Anpassa din lastbil med delar, öppna cargo-lådor och visa upp din samling.',
-      accent: '#27a349',
+      accent: '#00a34c',
       cta: () => { dismiss(); setScreen('garage') },
       ctaLabel: 'Öppna garaget',
     }

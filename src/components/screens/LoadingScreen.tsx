@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
-import { Button } from '../ui/Button'
-import { GlassCard } from '../ui/GlassCard'
 import { TrailerView, type GhostPreview } from '../game/TrailerView'
 import {
   TRAILER_COLS, TRAILER_ROWS, settleRow, computeMetrics,
@@ -40,7 +38,6 @@ export function LoadingScreen() {
   const [ghost, setGhost] = useState<GhostPreview | null>(null)
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null)
 
-  // Securing
   const [strapYs, setStrapYs] = useState<number[]>([])
   const [net, setNet] = useState(false)
   const [divider, setDivider] = useState(false)
@@ -69,12 +66,10 @@ export function LoadingScreen() {
     return null
   }, [phase, placed.length, metrics.securing])
 
-  // ─── Drag mapping ─────────────────────────────────────────────────────
   const computeGhost = useCallback((clientX: number, clientY: number, d: DragState): GhostPreview | null => {
     const el = gridRef.current
     if (!el) return null
     const rect = el.getBoundingClientRect()
-    // Ignore if far outside the grid horizontally
     const cellW = rect.width / TRAILER_COLS
     const relX = clientX - rect.left
     let col = Math.round(relX / cellW - d.cols / 2)
@@ -85,7 +80,6 @@ export function LoadingScreen() {
     return { col, row: settled, cols: d.cols, rows: d.rows, valid: true }
   }, [placed])
 
-  // Window listeners while dragging
   useEffect(() => {
     if (!drag) return
     const move = (e: PointerEvent) => {
@@ -112,9 +106,7 @@ export function LoadingScreen() {
           }
         }
       }
-      setDrag(null)
-      setGhost(null)
-      setPointer(null)
+      setDrag(null); setGhost(null); setPointer(null)
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -153,7 +145,6 @@ export function LoadingScreen() {
       if (settled !== null) {
         return [...others, { ...item, cols: nc, rows: nr, row: settled, rotated: !item.rotated }]
       }
-      // try to find any column that fits rotated
       for (let c = 0; c <= TRAILER_COLS - nc; c++) {
         const s = settleRow(prev, c, nc, nr, item.uid)
         if (s !== null) return [...others, { ...item, cols: nc, rows: nr, col: c, row: s, rotated: !item.rotated }]
@@ -173,7 +164,6 @@ export function LoadingScreen() {
   }
 
   const autoArrange = () => {
-    // Greedy auto-load: heaviest/largest first, left to right.
     const all = [...placed.map(p => p.type), ...queue.map(q => q.type)]
     const sorted = [...all].sort((a, b) => (b.load.cols * b.load.rows) - (a.load.cols * a.load.rows) || b.weight - a.weight)
     const result: PlacedItem[] = []
@@ -185,23 +175,18 @@ export function LoadingScreen() {
       }
       if (best) result.push({ uid: newUid(), type, col: best.col, row: best.row, cols: type.load.cols, rows: type.load.rows, rotated: false })
     }
-    setPlaced(result)
-    setQueue([])
-    setSelectedUid(null)
+    setPlaced(result); setQueue([]); setSelectedUid(null)
   }
 
-  // ─── Securing: swipe to add straps ────────────────────────────────────
   const secureRef = useRef<HTMLDivElement>(null)
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
-  const onSecurePointerDown = (e: React.PointerEvent) => {
-    swipeStart.current = { x: e.clientX, y: e.clientY }
-  }
+  const onSecurePointerDown = (e: React.PointerEvent) => { swipeStart.current = { x: e.clientX, y: e.clientY } }
   const onSecurePointerUp = (e: React.PointerEvent) => {
     const start = swipeStart.current
     swipeStart.current = null
     if (!start || !secureRef.current) return
     const dx = Math.abs(e.clientX - start.x)
-    if (dx < 40) return // require a horizontal swipe
+    if (dx < 40) return
     const rect = secureRef.current.getBoundingClientRect()
     const y = Math.max(0.05, Math.min(0.92, (start.y - rect.top) / rect.height))
     setStrapYs(prev => (prev.length >= 6 ? prev : [...prev, y]))
@@ -214,12 +199,9 @@ export function LoadingScreen() {
     setScreen('delivery')
   }
 
-  // Dev-genväg: auto-lasta allt kvar + hoppa direkt till transport.
-  // Synlig alltid — enkelt sätt att komma vidare utan drag-and-drop.
   const handleDevAutoLoadAndGo = () => {
     const all: CargoType[] = [...placed.map(p => p.type), ...queue.map(q => q.type)]
     if (all.length === 0) {
-      // ingen inventory — lägg till 6 slumpade så nåt syns
       for (let i = 0; i < 6; i++) all.push(CARGO_TYPES[Math.floor(Math.random() * CARGO_TYPES.length)])
     }
     const sorted = [...all].sort((a, b) => (b.load.cols * b.load.rows) - (a.load.cols * a.load.rows) || b.weight - a.weight)
@@ -240,182 +222,208 @@ export function LoadingScreen() {
   }
 
   return (
-    <div className="fixed inset-0 bg-surface-900 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="px-4 pt-14 pb-2 flex items-center justify-between">
+    <div
+      className="fixed inset-0 bg-[#f6f4ef] text-[#0a0a0a] flex flex-col overflow-hidden"
+      style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui' }}
+    >
+      {/* ── Header ── */}
+      <div
+        className="flex items-center justify-between px-5 pt-14 pb-3 border-b border-black/8"
+        style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top))' }}
+      >
         <div>
-          <div className="text-[10px] uppercase tracking-[0.24em] text-white/30">
-            {phase === 'place' ? 'Steg 1 · Lastplanering' : 'Steg 2 · Lastsäkring'}
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e]">
+            — Steg {phase === 'place' ? '01' : '02'} · {phase === 'place' ? 'Lastplanering' : 'Lastsäkring'}
           </div>
-          <h1 className="text-xl font-black text-white font-display">
-            {phase === 'place' ? 'Bygg din last' : 'Säkra lasten'}
+          <h1 className="text-[26px] font-black leading-none tracking-tight mt-1">
+            {phase === 'place' ? 'Bygg din last' : 'Säkra lasten'}<span className="text-[#00843e]">.</span>
           </h1>
         </div>
-        <div className="flex gap-1.5">
-          <div className={`w-8 h-1.5 rounded-full ${phase === 'place' ? 'bg-lbc-green' : 'bg-lbc-green/40'}`} />
-          <div className={`w-8 h-1.5 rounded-full ${phase === 'secure' ? 'bg-lbc-green' : 'bg-white/15'}`} />
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex gap-1">
+            <div className={`w-6 h-[3px] ${phase === 'place' ? 'bg-[#00843e]' : 'bg-[#00843e]/40'}`} />
+            <div className={`w-6 h-[3px] ${phase === 'secure' ? 'bg-[#00843e]' : 'bg-black/15'}`} />
+          </div>
+          <span className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45">
+            {phase === 'place' ? '1 / 2' : '2 / 2'}
+          </span>
         </div>
       </div>
 
-      {/* ── PLACE PHASE ── */}
       {phase === 'place' && (
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Trailer interactive area */}
-          <div className="px-4 pt-1">
-            <div className="relative">
-              {/* exact interior grid for hit-testing (matches TRAILER_COLS×ROWS) */}
-              <div className="relative w-full rounded-2xl border border-white/12 overflow-hidden"
-                style={{ aspectRatio: `${TRAILER_COLS} / ${TRAILER_ROWS}`, background: 'linear-gradient(170deg, rgba(30,40,34,.95), rgba(12,18,14,.98))', boxShadow: 'inset 0 2px 18px rgba(0,0,0,.5)' }}
-              >
-                <div ref={gridRef} className="absolute inset-0">
-                  {/* framstam / bakdörrar */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-white/20 to-white/5 z-20 pointer-events-none" />
-                  <div className="absolute right-0 top-0 bottom-0 w-2 border-l border-white/15 bg-white/5 z-20 pointer-events-none" />
-                  {/* grid lines */}
-                  <div className="absolute inset-0 pointer-events-none opacity-[.13]">
-                    {Array.from({ length: TRAILER_COLS - 1 }).map((_, i) => (
-                      <div key={`v${i}`} className="absolute top-0 bottom-0 w-px bg-white" style={{ left: `${pctX(i + 1)}%` }} />
-                    ))}
-                    {Array.from({ length: TRAILER_ROWS - 1 }).map((_, i) => (
-                      <div key={`h${i}`} className="absolute left-0 right-0 h-px bg-white" style={{ top: `${pctY(i + 1)}%` }} />
-                    ))}
-                  </div>
+          {/* Trailer */}
+          <div className="px-5 pt-3">
+            <div
+              className="relative w-full border border-black/15 overflow-hidden bg-[#0e1310]"
+              style={{ aspectRatio: `${TRAILER_COLS} / ${TRAILER_ROWS}`, boxShadow: 'inset 0 2px 12px rgba(0,0,0,.4)' }}
+            >
+              <div ref={gridRef} className="absolute inset-0">
+                {/* framstam / bakdörrar */}
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#00843e] z-20 pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-1.5 border-l border-white/25 bg-white/10 z-20 pointer-events-none" />
+                {/* rutnät */}
+                <div className="absolute inset-0 pointer-events-none opacity-[.12]">
+                  {Array.from({ length: TRAILER_COLS - 1 }).map((_, i) => (
+                    <div key={`v${i}`} className="absolute top-0 bottom-0 w-px bg-white" style={{ left: `${pctX(i + 1)}%` }} />
+                  ))}
+                  {Array.from({ length: TRAILER_ROWS - 1 }).map((_, i) => (
+                    <div key={`h${i}`} className="absolute left-0 right-0 h-px bg-white" style={{ top: `${pctY(i + 1)}%` }} />
+                  ))}
+                </div>
 
-                  {/* placed items */}
-                  {placed.map(it => {
-                    const selected = selectedUid === it.uid
-                    return (
-                      <div
-                        key={it.uid}
-                        onPointerDown={e => startPlacedDrag(it.uid, e)}
-                        onClick={() => setSelectedUid(it.uid)}
-                        className="absolute rounded-lg overflow-hidden touch-none"
+                {placed.map(it => {
+                  const selected = selectedUid === it.uid
+                  return (
+                    <div
+                      key={it.uid}
+                      onPointerDown={e => startPlacedDrag(it.uid, e)}
+                      onClick={() => setSelectedUid(it.uid)}
+                      className="absolute overflow-hidden touch-none"
+                      style={{
+                        left: `${pctX(it.col)}%`, top: `${pctY(it.row)}%`,
+                        width: `${pctX(it.cols)}%`, height: `${pctY(it.rows)}%`,
+                        padding: 2, zIndex: selected ? 30 : 10, cursor: 'grab',
+                      }}
+                    >
+                      <div className="w-full h-full relative flex flex-col items-center justify-center"
                         style={{
-                          left: `${pctX(it.col)}%`, top: `${pctY(it.row)}%`,
-                          width: `${pctX(it.cols)}%`, height: `${pctY(it.rows)}%`,
-                          padding: 2, zIndex: selected ? 30 : 10, cursor: 'grab',
+                          background: `linear-gradient(150deg, ${it.type.color2}, ${it.type.color})`,
+                          border: selected ? '2px solid #fff' : `1px solid ${it.type.color2}`,
+                          boxShadow: selected ? '0 0 12px rgba(255,255,255,.5)' : '0 3px 8px rgba(0,0,0,.4)',
+                          opacity: drag?.uid === it.uid ? 0.4 : 1,
                         }}
                       >
-                        <div className="w-full h-full rounded-lg relative flex flex-col items-center justify-center"
-                          style={{
-                            background: `linear-gradient(150deg, ${it.type.color2}, ${it.type.color})`,
-                            border: selected ? '2px solid #fff' : `1.5px solid ${it.type.color2}`,
-                            boxShadow: selected ? '0 0 16px rgba(255,255,255,.5)' : '0 5px 12px rgba(0,0,0,.4)',
-                            opacity: drag?.uid === it.uid ? 0.4 : 1,
-                          }}
-                        >
-                          <div className="absolute top-0 left-0 right-0 h-1/4 bg-white/20 rounded-t-lg pointer-events-none" />
-                          <div className="absolute top-0 right-0 bottom-0 w-1/5 bg-black/20 pointer-events-none" />
-                          <span className="relative leading-none" style={{ fontSize: 'min(5vw, 24px)' }}>{it.type.emoji}</span>
-                          {it.rows >= 2 && (
-                            <span className="relative mt-0.5 px-1 text-[8px] font-bold text-white/90 leading-tight text-center line-clamp-1">{it.type.name}</span>
-                          )}
-                        </div>
+                        <span className="relative leading-none" style={{ fontSize: 'min(5vw, 22px)' }}>{it.type.emoji}</span>
+                        {it.rows >= 2 && (
+                          <span className="relative mt-0.5 px-1 text-[8px] font-bold text-white/90 leading-tight text-center line-clamp-1">{it.type.name}</span>
+                        )}
                       </div>
-                    )
-                  })}
+                    </div>
+                  )
+                })}
 
-                  {/* ghost */}
-                  {ghost && (
-                    <div className="absolute rounded-lg pointer-events-none"
-                      style={{
-                        left: `${pctX(ghost.col)}%`, top: `${pctY(ghost.row)}%`,
-                        width: `${pctX(ghost.cols)}%`, height: `${pctY(ghost.rows)}%`,
-                        border: `2px dashed ${ghost.valid ? '#27a349' : '#e04020'}`,
-                        background: ghost.valid ? 'rgba(39,163,73,.18)' : 'rgba(224,64,32,.16)',
-                        zIndex: 40,
-                      }}
-                    />
-                  )}
-                </div>
+                {ghost && (
+                  <div className="absolute pointer-events-none"
+                    style={{
+                      left: `${pctX(ghost.col)}%`, top: `${pctY(ghost.row)}%`,
+                      width: `${pctX(ghost.cols)}%`, height: `${pctY(ghost.rows)}%`,
+                      border: `2px dashed ${ghost.valid ? '#00a34c' : '#e04020'}`,
+                      background: ghost.valid ? 'rgba(0,163,76,.18)' : 'rgba(224,64,32,.16)',
+                      zIndex: 40,
+                    }}
+                  />
+                )}
               </div>
-              <div className="flex justify-between px-1 mt-1">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">⟵ Framstam</span>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">Bakdörrar ⟶</span>
-              </div>
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span className="text-[9px] font-black uppercase tracking-[0.22em] text-black/40">⟵ Framstam</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.22em] text-black/40">Bakdörrar ⟶</span>
             </div>
           </div>
 
-          {/* Live metrics */}
-          <div className="px-4 mt-2 grid grid-cols-3 gap-2">
-            <Metric label="Fyllnadsgrad" value={metrics.fillPercent} suffix="%" color="#1a7e34" />
-            <Metric label="Viktbalans" value={metrics.weightBalance} suffix="%" color="#d4a017" />
-            <Metric label="Tyngdpunkt" value={100 - metrics.cogHeight} suffix="%" color="#2a8ae0" />
+          {/* Metrics */}
+          <div className="grid grid-cols-3 border-y border-black/8 mt-3">
+            <MetricCell label="Fyllnad" value={metrics.fillPercent} suffix="%" accent="green" />
+            <MetricCell label="Viktbalans" value={metrics.weightBalance} suffix="%" accent="amber" divider />
+            <MetricCell label="Tyngdpunkt" value={100 - metrics.cogHeight} suffix="%" accent="blue" />
           </div>
 
-          {/* Feedback + selected controls */}
-          <div className="px-4 mt-2 flex-1 min-h-0 flex flex-col">
-            <div className="flex flex-wrap gap-1.5">
-              {metrics.feedback.slice(0, 3).map((f, i) => (
-                <span key={i} className="text-[11px] px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-white/75">{f}</span>
-              ))}
-            </div>
+          {/* Feedback + selected */}
+          <div className="px-5 mt-3 flex-1 min-h-0 flex flex-col">
+            {metrics.feedback.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {metrics.feedback.slice(0, 3).map((f, i) => (
+                  <span key={i} className="text-[10px] font-bold px-2 py-1 border border-black/12 text-black/70 bg-white">{f}</span>
+                ))}
+              </div>
+            )}
 
             <AnimatePresence>
               {selectedItem && (
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="mt-2 flex items-center gap-2">
-                  <span className="text-sm text-white/70 flex-1">Vald: <strong className="text-white">{selectedItem.type.name}</strong></span>
-                  <Button size="sm" variant="secondary" onClick={rotateSelected}>🔄 Rotera</Button>
-                  <Button size="sm" variant="danger" onClick={removeSelected}>🗑 Ta bort</Button>
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 pb-3 border-b border-black/8"
+                >
+                  <span className="text-[11px] text-black/60 flex-1 truncate">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-black/45 mr-1">Vald:</span>
+                    <strong className="text-[#0a0a0a]">{selectedItem.type.name}</strong>
+                  </span>
+                  <button onClick={rotateSelected} className="h-8 px-3 text-[10px] font-black uppercase tracking-[0.22em] bg-[#0a0a0a] text-white active:bg-[#00843e]">
+                    ↻ Rotera
+                  </button>
+                  <button onClick={removeSelected} className="h-8 px-3 text-[10px] font-black uppercase tracking-[0.22em] border border-red-600 text-red-700 active:bg-red-50">
+                    ✕ Ta bort
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Palette */}
-            <div className="mt-3 mb-1 flex items-center justify-between">
-              <div className="text-[10px] uppercase tracking-[0.2em] text-white/30">
-                Att lasta · {queue.length} kvar
-              </div>
+            {/* Palette header */}
+            <div className="mt-3 mb-2 flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55">— Att lasta · {queue.length} kvar</span>
               {queue.length > 0 && (
-                <button onClick={autoArrange} className="text-[11px] font-bold text-lbc-blue">⚡ Autolasta</button>
+                <button onClick={autoArrange} className="text-[10px] font-black uppercase tracking-[0.22em] text-[#00843e] active:text-[#0a0a0a]">
+                  ⚡ Autolasta
+                </button>
               )}
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+
+            {/* Palette */}
+            <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
               {queue.length === 0 && (
-                <div className="text-white/30 text-sm py-3">Allt gods är lastat 🎉</div>
+                <div className="text-black/40 text-[12px] py-3 font-bold">Allt gods är lastat.</div>
               )}
               {queue.map(q => (
                 <div
                   key={q.qid}
                   onPointerDown={e => startPaletteDrag(q, e)}
-                  className="flex-shrink-0 w-[88px] rounded-2xl bg-white/6 border border-white/12 p-2 touch-none active:scale-95 transition-transform cursor-grab"
+                  className="flex-shrink-0 w-[86px] border border-black/12 bg-white p-2 touch-none active:scale-95 transition-transform cursor-grab"
                 >
-                  <div className="flex items-center justify-center h-9 rounded-lg mb-1"
+                  <div className="flex items-center justify-center h-9 mb-1"
                     style={{ background: `linear-gradient(150deg, ${q.type.color2}, ${q.type.color})` }}>
                     <span className="text-xl">{q.type.emoji}</span>
                   </div>
-                  <div className="text-[10px] font-bold text-white leading-tight line-clamp-1">{q.type.name}</div>
-                  <div className="text-[9px] text-white/45">{q.type.weight} kg · {q.type.load.cols}×{q.type.load.rows}</div>
+                  <div className="text-[10px] font-black text-[#0a0a0a] leading-tight line-clamp-1">{q.type.name}</div>
+                  <div className="text-[9px] text-black/50 font-bold tracking-wide">{q.type.weight}kg · {q.type.load.cols}×{q.type.load.rows}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Continue */}
-          <div className="px-4 pb-6 pt-1 border-t border-white/8 bg-surface-900/80 space-y-2">
+          <div className="px-5 pb-6 pt-3 border-t border-black/8 bg-[#f6f4ef] space-y-2">
             {loadDanger && placed.length > 0 && (
-              <div className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 ${
+              <div className={`px-3 py-2 text-[11px] font-bold flex items-center gap-2 border ${
                 loadDanger === 'critical'
-                  ? 'bg-red-900/60 border border-red-500/50 text-red-200'
-                  : 'bg-amber-900/50 border border-amber-500/40 text-amber-200'
+                  ? 'bg-red-50 border-red-300 text-red-800'
+                  : 'bg-amber-50 border-amber-300 text-amber-900'
               }`}>
-                <span className="text-base">{loadDanger === 'critical' ? '🚨' : '⚠️'}</span>
+                <span>{loadDanger === 'critical' ? '⚠' : '△'}</span>
                 <span>
-                  {metrics.weightBalance < 25
-                    ? 'Kritisk viktbalans – lasten kan tippa vid bromsning!'
-                    : metrics.cogHeight > 75
-                    ? 'Tyngdpunkten är för hög – tippningsrisk i kurvor!'
+                  {metrics.weightBalance < 25 ? 'Kritisk viktbalans – lasten kan tippa.'
+                    : metrics.cogHeight > 75 ? 'Tyngdpunkten är för hög – tippningsrisk.'
                     : 'Dålig lastfördelning – omfördela godset.'}
                 </span>
               </div>
             )}
-            <Button fullWidth size="lg" disabled={placed.length === 0} onClick={() => { setSelectedUid(null); setPhase('secure') }}>
-              {placed.length === 0 ? 'Lasta minst ett gods' : queue.length > 0 ? `Fortsätt till lastsäkring (${queue.length} kvar)` : 'Fortsätt till lastsäkring →'}
-            </Button>
+            <button
+              onClick={() => { setSelectedUid(null); setPhase('secure') }}
+              disabled={placed.length === 0}
+              className={
+                'w-full h-14 flex items-center justify-between px-5 text-[12px] font-black uppercase tracking-[0.22em] transition-colors ' +
+                (placed.length === 0
+                  ? 'bg-black/10 text-black/40 cursor-not-allowed'
+                  : 'bg-[#0a0a0a] text-white active:bg-[#00843e]')
+              }
+            >
+              <span>
+                {placed.length === 0 ? 'Lasta minst ett gods' : queue.length > 0 ? `Nästa: Lastsäkring · ${queue.length} kvar` : 'Nästa: Lastsäkring'}
+              </span>
+              <span className="text-base">→</span>
+            </button>
             <button
               onClick={handleDevAutoLoadAndGo}
-              className="w-full h-10 mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-white/70 bg-white/5 hover:bg-white/10 active:bg-lbc-green/30 border border-white/10 rounded-lg transition-colors"
+              className="w-full h-9 text-[10px] font-black uppercase tracking-[0.22em] text-black/55 border border-black/12 bg-white active:bg-black/[0.04] transition-colors"
             >
               ⚡ Auto-lasta &amp; hoppa till Transport (dev)
             </button>
@@ -423,115 +431,166 @@ export function LoadingScreen() {
         </div>
       )}
 
-      {/* ── SECURE PHASE ── */}
       {phase === 'secure' && (
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto scrollbar-hide" data-scroll>
-            <div className="px-4 pt-1">
-              <div ref={secureRef} className="relative touch-none"
+            <div className="px-5 pt-3">
+              <div ref={secureRef} className="relative touch-none border border-black/15 bg-[#0e1310] overflow-hidden"
                 onPointerDown={onSecurePointerDown}
                 onPointerUp={onSecurePointerUp}
               >
                 <TrailerView items={placed} strapYs={strapYs} net={net} divider={divider} />
               </div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/45 mt-1.5 text-center">
+                Svep horisontellt över lasten för att lägga till spännband
+              </div>
             </div>
 
             {/* Securing meter */}
-            <div className="px-4 mt-2">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-white/55">Lastsäkring</span>
-                <span className="text-sm font-black" style={{ color: metrics.securing >= 80 ? '#27a349' : metrics.securing >= 50 ? '#d4a017' : '#e04020' }}>
+            <div className="px-5 mt-4">
+              <div className="flex items-baseline justify-between mb-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55">— Lastsäkring</span>
+                <span className="text-[18px] font-black tabular-nums" style={{ color: metrics.securing >= 80 ? '#00843e' : metrics.securing >= 50 ? '#d4a017' : '#c93820' }}>
                   {metrics.securing}%
                 </span>
               </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div className="h-full rounded-full"
+              <div className="h-[3px] bg-black/8 overflow-hidden">
+                <motion.div
+                  className="h-full"
                   animate={{ width: `${metrics.securing}%` }}
-                  style={{ background: metrics.securing >= 80 ? '#27a349' : metrics.securing >= 50 ? '#d4a017' : '#e04020' }} />
+                  style={{ background: metrics.securing >= 80 ? '#00843e' : metrics.securing >= 50 ? '#d4a017' : '#c93820' }}
+                />
               </div>
             </div>
 
-            {/* Securing tools */}
-            <div className="px-4 mt-2 grid grid-cols-3 gap-1.5">
-              <ToolToggle active={strapYs.length > 0} icon="🔗" label={`Band · ${strapYs.length}`} onClick={() => {
-                setStrapYs(prev => prev.length >= 6 ? prev : [...prev, 0.88 - prev.length * 0.12])
-              }} />
-              <ToolToggle active={false} icon="↩️" label="Ångra" disabled={strapYs.length === 0} onClick={() => setStrapYs(prev => prev.slice(0, -1))} />
-              <ToolToggle active={net} icon="🕸️" label="Lastnät" onClick={() => setNet(v => !v)} />
-              <ToolToggle active={divider} icon="🧱" label="Mellanvägg" onClick={() => setDivider(v => !v)} />
-
+            {/* Tools */}
+            <div className="grid grid-cols-2 border-y border-black/8 mt-4">
+              <SecureTool
+                label="Spännband"
+                value={`${strapYs.length}`}
+                helper={strapYs.length === 0 ? 'Inga applicerade' : `${strapYs.length} av 6`}
+                enabled={strapYs.length < 6}
+                onClick={() => setStrapYs(prev => prev.length >= 6 ? prev : [...prev, 0.88 - prev.length * 0.12])}
+              />
+              <SecureTool
+                label="Ångra band"
+                value="↩"
+                helper={strapYs.length === 0 ? 'Inget att ångra' : 'Ta bort senaste'}
+                enabled={strapYs.length > 0}
+                onClick={() => setStrapYs(prev => prev.slice(0, -1))}
+                divider
+              />
+              <SecureTool
+                label="Lastnät"
+                value={net ? 'PÅ' : 'AV'}
+                helper="Skydd baktill"
+                enabled
+                active={net}
+                onClick={() => setNet(v => !v)}
+              />
+              <SecureTool
+                label="Mellanvägg"
+                value={divider ? 'PÅ' : 'AV'}
+                helper="Delar upp lasten"
+                enabled
+                active={divider}
+                onClick={() => setDivider(v => !v)}
+                divider
+              />
             </div>
 
-            {/* Feedback */}
-            <div className="px-4 mt-2 pb-3">
-              <div className="flex flex-wrap gap-1.5">
-                {metrics.feedback.map((f, i) => (
-                  <span key={i} className="text-[11px] px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-white/75">{f}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Pinned action buttons – always visible */}
-          <div className="px-4 pb-6 pt-2 border-t border-white/8 bg-surface-900/95 space-y-2 shrink-0">
-            {secureDanger && (
-              <div className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                secureDanger === 'critical'
-                  ? 'bg-red-900/60 border border-red-500/50 text-red-200'
-                  : 'bg-amber-900/50 border border-amber-500/40 text-amber-200'
-              }`}>
-                <span className="text-base">{secureDanger === 'critical' ? '🚨' : '⚠️'}</span>
-                <span>
-                  {metrics.securing < 20
-                    ? 'Lasten är nästan osäkrad – livsfarligt att köra!'
-                    : 'Lasten behöver mer lastsäkring innan körning.'}
-                </span>
+            {metrics.feedback.length > 0 && (
+              <div className="px-5 mt-3 mb-4">
+                <div className="flex flex-wrap gap-1.5">
+                  {metrics.feedback.map((f, i) => (
+                    <span key={i} className="text-[10px] font-bold px-2 py-1 border border-black/12 text-black/70 bg-white">{f}</span>
+                  ))}
+                </div>
               </div>
             )}
-            <Button fullWidth size="lg" onClick={handleStartTransport}>🚚 Starta transport</Button>
-            <Button fullWidth size="sm" variant="ghost" onClick={() => setPhase('place')}>← Tillbaka till lastning</Button>
+          </div>
+
+          <div className="px-5 pb-6 pt-3 border-t border-black/8 bg-[#f6f4ef] space-y-2">
+            {secureDanger && (
+              <div className={`px-3 py-2 text-[11px] font-bold flex items-center gap-2 border ${
+                secureDanger === 'critical' ? 'bg-red-50 border-red-300 text-red-800' : 'bg-amber-50 border-amber-300 text-amber-900'
+              }`}>
+                <span>{secureDanger === 'critical' ? '⚠' : '△'}</span>
+                <span>{metrics.securing < 20 ? 'Lasten är nästan osäkrad – farligt att köra.' : 'Lasten behöver mer säkring.'}</span>
+              </div>
+            )}
+            <button
+              onClick={handleStartTransport}
+              className="w-full h-14 flex items-center justify-between px-5 bg-[#0a0a0a] text-white text-[12px] font-black uppercase tracking-[0.22em] active:bg-[#00843e] transition-colors"
+            >
+              <span>Starta transport</span>
+              <span className="text-base">🚚 →</span>
+            </button>
+            <button
+              onClick={() => setPhase('place')}
+              className="w-full h-10 text-[10px] font-black uppercase tracking-[0.22em] text-black/55 border border-black/12 bg-white active:bg-black/[0.04]"
+            >
+              ← Tillbaka till lastning
+            </button>
           </div>
         </div>
       )}
 
       {/* Floating drag preview */}
       {drag && pointer && (
-        <div className="fixed pointer-events-none z-[2000] -translate-x-1/2 -translate-y-1/2 rounded-lg flex items-center justify-center shadow-2xl"
+        <div
+          className="fixed pointer-events-none z-[100]"
           style={{
             left: pointer.x, top: pointer.y,
-            width: 46, height: 46,
-            background: `linear-gradient(150deg, ${drag.type.color2}, ${drag.type.color})`,
-            border: '2px solid rgba(255,255,255,.7)', opacity: 0.92,
-          }}>
-          <span className="text-xl">{drag.type.emoji}</span>
+            transform: 'translate(-50%, -50%)',
+            width: 44, height: 44,
+          }}
+        >
+          <div
+            className="w-full h-full flex items-center justify-center text-2xl border-2 border-white"
+            style={{ background: `linear-gradient(150deg, ${drag.type.color2}, ${drag.type.color})`, boxShadow: '0 6px 20px rgba(0,0,0,.4)' }}
+          >
+            {drag.type.emoji}
+          </div>
         </div>
       )}
     </div>
   )
 }
 
-function Metric({ label, value, suffix, color }: { label: string; value: number; suffix: string; color: string }) {
+// ─── Helpers ────────────────────────────────────────────
+function MetricCell({ label, value, suffix, accent, divider }: {
+  label: string; value: number; suffix?: string; accent?: 'green' | 'amber' | 'blue'; divider?: boolean
+}) {
+  const color = accent === 'green' ? '#00843e' : accent === 'amber' ? '#c98a00' : '#0f5a99'
   return (
-    <div className="rounded-2xl bg-white/6 border border-white/10 px-2.5 py-2 text-center">
-      <div className="text-lg font-black" style={{ color }}>{value}{suffix}</div>
-      <div className="text-[9px] uppercase tracking-wider text-white/40 mt-0.5">{label}</div>
+    <div className={'px-3 py-3 ' + (divider ? 'border-x border-black/8' : '')}>
+      <div className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45 mb-1">{label}</div>
+      <div className="text-[22px] font-black leading-none tabular-nums tracking-tight" style={{ color }}>
+        {value}<span className="text-[13px] ml-0.5 text-black/40">{suffix}</span>
+      </div>
     </div>
   )
 }
 
-function ToolToggle({ active, icon, label, onClick, disabled }: { active: boolean; icon: string; label: string; onClick: () => void; disabled?: boolean }) {
+function SecureTool({ label, value, helper, enabled, active, divider, onClick }: {
+  label: string; value: string; helper: string; enabled: boolean; active?: boolean; divider?: boolean; onClick: () => void
+}) {
   return (
     <button
-      onClick={disabled ? undefined : onClick}
-      className={[
-        'flex items-center gap-2 px-3 py-2.5 rounded-2xl text-xs font-bold border transition-all text-left',
-        disabled ? 'opacity-35' : 'active:scale-95',
-        active ? 'bg-lbc-green/18 border-lbc-green/40 text-lbc-green' : 'bg-white/6 border-white/12 text-white/80',
-      ].join(' ')}
+      onClick={onClick}
+      disabled={!enabled}
+      className={
+        'text-left px-4 py-3 transition-colors ' +
+        (divider ? 'border-l border-black/8 ' : '') +
+        (!enabled ? 'opacity-40 cursor-not-allowed ' : 'active:bg-black/[0.04] ')
+      }
     >
-      <span className="text-base">{icon}</span>
-      <span className="leading-tight">{label}</span>
+      <div className="flex items-baseline justify-between">
+        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50">{label}</span>
+        <span className={'text-[16px] font-black tabular-nums ' + (active ? 'text-[#00843e]' : 'text-[#0a0a0a]')}>{value}</span>
+      </div>
+      <div className="text-[10px] text-black/45 mt-0.5">{helper}</div>
     </button>
   )
 }

@@ -10,7 +10,7 @@ interface Props {
   className?: string
 }
 
-export function ProgressBar({ value, max=100, color='#1a7e34', height=8, label, showPct=false, className='' }: Props) {
+export function ProgressBar({ value, max=100, color='#00843e', height=8, label, showPct=false, className='' }: Props) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100))
   return (
     <div className={`w-full ${className}`}>

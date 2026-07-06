@@ -1,17 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
-import { Button } from '../ui/Button'
-import { GlassCard } from '../ui/GlassCard'
 import { generateCargoItems } from '../../utils/cargoGenerator'
 import { CURRENT_EVENT } from '../../data/events'
 
-type Step = 'intro' | 'name' | 'ready' | 'mission'
+type Step = 'name' | 'ready' | 'mission'
 
 export function SplashScreen() {
   const { setScreen, setPlayerName, player, setCargoItems, playerPosition, eventMode, setEventMode } = useGameStore()
-  const [step, setStep] = useState<Step>(player.name ? 'ready' : 'intro')
+  const [step, setStep] = useState<Step>(player.name ? 'ready' : 'name')
   const [name, setName] = useState(player.name)
+  const [now, setNow] = useState(new Date())
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(t)
+  }, [])
+
+  const clock = now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
 
   const handleSaveName = () => {
     if (!name.trim()) return
@@ -25,217 +31,192 @@ export function SplashScreen() {
   }
 
   return (
-    <div className="fixed inset-0 bg-surface-900 flex flex-col overflow-hidden" style={{ overscrollBehavior: 'none' }}>
-      {/* Ambient glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[22%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[26rem] h-[26rem] bg-lbc-green/15 rounded-full blur-3xl" />
-        <div className="absolute top-[18%] left-[16%] w-40 h-40 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-lbc-blue/10 rounded-full blur-3xl" />
+    <div
+      className="fixed inset-0 flex flex-col bg-[#f6f4ef] text-[#0a0a0a] overflow-hidden"
+      style={{ overscrollBehavior: 'none', fontFamily: 'Manrope, ui-sans-serif, system-ui' }}
+    >
+      {/* ─── Top rail ────────────────────────────────────────── */}
+      <div
+        className="flex items-center justify-between px-5 h-12 border-b border-black/8 bg-white/60 backdrop-blur-sm flex-shrink-0"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="flex items-baseline gap-2">
+          <span className="text-[15px] font-black tracking-tight leading-none">LBC<span className="text-[#1a7e34]">frakt</span></span>
+          <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-black/45 leading-none">Sedan 1994</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-black/45">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#1a7e34]" />
+          Karlstad · {clock}
+        </div>
       </div>
 
-      <div data-scroll className="relative flex-1 flex flex-col items-center justify-start px-6 gap-5 overflow-y-auto scrollbar-hide pt-8 pb-6" style={{ overscrollBehavior: 'contain' }}>
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, type: 'spring', bounce: 0.3 }}
-          className="text-center"
-        >
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-white/45 mb-6">
-            <span className="h-2 w-2 rounded-full bg-lbc-green shadow-[0_0_12px_rgba(39,163,73,.9)]" />
-            Fleet Online
-          </div>
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            className="text-6xl mb-3 drop-shadow-[0_0_24px_rgba(39,163,73,.25)]"
-          >
-            🚛
-          </motion.div>
-          <div className="text-white/35 text-xs font-black tracking-[0.45em] uppercase mb-2 font-display">
-            LBC FRAKT
-          </div>
-          <h1 className="text-5xl font-black text-white leading-none tracking-tight font-display sm:text-6xl">
-            CARGO<br />
-            <span className="bg-[linear-gradient(180deg,#56d67b,#1a7e34)] bg-clip-text text-transparent">QUEST</span>
+      {/* ─── Main scroll area ────────────────────────────────── */}
+      <div data-scroll className="flex-1 overflow-y-auto scrollbar-hide" style={{ overscrollBehavior: 'contain' }}>
+
+        {/* Hero */}
+        <div className="px-5 pt-8 pb-6 border-b border-black/8">
+          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#1a7e34] mb-4">— LBC Cargo Quest</div>
+          <h1 className="font-black leading-[0.88] tracking-[-0.02em] text-[64px] sm:text-[76px]">
+            PÅ GOD<br />VÄG<span className="text-[#1a7e34]">.</span>
           </h1>
-          <p className="mt-4 text-white/42 text-sm font-medium max-w-[18rem] mx-auto leading-relaxed">
-            Sveriges smartaste transportäventyr
+          <p className="mt-5 text-[13px] text-black/60 leading-relaxed max-w-[24rem]">
+            Sveriges smartaste transportäventyr — hitta gods i verkligheten, lasta smart, leverera hållbart.
           </p>
-          <div className="mt-5 flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em] text-white/28">
-            <span>GPS</span>
-            <span className="h-1 w-1 rounded-full bg-white/20" />
-            <span>Eco Score</span>
-            <span className="h-1 w-1 rounded-full bg-white/20" />
-            <span>Live Cargo</span>
-          </div>
-        </motion.div>
+        </div>
 
-        <AnimatePresence mode="wait">
-          {step === 'intro' && (
-            <motion.div
-              key="intro"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              className="w-full max-w-sm space-y-4"
-            >
-              <GlassCard className="p-5">
-                <div className="grid grid-cols-2 gap-2 mb-4 text-left">
-                  <div className="rounded-2xl border border-white/8 bg-black/10 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.22em] text-white/28">Räckvidd</div>
-                    <div className="mt-1 text-lg text-white font-black font-display">25m</div>
-                  </div>
-                  <div className="rounded-2xl border border-white/8 bg-black/10 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.22em] text-white/28">Drivning</div>
-                    <div className="mt-1 text-lg text-lbc-green font-black font-display">EV</div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    { icon: '🗺️', text: 'Hitta gods i verkligheten med GPS' },
-                    { icon: '📦', text: 'Lasta och balansera lastbilen' },
-                    { icon: '🛡️', text: 'Leverera säkert och klok' },
-                    { icon: '⚡', text: 'Eldriven lastbil – noll utsläpp' },
-                  ].map((row, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 + i * 0.08 }}
-                      className="flex items-center gap-3"
-                    >
-                      <span className="text-2xl">{row.icon}</span>
-                      <span className="text-sm text-white/80 font-medium leading-snug">{row.text}</span>
-                    </motion.div>
-                  ))}
-                </div>
-              </GlassCard>
-              <Button fullWidth size="lg" onClick={() => setStep('name')}>
-                Börja äventyret →
-              </Button>
-            </motion.div>
-          )}
+        {/* Stats row */}
+        <div className="grid grid-cols-3 border-b border-black/8">
+          <StatCell label="Spelare" value={player.name || '—'} />
+          <StatCell label="Nivå" value={String(player.level)} accent />
+          <StatCell label="XP" value={String(player.xp)} last />
+        </div>
 
-          {step === 'name' && (
-            <motion.div
-              key="name"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              className="w-full max-w-sm space-y-4"
-            >
-              <GlassCard className="p-6">
-                <p className="text-white/55 text-sm mb-4 text-center">Vad ska vi kalla dig?</p>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSaveName()}
-                  placeholder="Ditt namn..."
-                  maxLength={20}
-                  autoFocus
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/25 text-center text-lg font-bold focus:outline-none focus:border-lbc-green transition-colors"
+        {/* Tiles grid */}
+        <div className="grid grid-cols-2 border-b border-black/8">
+          <button
+            onClick={() => setEventMode(!eventMode)}
+            className="text-left px-5 py-5 border-r border-black/8 active:bg-black/[0.03] transition-colors"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50">Mässläge</span>
+              <div
+                className={
+                  'w-9 h-5 rounded-full transition-colors relative flex-shrink-0 ' +
+                  (eventMode ? 'bg-[#1a7e34]' : 'bg-black/15')
+                }
+              >
+                <div
+                  className={
+                    'absolute top-[3px] w-3.5 h-3.5 bg-white rounded-full shadow transition-all ' +
+                    (eventMode ? 'left-[19px]' : 'left-[3px]')
+                  }
                 />
-              </GlassCard>
-              <Button fullWidth size="lg" disabled={!name.trim()} onClick={handleSaveName}>
-                Kör igång! 🚛
-              </Button>
-            </motion.div>
-          )}
-
-          {step === 'ready' && (
-            <motion.div
-              key="ready"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              className="w-full max-w-sm space-y-4"
-            >
-              <GlassCard className="p-6 text-center" glow>
-                <div className="text-4xl mb-2">👋</div>
-                <p className="text-xl font-black text-white font-display">Välkommen, {player.name}!</p>
-                <p className="text-white/45 text-sm mt-1">Nivå {player.level} · {player.rank}</p>
-                <div className="mt-4 flex justify-center gap-8">
-                  <div className="text-center">
-                    <div className="text-3xl font-black text-lbc-green">{player.totalDeliveries}</div>
-                    <div className="text-xs text-white/40 mt-0.5">Leveranser</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-black text-lbc-blue">{player.xp}</div>
-                    <div className="text-xs text-white/40 mt-0.5">XP</div>
-                  </div>
-                </div>
-              </GlassCard>
-
-              {/* Mässläge-toggle */}
-              <GlassCard className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="font-black text-white text-sm">🏙️ Mässläge</div>
-                    <div className="text-white/45 text-xs mt-0.5">{CURRENT_EVENT.name}</div>
-                  </div>
-                  <button
-                    onClick={() => setEventMode(!eventMode)}
-                    className={'w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ' + (eventMode ? 'bg-lbc-green' : 'bg-white/20')}
-                    aria-label="Toggäla mässläge"
-                  >
-                    <div className={'absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ' + (eventMode ? 'left-7' : 'left-1')} />
-                  </button>
-                </div>
-                {eventMode && (
-                  <div className="mt-3 text-xs text-lbc-green/85 bg-lbc-green/8 rounded-xl px-3 py-2 flex items-center gap-2">
-                    <span>✓</span> Gods placeras inom travbaneområdet — du behöver inte gå ut i trafiken
-                  </div>
-                )}
-              </GlassCard>
-              <Button fullWidth size="xl" onClick={() => setStep('mission')}>
-                🗺️ Hitta gods nu
-              </Button>
-              <Button fullWidth size="md" variant="ghost" onClick={() => setStep('name')}>
-                Byt namn
-              </Button>
-            </motion.div>
-          )}
-          {step === 'mission' && (
-            <motion.div
-              key="mission"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-sm space-y-4"
-            >
-              <div className="text-center">
-                <div className="inline-flex items-center gap-2 rounded-full border border-lbc-green/30 bg-lbc-green/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-lbc-green mb-4">
-                  📡 Uppdrag mottaget
-                </div>
               </div>
-              <GlassCard className="p-6" glow>
-                <div className="text-4xl mb-4 text-center">🚛</div>
-                <p className="text-white font-bold text-base leading-relaxed text-center">
-                  Du har ett uppdrag.
-                </p>
-                <p className="text-white/70 text-sm leading-relaxed text-center mt-3">
-                  Hitta godset före dina konkurrenter och se till att det levereras{' '}
-                  <span className="text-white font-semibold">säkert</span> och{' '}
-                  <span className="text-lbc-green font-semibold">hållbart</span> till kunden.
-                </p>
-                <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-center gap-2">
-                  <span className="text-lbc-green text-lg">●</span>
-                  <span className="text-white/50 text-xs font-bold uppercase tracking-widest">Lycka till, {player.name}!</span>
-                </div>
-              </GlassCard>
-              <Button fullWidth size="xl" onClick={handlePlay}>
-                Starta uppdrag →
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+            <div className="text-[14px] font-black leading-tight">
+              {eventMode ? 'Aktivt' : 'Avstängt'}
+            </div>
+            <div className="text-[11px] text-black/50 mt-0.5">{CURRENT_EVENT.name}</div>
+          </button>
+
+          <button
+            onClick={() => setStep('name')}
+            className="text-left px-5 py-5 active:bg-black/[0.03] transition-colors flex flex-col justify-between"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50">Profil</span>
+              <span className="text-black/30">↗</span>
+            </div>
+            <div>
+              <div className="text-[14px] font-black leading-tight">Byt namn</div>
+              <div className="text-[11px] text-black/50 mt-0.5">Nuvarande: {player.name || 'Ej valt'}</div>
+            </div>
+          </button>
+        </div>
+
+        {/* Mission brief tile */}
+        <div className="px-5 py-6 border-b border-black/8">
+          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50 mb-3">Uppdrag</div>
+          <ul className="space-y-2.5 text-[13px] text-black/75">
+            <MissionRow n="01" t="Hitta gods i verkligheten med GPS" />
+            <MissionRow n="02" t="Lasta smart och balansera lastbilen" />
+            <MissionRow n="03" t="Leverera säkert och hållbart" />
+          </ul>
+        </div>
+
       </div>
 
-      <div className="relative text-center pb-8 text-white/20 text-xs">
-        LBC Frakt i Värmland AB · På god väg
+      {/* ─── Footer CTA ─────────────────────────────────────── */}
+      <div className="flex-shrink-0 border-t border-black/8 bg-white/70 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <button
+          onClick={handlePlay}
+          disabled={!player.name}
+          className="w-full px-5 h-14 bg-[#0a0a0a] text-white flex items-center justify-between active:bg-[#1a7e34] transition-colors disabled:bg-black/30 disabled:cursor-not-allowed"
+        >
+          <span className="text-[13px] font-black uppercase tracking-[0.24em]">
+            {player.name ? 'Hitta gods nu' : 'Ange namn för att starta'}
+          </span>
+          <span className="text-xl">→</span>
+        </button>
+        <div className="text-center py-3 text-[10px] font-bold uppercase tracking-[0.22em] text-black/35">
+          LBC Frakt i Värmland AB · På god väg
+        </div>
+      </div>
+
+      {/* ─── Name overlay ───────────────────────────────────── */}
+      <AnimatePresence>
+        {step === 'name' && (
+          <motion.div
+            key="name-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center"
+            onClick={() => player.name && setStep('ready')}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', bounce: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full sm:max-w-sm bg-[#f6f4ef] rounded-t-3xl sm:rounded-3xl border-t sm:border border-black/10 p-6"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)' }}
+            >
+              <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1a7e34] mb-2">— Registrering</div>
+              <h2 className="text-[28px] font-black leading-none tracking-tight mb-1">Vad ska vi kalla dig?</h2>
+              <p className="text-[13px] text-black/55 mb-5">Ditt namn visas på topplistan när du levererar.</p>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                placeholder="Skriv namn…"
+                maxLength={20}
+                autoFocus
+                className="w-full bg-white border border-black/15 rounded-none px-4 h-12 text-[16px] font-bold placeholder-black/25 focus:outline-none focus:border-[#1a7e34] transition-colors"
+              />
+              <div className="mt-4 flex gap-2">
+                {player.name && (
+                  <button
+                    onClick={() => setStep('ready')}
+                    className="flex-1 h-12 border border-black/15 text-[12px] font-black uppercase tracking-[0.22em] text-black/60 active:bg-black/[0.04]"
+                  >
+                    Avbryt
+                  </button>
+                )}
+                <button
+                  onClick={handleSaveName}
+                  disabled={!name.trim()}
+                  className="flex-1 h-12 bg-[#0a0a0a] text-white text-[12px] font-black uppercase tracking-[0.22em] active:bg-[#1a7e34] disabled:bg-black/25"
+                >
+                  Spara →
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function StatCell({ label, value, accent, last }: { label: string; value: string; accent?: boolean; last?: boolean }) {
+  return (
+    <div className={'px-5 py-4 ' + (last ? '' : 'border-r border-black/8')}>
+      <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45 mb-1">{label}</div>
+      <div className={'text-[22px] font-black leading-none tracking-tight truncate ' + (accent ? 'text-[#1a7e34]' : '')}>
+        {value}
       </div>
     </div>
+  )
+}
+
+function MissionRow({ n, t }: { n: string; t: string }) {
+  return (
+    <li className="flex items-baseline gap-3">
+      <span className="text-[10px] font-black tracking-widest text-black/35 w-6 flex-shrink-0">{n}</span>
+      <span className="leading-snug">{t}</span>
+    </li>
   )
 }

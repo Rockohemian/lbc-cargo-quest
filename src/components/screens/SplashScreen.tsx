@@ -20,7 +20,10 @@ export function SplashScreen() {
     return () => clearTimeout(t)
   }, [devTaps])
 
-  const handleSecretTap = () => {
+  // Visual feedback: small counter shown after first tap
+  const handleSecretTap = (e?: React.SyntheticEvent) => {
+    e?.stopPropagation()
+    e?.preventDefault()
     const next = devTaps + 1
     if (next >= 5) {
       setDevTaps(0)
@@ -29,6 +32,25 @@ export function SplashScreen() {
       setDevTaps(next)
     }
   }
+
+  // Backup triggers:
+  //  1) URL hash #dev opens direct
+  //  2) Keyboard: Ctrl+Shift+D
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.location.hash === '#dev') {
+      window.location.hash = ''
+      setScreen('dev')
+    }
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.ctrlKey && ev.shiftKey && (ev.key === 'D' || ev.key === 'd')) {
+        ev.preventDefault()
+        setScreen('dev')
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [setScreen])
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30_000)
@@ -74,13 +96,25 @@ export function SplashScreen() {
         {/* Hero */}
         <div className="px-5 pt-8 pb-6 border-b border-black/8">
           <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#1a7e34] mb-4">— LBC Cargo Quest</div>
-          <h1 className="font-black leading-[0.88] tracking-[-0.02em] text-[64px] sm:text-[76px]">
-            PÅ GOD<br />VÄG<span
-              onClick={handleSecretTap}
-              className="text-[#1a7e34] cursor-default select-none"
-              aria-hidden="true"
-            >.</span>
+          <h1 className="font-black leading-[0.88] tracking-[-0.02em] text-[64px] sm:text-[76px] relative inline-block">
+            PÅ GOD<br />VÄG<span className="text-[#1a7e34] relative">
+              .
+              {/* Invisible larger tap target over the period */}
+              <button
+                type="button"
+                onPointerDown={handleSecretTap}
+                aria-label="Dev"
+                tabIndex={-1}
+                className="absolute -inset-6 bg-transparent cursor-default"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              />
+            </span>
           </h1>
+          {devTaps > 0 && (
+            <div className="mt-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#1a7e34]">
+              {devTaps}/5
+            </div>
+          )}
           <p className="mt-5 text-[13px] text-black/60 leading-relaxed max-w-[24rem]">
             Sveriges smartaste transportäventyr — hitta gods i verkligheten, lasta smart, leverera hållbart.
           </p>

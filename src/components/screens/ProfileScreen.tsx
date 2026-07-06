@@ -9,7 +9,7 @@ import { TruckPreview } from '../game/TruckPreview'
 import { generateCargoItems } from '../../utils/cargoGenerator'
 
 export function ProfileScreen() {
-  const { player, garage, resetRound, setCargoItems, playerPosition, setScreen } = useGameStore()
+  const { player, garage, resetRound, setCargoItems, playerPosition, setScreen, setEventMode } = useGameStore()
 
   const rankIdx = RANKS.indexOf(player.rank)
   const nextRank = RANKS[Math.min(rankIdx + 1, RANKS.length - 1)]
@@ -94,7 +94,7 @@ export function ProfileScreen() {
           <GlassCard className="p-4" delay={0.15} glow>
             <div className="flex items-center justify-between mb-1">
               <div>
-                <p className="text-[10px] text-white/35 font-bold uppercase tracking-widest">Din lastbil</p>
+                <p className="text-[10px] text-white/35 font-bold uppercase tracking-widest">Din lastbil — anpassa &amp; uppgradera</p>
                 <p className="text-xs text-white/45 mt-0.5">
                   {garage.unlocked
                     ? 'Anpassa lastbilen med delar du tjänat in'
@@ -110,7 +110,7 @@ export function ProfileScreen() {
             </div>
             {garage.unlocked ? (
               <Button fullWidth size="md" onClick={() => setScreen('garage')}>
-                🔧 Öppna garaget →
+                🔧 Anpassa lastbilen i garaget →
               </Button>
             ) : (
               <div className="mt-1">
@@ -160,14 +160,17 @@ export function ProfileScreen() {
             transition={{ delay: 0.3 }}
             className="space-y-2 pb-4"
           >
-            <Button fullWidth size="lg" onClick={handleNewRound}>
-              🗺️ Hitta gods
+            <Button fullWidth size="lg" onClick={() => setScreen('map')}>
+              ← Tillbaka till kartan
+            </Button>
+            <Button fullWidth size="md" variant="secondary" onClick={handleNewRound}>
+              🗺️ Ny omgång
             </Button>
             <Button fullWidth size="md" variant="secondary" onClick={() => setScreen('leaderboard')}>
               🏆 Dagens topplista
             </Button>
-            <Button fullWidth size="md" variant="ghost" onClick={() => setScreen('splash')}>
-              ⚙️ Inställningar / Byt läge
+            <Button fullWidth size="md" variant="ghost" onClick={() => { resetRound(); setEventMode(false); setScreen('splash') }}>
+              ✕ Avsluta → Startsida
             </Button>
           </motion.div>
         </div>

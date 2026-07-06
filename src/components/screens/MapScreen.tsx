@@ -336,7 +336,10 @@ export function MapScreen() {
     : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
 
   return (
-    <div className="fixed inset-0 bg-surface-900 flex flex-col">
+    <div
+      className="fixed inset-x-0 bottom-0 bg-surface-900 flex flex-col"
+      style={{ top: 'calc(2.75rem + env(safe-area-inset-top, 0px))' }}
+    >
       {/* Map */}
       <div className={`flex-1 relative ${isNight ? 'map-night' : 'map-day'}`}>
         <MapContainer
@@ -389,39 +392,7 @@ export function MapScreen() {
           ))}
         </MapContainer>
 
-        {/* GPS status banner */}
-        <AnimatePresence>
-          {gpsStatus === 'pending' && (
-            <motion.div
-              key="gps-pending"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="absolute top-20 left-1/2 -translate-x-1/2 z-[1100] whitespace-nowrap"
-            >
-              <div className="rounded-xl border border-white/15 bg-black/60 backdrop-blur-lg px-3 py-1.5 text-[11px] font-bold text-white/60 flex items-center gap-1.5">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-lbc-green animate-pulse" />
-                Hämtar GPS...
-              </div>
-            </motion.div>
-          )}
-          {gpsStatus === 'fallback' && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="absolute top-20 left-4 right-4 z-[1100]"
-            >
-              <div className="rounded-2xl border border-amber-400/40 bg-amber-900/80 backdrop-blur-xl px-4 py-3 text-sm font-bold text-amber-200 shadow-[0_12px_30px_rgba(0,0,0,.4)] flex items-start gap-2">
-                <span className="text-xl leading-none mt-0.5">📍</span>
-                <div>
-                  <div className="font-black">GPS saknas – gods visas på fel plats</div>
-                  <div className="text-amber-300/70 text-xs mt-0.5 font-normal">Tillåt plats i webbläsarens inställningar, sedan ladda om sidan</div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* GPS-status visas i bottenpanelen — inga flytande banners */}
 
         {/* Stolen notice */}
         <AnimatePresence>
@@ -498,18 +469,25 @@ export function MapScreen() {
         )}
       </AnimatePresence>
 
-      {/* Bottom panel — kompakt */}
-      <div className="bg-[linear-gradient(180deg,rgba(16,24,16,.96),rgba(8,16,10,.99))] backdrop-blur-xl border-t border-white/10 px-3 pt-2 pb-3 z-[1000] safe-area-bottom">
+      {/* Bottenpanel */}
+      <div className="bg-[#060d07]/98 border-t border-white/[0.07] px-3 pt-2.5 pb-3 z-[1000] safe-area-bottom">
         <div className="max-w-lg mx-auto">
-          {/* header row */}
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="flex items-center gap-2">
-              <button onClick={() => setScreen('splash')} className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1 text-white/70 text-xs font-bold active:bg-white/20" title="Tillbaka till start">⬅️ Start</button>
-              <button onClick={() => setScreen('profile')} className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1 text-white/70 text-xs font-bold active:bg-white/20">👤 Profil</button>
-              <span className="text-white font-black text-sm">Sök gods</span>
-              {gpsStatus === 'fallback' && <span className="text-[10px] text-amber-300/80">GPS saknas</span>}
+          {/* Statusrad */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[11px] font-black text-white/70 uppercase tracking-widest">Sök gods</span>
+              <span className={[
+                'text-[10px] font-bold',
+                gpsStatus === 'ok'       ? 'text-lbc-green/60' :
+                gpsStatus === 'fallback' ? 'text-amber-400'    :
+                                           'text-white/30',
+              ].join(' ')}>
+                {gpsStatus === 'ok'       ? '● GPS' :
+                 gpsStatus === 'fallback' ? '⚠ GPS saknas – ladda om' :
+                                           '○ Hämtar GPS…'}
+              </span>
             </div>
-            <span className="text-xs font-bold text-lbc-green">{inventory.length}/{LOAD_MIN}</span>
+            <span className="text-[11px] font-bold text-white/50">{inventory.length}/{LOAD_MIN} kolli</span>
           </div>
 
           {/* Cargo carousel */}

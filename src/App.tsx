@@ -18,24 +18,39 @@ export default function App() {
   const screen = useGameStore(s => s.screen)
 
   return (
-    <div className="fixed inset-0 bg-surface-900 text-white font-sans select-none overflow-hidden">
-      <HUD />
+    // Yttersta lagret: mörk letterbox på desktop
+    <div className="fixed inset-0 bg-black text-white font-sans select-none overflow-hidden flex items-stretch justify-center">
+      {/*
+        Mobil-ram. `transform` gör att alla `fixed inset-0` inuti begränsas till
+        denna ruta i stället för hela viewport-fönstret — det är en officiell
+        CSS-spec-beteende (transformed ancestors blir containing block för
+        fixed children). Så vi slipper röra 14 skärmars layout.
+      */}
+      <div
+        className="relative w-full max-w-md h-full bg-surface-900 overflow-hidden"
+        style={{
+          transform: 'translateZ(0)',
+          boxShadow: '0 0 60px rgba(0, 0, 0, 0.6)',
+        }}
+      >
+        <HUD />
 
-      <AnimatePresence mode="wait">
-        {screen === 'splash'      && <SplashScreen      key="splash" />}
-        {screen === 'map'          && <MapScreen          key="map" />}
-        {screen === 'collect'      && <CollectScreen      key="collect" />}
-        {screen === 'loading'      && <LoadingScreen      key="loading" />}
-        {screen === 'delivery'     && <TransportScreen    key="delivery" />}
-        {screen === 'result'       && <ResultScreen       key="result" />}
-        {screen === 'profile'      && <ProfileScreen      key="profile" />}
-        {screen === 'garage'       && <GarageScreen       key="garage" />}
-        {screen === 'leaderboard'  && <LeaderboardScreen  key="leaderboard" />}
-        {screen === 'admin'        && <AdminScreen        key="admin" />}
-        {screen === 'dev'          && <DevConsoleScreen   key="dev" />}
-      </AnimatePresence>
+        <AnimatePresence mode="wait">
+          {screen === 'splash'      && <SplashScreen      key="splash" />}
+          {screen === 'map'          && <MapScreen          key="map" />}
+          {screen === 'collect'      && <CollectScreen      key="collect" />}
+          {screen === 'loading'      && <LoadingScreen      key="loading" />}
+          {screen === 'delivery'     && <TransportScreen    key="delivery" />}
+          {screen === 'result'       && <ResultScreen       key="result" />}
+          {screen === 'profile'      && <ProfileScreen      key="profile" />}
+          {screen === 'garage'       && <GarageScreen       key="garage" />}
+          {screen === 'leaderboard'  && <LeaderboardScreen  key="leaderboard" />}
+          {screen === 'admin'        && <AdminScreen        key="admin" />}
+          {screen === 'dev'          && <DevConsoleScreen   key="dev" />}
+        </AnimatePresence>
 
-      <GarageUnlockOverlay />
+        <GarageUnlockOverlay />
+      </div>
     </div>
   )
 }

@@ -1,6 +1,8 @@
-import { useId } from 'react'
+import { lazy, Suspense, useId, useState, useEffect } from 'react'
 import type { EquippedParts, PartCategory, TruckPart } from '../../types'
 import { PART_BY_ID, PART_RARITY_COLORS } from '../../data/garageParts'
+
+const Truck3D = lazy(() => import('./Truck3D').then(m => ({ default: m.Truck3D })))
 
 type View = 'side' | 'front' | 'back'
 
@@ -10,11 +12,36 @@ interface Props {
   className?: string
 }
 
+/** WebGL feature-detect (memoised) */
+function useWebGLSupported(): boolean {
+  const [ok, setOk] = useState(true)
+  useEffect(() => {
+    try {
+      const c = document.createElement('canvas')
+      const gl = c.getContext('webgl2') || c.getContext('webgl')
+      setOk(Boolean(gl))
+    } catch { setOk(false) }
+  }, [])
+  return ok
+}
+
 /**
- * LBC 24-meters ekipage — dragbil (Volvo/Scania-typ) + trailer.
- * Vit karosseri med officiell LBCfrakt-logotyp (grön #00843e).
+ * LBC 24-meters ekipage. Renderar 3D-modell via Three.js när WebGL finns,
+ * annars fallback till SVG.
  */
 export function TruckPreview({ equipped, view = 'side', className = '' }: Props) {
+  const webgl = useWebGLSupported()
+  if (webgl) {
+    return (
+      <Suspense fallback={<div className={className} style={{ aspectRatio: '16/9', background: 'linear-gradient(180deg,#eef2ee,#c0cac0)' }} />}>
+        <Truck3D equipped={equipped} view={view} className={className} autoRotate={view === 'side'} />
+      </Suspense>
+    )
+  }
+  return <TruckPreviewSVG equipped={equipped} view={view} className={className} />
+}
+
+function TruckPreviewSVG({ equipped, view = 'side', className = '' }: Props) {
   const uid = useId().replace(/:/g, '')
   const LOGO = import.meta.env.BASE_URL + 'assets/lbc-logo.png'
 

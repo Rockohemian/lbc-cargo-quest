@@ -20,13 +20,13 @@ interface Props {
  */
 export function Truck3D({ equipped, view = 'side', className = '', autoRotate = true }: Props) {
   const camera = useMemo(() => {
-    if (view === 'front') return { position: [0, 1.6, 8.5] as [number, number, number], fov: 26 }
-    if (view === 'back') return { position: [0, 1.6, -8.5] as [number, number, number], fov: 26 }
-    return { position: [7, 3, 8] as [number, number, number], fov: 26 }
+    if (view === 'front') return { position: [0, 2.2, 14] as [number, number, number], fov: 30 }
+    if (view === 'back') return { position: [0, 2.2, -14] as [number, number, number], fov: 30 }
+    return { position: [11, 5, 14] as [number, number, number], fov: 32 }
   }, [view])
 
   return (
-    <div className={className} style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: 'linear-gradient(180deg,#eef2ee 0%,#d8e0d8 60%,#c0cac0 100%)' }}>
+    <div className={className} style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#ffffff' }}>
       <Canvas
         shadows
         dpr={[1, 2]}
@@ -176,10 +176,10 @@ function TruckScene({ equipped, autoRotate }: { equipped: EquippedParts; autoRot
         </group>
       ))}
 
-      {/* Vägunderlag (bara för skuggmottagning) */}
+      {/* Vitt "showroom"-golv för skuggmottagning */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="#c0c8c0" roughness={0.95} />
+        <planeGeometry args={[40, 40]} />
+        <meshStandardMaterial color="#ffffff" roughness={1} />
       </mesh>
     </group>
   )

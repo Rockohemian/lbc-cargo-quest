@@ -33,7 +33,7 @@ export function TruckPreview({ equipped, view = 'side', className = '' }: Props)
   const webgl = useWebGLSupported()
   if (webgl) {
     return (
-      <Suspense fallback={<div className={className} style={{ aspectRatio: '16/9', background: 'linear-gradient(180deg,#eef2ee,#c0cac0)' }} />}>
+      <Suspense fallback={<div className={className} style={{ aspectRatio: '16/9', background: '#ffffff' }} />}>
         <Truck3D equipped={equipped} view={view} className={className} autoRotate={view === 'side'} />
       </Suspense>
     )

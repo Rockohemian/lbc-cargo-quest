@@ -46,6 +46,25 @@ export function LoadingScreen() {
   const dragRef = useRef<DragState | null>(null)
   dragRef.current = drag
 
+  // Runtime-invariant: garantera att inga två items överlappar. Om det ändå skulle hända
+  // (bugg någonstans), släng ut duplikaten hellre än att låta användaren se överlapp.
+  useEffect(() => {
+    const seen: PlacedItem[] = []
+    let mutated = false
+    for (const it of placed) {
+      const overlap = seen.some(s =>
+        it.col < s.col + s.cols && it.col + it.cols > s.col &&
+        it.row < s.row + s.rows && it.row + it.rows > s.row
+      )
+      if (overlap) { mutated = true; continue }
+      seen.push(it)
+    }
+    if (mutated) {
+      console.warn('[LoadingScreen] Överlappande items upptäckta, städar upp:', placed.length - seen.length)
+      setPlaced(seen)
+    }
+  }, [placed])
+
   const securing: SecuringState = useMemo(
     () => ({ straps: strapYs.length, net, divider }),
     [strapYs.length, net, divider]
@@ -296,9 +315,9 @@ export function LoadingScreen() {
                       onClick={() => setSelectedUid(it.uid)}
                       className="absolute overflow-hidden touch-none"
                       style={{
-                        left: `${pctX(it.col)}%`, top: `${pctY(it.row)}%`,
-                        width: `${pctX(it.cols)}%`, height: `${pctY(it.rows)}%`,
-                        padding: 2, zIndex: selected ? 30 : 10, cursor: 'grab',
+                        left: `calc(${pctX(it.col)}% + 2px)`, top: `calc(${pctY(it.row)}% + 2px)`,
+                        width: `calc(${pctX(it.cols)}% - 4px)`, height: `calc(${pctY(it.rows)}% - 4px)`,
+                        zIndex: selected ? 30 : 10, cursor: 'grab',
                         WebkitUserDrag: 'none',
                         WebkitTouchCallout: 'none',
                         WebkitUserSelect: 'none',
@@ -399,7 +418,7 @@ export function LoadingScreen() {
             </div>
 
             {/* Palette */}
-            <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
+            <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide" style={{ touchAction: 'pan-x' }}>
               {queue.length === 0 && (
                 <div className="text-black/40 text-[12px] py-3 font-bold">Allt gods är lastat.</div>
               )}
@@ -411,11 +430,12 @@ export function LoadingScreen() {
                     key={q.qid}
                     data-drag-source
                     onPointerDown={e => startPaletteDrag(q, e)}
-                    className="flex-shrink-0 w-[92px] touch-none active:scale-95 transition-all cursor-grab"
+                    className="flex-shrink-0 w-[92px] active:scale-95 transition-all cursor-grab"
                     style={{
                       background: '#ffffff',
                       border: '1px solid rgba(0,0,0,0.12)',
                       padding: 8,
+                      touchAction: 'pan-x',
                       opacity: isOtherDrag ? 0.35 : isDragging ? 0.5 : 1,
                       WebkitUserDrag: 'none',
                       WebkitTouchCallout: 'none',

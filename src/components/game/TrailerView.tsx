@@ -93,11 +93,10 @@ function TrailerViewBase({
               onPointerDown={onItemPointerDown ? e => onItemPointerDown(it.uid, e) : undefined}
               className="absolute rounded-lg flex items-center justify-center overflow-hidden touch-none"
               style={{
-                left: `${pctX(it.col)}%`,
-                top: `${pctY(it.row)}%`,
-                width: `${pctX(it.cols)}%`,
-                height: `${pctY(it.rows)}%`,
-                padding: 2,
+                left: `calc(${pctX(it.col)}% + 2px)`,
+                top: `calc(${pctY(it.row)}% + 2px)`,
+                width: `calc(${pctX(it.cols)}% - 4px)`,
+                height: `calc(${pctY(it.rows)}% - 4px)`,
                 transform: `translate(${fx.dx ?? 0}px, ${fx.dy ?? 0}px) rotate(${fx.rot ?? 0}deg)`,
                 transition: 'transform 0.3s cubic-bezier(.3,1.4,.5,1)',
                 zIndex: selected ? 30 : 10,

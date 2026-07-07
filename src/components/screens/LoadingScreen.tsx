@@ -72,12 +72,26 @@ export function LoadingScreen() {
     const rect = el.getBoundingClientRect()
     const cellW = rect.width / TRAILER_COLS
     const relX = clientX - rect.left
-    let col = Math.round(relX / cellW - d.cols / 2)
-    col = Math.max(0, Math.min(TRAILER_COLS - d.cols, col))
+    let intended = Math.round(relX / cellW - d.cols / 2)
+    intended = Math.max(0, Math.min(TRAILER_COLS - d.cols, intended))
     const ignore = d.source === 'placed' ? d.uid : undefined
-    const settled = settleRow(placed, col, d.cols, d.rows, ignore)
-    if (settled === null) return { col, row: 0, cols: d.cols, rows: d.rows, valid: false }
-    return { col, row: settled, cols: d.cols, rows: d.rows, valid: true }
+
+    // Prova avsedd kolumn först
+    const direct = settleRow(placed, intended, d.cols, d.rows, ignore)
+    if (direct !== null) return { col: intended, row: direct, cols: d.cols, rows: d.rows, valid: true }
+
+    // Snappa till närmaste giltiga kolumn (max 4 steg åt vardera hållet)
+    for (let step = 1; step <= 4; step++) {
+      for (const dir of [-1, 1]) {
+        const c = intended + dir * step
+        if (c < 0 || c > TRAILER_COLS - d.cols) continue
+        const s = settleRow(placed, c, d.cols, d.rows, ignore)
+        if (s !== null) return { col: c, row: s, cols: d.cols, rows: d.rows, valid: true }
+      }
+    }
+
+    // Ingen valid plats — visa invalid ghost på golvet (row=TRAILER_ROWS-d.rows) så det INTE overlappar
+    return { col: intended, row: Math.max(0, TRAILER_ROWS - d.rows), cols: d.cols, rows: d.rows, valid: false }
   }, [placed])
 
   useEffect(() => {
@@ -309,15 +323,26 @@ export function LoadingScreen() {
                 })}
 
                 {ghost && (
-                  <div className="absolute pointer-events-none"
+                  <div className="absolute pointer-events-none flex items-center justify-center"
                     style={{
                       left: `${pctX(ghost.col)}%`, top: `${pctY(ghost.row)}%`,
                       width: `${pctX(ghost.cols)}%`, height: `${pctY(ghost.rows)}%`,
-                      border: `2px dashed ${ghost.valid ? '#00a34c' : '#e04020'}`,
-                      background: ghost.valid ? 'rgba(0,163,76,.18)' : 'rgba(224,64,32,.16)',
+                      border: `3px solid ${ghost.valid ? '#00e070' : '#ff4030'}`,
+                      background: ghost.valid
+                        ? 'rgba(0,168,80,.35)'
+                        : 'repeating-linear-gradient(45deg, rgba(255,64,48,.45) 0 8px, rgba(255,64,48,.18) 8px 16px)',
+                      boxShadow: ghost.valid
+                        ? '0 0 0 2px rgba(0,168,80,.35), inset 0 0 12px rgba(0,168,80,.45)'
+                        : '0 0 0 2px rgba(255,64,48,.4)',
                       zIndex: 40,
                     }}
-                  />
+                  >
+                    {!ghost.valid && (
+                      <span className="text-white font-black text-xs uppercase tracking-widest select-none" style={{ textShadow: '0 1px 2px rgba(0,0,0,.6)' }}>
+                        ✕ Ingen plats
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

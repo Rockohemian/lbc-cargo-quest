@@ -285,6 +285,7 @@ export function LoadingScreen() {
 
       {phase === 'place' && (
         <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0" data-scroll>
           {/* Trailer */}
           <div className="px-5 pt-3">
             <div
@@ -379,7 +380,7 @@ export function LoadingScreen() {
           </div>
 
           {/* Feedback + selected */}
-          <div className="px-5 mt-3 flex-1 min-h-0 flex flex-col">
+          <div className="px-5 mt-3 flex flex-col">
             {metrics.feedback.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {metrics.feedback.slice(0, 3).map((f, i) => (
@@ -461,6 +462,7 @@ export function LoadingScreen() {
                 )
               })}
             </div>
+          </div>
           </div>
 
           {/* Continue */}

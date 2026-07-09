@@ -211,10 +211,10 @@ export function TransportScreen() {
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-[#0a0a0a]" />
               {/* Mål-punkt */}
               <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 border-2 border-[#0a0a0a] bg-white" />
-              {/* Lastbil */}
+              {/* Lastbil — emoji 🚛 pekar naturligt åt vänster, flippas så den kör framåt (åt höger mot målet) */}
               <div
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 text-[22px] leading-none transition-[left] duration-100 select-none"
-                style={{ left: `${progress}%` }}
+                className="absolute top-1/2 text-[22px] leading-none transition-[left] duration-100 select-none"
+                style={{ left: `${progress}%`, transform: 'translate(-50%, -50%) scaleX(-1)' }}
               >
                 🚛
               </div>

@@ -1,12 +1,15 @@
 import { motion } from 'framer-motion'
+import { useRef } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { RANKS } from '../../data/cargoTypes'
 import { GARAGE_UNLOCK_POINTS } from '../../data/garageParts'
 import { TruckPreview } from '../game/TruckPreview'
 import { generateCargoItems } from '../../utils/cargoGenerator'
+import { ScrollHint } from '../ui/ScrollHint'
 
 export function ProfileScreen() {
   const { player, garage, resetRound, setCargoItems, playerPosition, setScreen, setEventMode } = useGameStore()
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const rankIdx = RANKS.indexOf(player.rank)
   const nextRank = RANKS[Math.min(rankIdx + 1, RANKS.length - 1)]
@@ -27,6 +30,7 @@ export function ProfileScreen() {
 
   return (
     <div
+      ref={scrollRef}
       className="fixed inset-0 bg-[#f6f4ef] text-[#0a0a0a] overflow-y-auto"
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui' }}
       data-scroll
@@ -181,6 +185,7 @@ export function ProfileScreen() {
         </div>
 
       </div>
+      <ScrollHint targetRef={scrollRef} bottomOffset={20} />
     </div>
   )
 }

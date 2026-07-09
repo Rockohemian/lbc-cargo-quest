@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import {
@@ -9,6 +9,7 @@ import {
 import type { PartCategory, CrateTier, PartRarity } from '../../types'
 import { TruckPreview } from '../game/TruckPreview'
 import { CrateOpenModal } from '../garage/CrateOpenModal'
+import { ScrollHint } from '../ui/ScrollHint'
 
 type View = 'side' | 'front' | 'back'
 const VIEWS: View[] = ['front', 'side', 'back']
@@ -24,6 +25,7 @@ export function GarageScreen() {
   const [view, setView] = useState<View>('side')
   const [tab, setTab] = useState<PartCategory>('front')
   const [openingCrate, setOpeningCrate] = useState<CrateTier | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const owned = useMemo(() => new Set(garage.ownedPartIds), [garage.ownedPartIds])
 
@@ -74,7 +76,7 @@ export function GarageScreen() {
       </div>
 
       {/* ── Scrollbart innehåll ── */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide" data-scroll>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-hide" data-scroll>
         {/* ── Truck stage (vit, LBC-ren) ── */}
         <div className="px-4 pt-3">
           <div className="border border-black/12 bg-white overflow-hidden">
@@ -258,6 +260,9 @@ export function GarageScreen() {
           <CrateOpenModal tier={openingCrate} onClose={() => setOpeningCrate(null)} />
         )}
       </AnimatePresence>
+
+      {/* Scroll-hint (visas när det finns mer nedanför, precis ovanför CTA) */}
+      <ScrollHint targetRef={scrollRef} bottomOffset={80} />
     </div>
   )
 }

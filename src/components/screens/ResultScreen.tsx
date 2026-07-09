@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { TruckPreview } from '../game/TruckPreview'
 import { generateCargoItems } from '../../utils/cargoGenerator'
 import { supabase } from '../../lib/supabase'
+import { ScrollHint } from '../ui/ScrollHint'
 
 const GRADE_COLORS: Record<string, string> = { S: '#c98a00', A: '#00843e', B: '#0f5a99', C: '#c98a00', D: '#c93820' }
 const GRADE_LABELS: Record<string, string> = { S: 'Legendarisk', A: 'Utmärkt', B: 'Bra', C: 'Godkänd', D: 'Under förväntan' }
@@ -23,6 +24,7 @@ export function ResultScreen() {
   const [phoneInput, setPhoneInput] = useState('')
   const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const handleSubmitScore = async () => {
     const phone = phoneInput.trim()
@@ -46,6 +48,7 @@ export function ResultScreen() {
 
   return (
     <div
+      ref={scrollRef}
       data-scroll
       className="fixed inset-0 bg-[#f6f4ef] text-[#0a0a0a] overflow-y-auto"
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui' }}
@@ -222,6 +225,7 @@ export function ResultScreen() {
           Min profil
         </button>
       </section>
+      <ScrollHint targetRef={scrollRef} bottomOffset={20} />
     </div>
   )
 }

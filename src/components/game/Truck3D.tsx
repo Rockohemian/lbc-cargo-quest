@@ -118,36 +118,44 @@ function TruckScene({ equipped, autoRotate }: { equipped: EquippedParts; autoRot
       {/* ═════ DRAGBIL (framänden, x>2) ═════ */}
       <TractorBody />
 
-      {/* Framruta — lutad glaspanel på hyttens framsida */}
-      <mesh position={[4.0, 2.55, 0]} rotation={[0, 0, Math.PI / 3]}>
-        <planeGeometry args={[1.9, 0.72]} />
-        <meshPhysicalMaterial
-          color="#6ba7c9"
-          metalness={0.2}
-          roughness={0.05}
-          transmission={0.5}
-          thickness={0.4}
-          clearcoat={1}
-          clearcoatRoughness={0.02}
-          transparent
-          opacity={0.7}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-      {/* Framrutans mittstolpe (mörk ram) */}
-      <mesh position={[4.0, 2.55, 0]} rotation={[0, 0, Math.PI / 3]}>
-        <boxGeometry args={[0.04, 0.72, 0.06]} />
-        <meshStandardMaterial color="#0a0a0a" />
-      </mesh>
-      {/* Framrutans överkant + underkant (svart ram) */}
-      <mesh position={[3.87, 2.83, 0]}>
-        <boxGeometry args={[0.1, 0.06, 1.95]} />
-        <meshStandardMaterial color="#0a0a0a" />
-      </mesh>
-      <mesh position={[4.13, 2.28, 0]}>
-        <boxGeometry args={[0.1, 0.06, 1.95]} />
-        <meshStandardMaterial color="#0a0a0a" />
-      </mesh>
+      {/* ─── Framruta ─── Vertikal glasruta på hyttens framsida (x=4.005), lätt tiltad bakåt */}
+      <group position={[4.005, 2.45, 0]} rotation={[0, Math.PI / 2, -0.18]}>
+        {/* Svart ram runt rutan */}
+        <mesh position={[0, 0, 0]}>
+          <planeGeometry args={[1.85, 0.7]} />
+          <meshStandardMaterial color="#0a0a0a" side={THREE.DoubleSide} />
+        </mesh>
+        {/* Själva glaset */}
+        <mesh position={[0, 0, 0.003]}>
+          <planeGeometry args={[1.65, 0.5]} />
+          <meshPhysicalMaterial
+            color="#3a5f7a"
+            metalness={0.15}
+            roughness={0.05}
+            transmission={0.45}
+            thickness={0.3}
+            clearcoat={1}
+            clearcoatRoughness={0.02}
+            transparent
+            opacity={0.85}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+        {/* Mittstolpe (vertikal) */}
+        <mesh position={[0, 0, 0.006]}>
+          <planeGeometry args={[0.035, 0.5]} />
+          <meshStandardMaterial color="#0a0a0a" side={THREE.DoubleSide} />
+        </mesh>
+        {/* Vindrutetorkare (två små svarta streck) */}
+        <mesh position={[-0.4, -0.22, 0.008]} rotation={[0, 0, 0.5]}>
+          <planeGeometry args={[0.35, 0.02]} />
+          <meshStandardMaterial color="#0a0a0a" side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0.4, -0.22, 0.008]} rotation={[0, 0, 0.5]}>
+          <planeGeometry args={[0.35, 0.02]} />
+          <meshStandardMaterial color="#0a0a0a" side={THREE.DoubleSide} />
+        </mesh>
+      </group>
 
       {/* Solskydd (roof-part) */}
       {part('roof') && (

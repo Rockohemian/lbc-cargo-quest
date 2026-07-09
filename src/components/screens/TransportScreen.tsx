@@ -4,20 +4,6 @@ import { useGameStore } from '../../store/gameStore'
 import { TrailerView, type ItemFx } from '../game/TrailerView'
 import { calcRoundResult, simulateDamage } from '../../utils/scoring'
 
-const SWEDEN_PATH =
-  'M96 8 C104 14 102 26 108 34 C116 44 112 56 118 66 C126 78 120 92 126 104 ' +
-  'C134 118 128 134 132 150 C138 168 150 178 150 196 C150 214 138 226 140 244 ' +
-  'C142 262 132 274 128 290 C124 304 116 312 104 314 C92 316 86 306 82 294 ' +
-  'C76 276 84 262 78 246 C70 226 58 220 56 200 C54 180 64 170 60 152 ' +
-  'C56 132 44 124 46 104 C48 86 60 80 64 64 C68 48 62 34 72 22 C80 12 88 6 96 8 Z'
-
-const ROUTE = [
-  { x: 70, y: 232, city: 'Karlstad' },
-  { x: 86, y: 210 },
-  { x: 104, y: 196 },
-  { x: 120, y: 178, city: 'Mål' },
-]
-
 const WEATHERS = [
   { icon: '☀', label: 'Klart väder', risk: 0 },
   { icon: '☁', label: 'Molnigt', risk: 0.05 },
@@ -30,7 +16,14 @@ const TRAFFICS = [
   { icon: '●', label: 'Medeltät trafik', risk: 0.05, color: '#c98a00' },
   { icon: '●', label: 'Tät trafik', risk: 0.1, color: '#c93820' },
 ]
-const DEST_CITIES = ['Stockholm', 'Göteborg', 'Örebro', 'Falun', 'Gävle', 'Sundsvall']
+const DEST_CITIES: { name: string; km: number }[] = [
+  { name: 'Stockholm', km: 310 },
+  { name: 'Göteborg', km: 250 },
+  { name: 'Örebro', km: 110 },
+  { name: 'Falun', km: 190 },
+  { name: 'Gävle', km: 230 },
+  { name: 'Sundsvall', km: 470 },
+]
 
 interface SimEvent { at: number; type: 'curve-l' | 'curve-r' | 'brake' | 'bump' | 'accel'; label: string }
 const EVENTS: SimEvent[] = [
@@ -41,14 +34,19 @@ const EVENTS: SimEvent[] = [
   { at: 86, type: 'bump', label: 'Ojämn vägbana' },
 ]
 
-function lerpRoute(t: number) {
-  const seg = (ROUTE.length - 1) * t
-  const i = Math.min(ROUTE.length - 2, Math.floor(seg))
-  const f = seg - i
-  return {
-    x: ROUTE[i].x + (ROUTE[i + 1].x - ROUTE[i].x) * f,
-    y: ROUTE[i].y + (ROUTE[i + 1].y - ROUTE[i].y) * f,
-  }
+// ETA baserat på 70 km/h snitthastighet, avgång 13:30
+function formatEta(totalKm: number, progressPct: number): string {
+  const remainingKm = totalKm * (1 - progressPct / 100)
+  const remainingMin = Math.max(0, Math.round((remainingKm / 70) * 60))
+  const startMinutes = 13 * 60 + 30
+  const etaMinutes = startMinutes + Math.round((totalKm / 70) * 60)
+  const h = Math.floor(etaMinutes / 60) % 24
+  const m = etaMinutes % 60
+  if (progressPct >= 100) return 'Framme'
+  if (remainingMin < 60) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} · ${remainingMin} min kvar`
+  const rh = Math.floor(remainingMin / 60)
+  const rm = remainingMin % 60
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} · ${rh}h ${rm}m kvar`
 }
 
 export function TransportScreen() {
@@ -158,7 +156,6 @@ export function TransportScreen() {
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }, [])
 
   if (!loadPlan) return null
-  const truck = lerpRoute(progress / 100)
   const cargoState = liveDamage <= 8 ? 'Stabilt' : liveDamage <= 25 ? 'Viss förskjutning' : 'Lasten rör sig'
   const cargoStateColor = liveDamage <= 8 ? '#00843e' : liveDamage <= 25 ? '#c98a00' : '#c93820'
 
@@ -181,54 +178,56 @@ export function TransportScreen() {
         </div>
         <div className="text-right">
           <div className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45">Rutt</div>
-          <div className="text-[13px] font-black">Karlstad → {destCity}</div>
+          <div className="text-[13px] font-black">Karlstad → {destCity.name}</div>
         </div>
       </div>
 
       <div data-scroll className="flex-1 overflow-y-auto scrollbar-hide">
-        {/* ── Sverigekarta ── */}
+        {/* ── Rutt-vy (från → till med progress) ── */}
         <div className="px-5 pt-4">
-          <div className="border border-black/12 bg-white p-3">
-            <svg viewBox="0 0 200 330" className="w-full h-auto max-h-[240px]">
-              <defs>
-                <linearGradient id="landG" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stopColor="#e8ece8" />
-                  <stop offset="1" stopColor="#d0d6d0" />
-                </linearGradient>
-              </defs>
-              <rect x="0" y="0" width="200" height="330" fill="#f6f4ef" />
-              <path d={SWEDEN_PATH} fill="url(#landG)" stroke="#0a0a0a" strokeWidth="1" />
-              {/* Planerad rutt */}
-              <polyline
-                points={ROUTE.map(p => `${p.x},${p.y}`).join(' ')}
-                fill="none" stroke="#0a0a0a" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.35"
-              />
-              {/* Redan körd rutt */}
-              <polyline
-                points={(() => {
-                  const pts: string[] = []
-                  const steps = 24
-                  for (let i = 0; i <= steps; i++) {
-                    const t = (progress / 100) * (i / steps)
-                    const pos = lerpRoute(t)
-                    pts.push(`${pos.x},${pos.y}`)
-                  }
-                  return pts.join(' ')
-                })()}
-                fill="none" stroke="#00843e" strokeWidth="2.5"
-              />
-              {ROUTE.filter(p => p.city).map((p, i) => (
-                <g key={i}>
-                  <circle cx={p.x} cy={p.y} r="3" fill="#0a0a0a" />
-                  <text x={p.x + 6} y={p.y + 3} fontSize="8" fill="#0a0a0a" fontWeight="900" letterSpacing="0.3">{p.city?.toUpperCase()}</text>
-                </g>
-              ))}
+          <div className="border border-black/12 bg-white p-4">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45">Från</div>
+                <div className="text-[20px] font-black leading-none tracking-tight mt-1">Karlstad</div>
+                <div className="text-[10px] font-bold text-black/50 mt-1">Avgång 13:30</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45">Till</div>
+                <div className="text-[20px] font-black leading-none tracking-tight mt-1">{destCity.name}</div>
+                <div className="text-[10px] font-bold text-black/50 mt-1">
+                  ETA {formatEta(destCity.km, progress)}
+                </div>
+              </div>
+            </div>
+
+            {/* Progress-track */}
+            <div className="relative h-8">
+              {/* bakgrundslinje */}
+              <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-black/12" />
+              {/* körd sträcka */}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-[3px] bg-[#00843e] transition-[width] duration-100" style={{ width: `${progress}%` }} />
+              {/* Start-punkt */}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-[#0a0a0a]" />
+              {/* Mål-punkt */}
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 border-2 border-[#0a0a0a] bg-white" />
               {/* Lastbil */}
-              <g transform={`translate(${truck.x},${truck.y})`}>
-                <circle r="6" fill="#00843e" opacity="0.25" />
-                <circle r="3.5" fill="#00843e" stroke="#fff" strokeWidth="1.5" />
-              </g>
-            </svg>
+              <div
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 text-[22px] leading-none transition-[left] duration-100 select-none"
+                style={{ left: `${progress}%` }}
+              >
+                🚛
+              </div>
+            </div>
+
+            <div className="flex items-baseline justify-between mt-3">
+              <span className="text-[11px] font-bold text-black/60 tabular-nums">
+                {Math.round(destCity.km * progress / 100)} / {destCity.km} km
+              </span>
+              <span className="text-[13px] font-black tabular-nums text-[#00843e]">
+                {Math.round(progress)}%
+              </span>
+            </div>
           </div>
         </div>
 
@@ -302,7 +301,7 @@ export function TransportScreen() {
         {phase === 'done' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 mt-6 pb-6 text-center">
             <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e] mb-2">— Leverans klar</div>
-            <div className="text-[32px] font-black leading-tight tracking-tight">Framme i<br/>{destCity}<span className="text-[#00843e]">.</span></div>
+            <div className="text-[32px] font-black leading-tight tracking-tight">Framme i<br/>{destCity.name}<span className="text-[#00843e]">.</span></div>
             <div className="mt-3 text-[11px] font-bold uppercase tracking-widest text-black/45 animate-pulse">Sammanställer leveransrapport…</div>
           </motion.div>
         )}

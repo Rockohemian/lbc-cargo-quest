@@ -232,65 +232,38 @@ export function LoadingScreen() {
     setScreen('delivery')
   }
 
-  const handleDevAutoLoadAndGo = () => {
-    const all: CargoType[] = [...placed.map(p => p.type), ...queue.map(q => q.type)]
-    if (all.length === 0) {
-      for (let i = 0; i < 6; i++) all.push(CARGO_TYPES[Math.floor(Math.random() * CARGO_TYPES.length)])
-    }
-    const sorted = [...all].sort((a, b) => (b.load.cols * b.load.rows) - (a.load.cols * a.load.rows) || b.weight - a.weight)
-    const result: PlacedItem[] = []
-    for (const type of sorted) {
-      for (let c = 0; c <= TRAILER_COLS - type.load.cols; c++) {
-        const s = settleRow(result, c, type.load.cols, type.load.rows)
-        if (s !== null) {
-          result.push({ uid: newUid(), type, col: c, row: s, cols: type.load.cols, rows: type.load.rows, rotated: false })
-          break
-        }
-      }
-    }
-    const sec = { straps: 4, net: true, divider: false }
-    const met = computeMetrics(result, sec)
-    setLoadPlan({ items: result, securing: sec, metrics: met })
-    setScreen('delivery')
-  }
-
   return (
     <div
       className="fixed inset-0 bg-[#f6f4ef] text-[#0a0a0a] flex flex-col overflow-hidden"
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui' }}
     >
-      {/* ── Header ── */}
+      {/* ── Header (kompakt) ── */}
       <div
-        className="flex items-center justify-between px-5 pt-14 pb-3 border-b border-black/8"
+        className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-black/8 flex-shrink-0"
         style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top))' }}
       >
-        <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e]">
-            — Steg {phase === 'place' ? '01' : '02'} · {phase === 'place' ? 'Lastplanering' : 'Lastsäkring'}
+        <div className="flex items-baseline gap-3 min-w-0">
+          <div className="text-[9px] font-black uppercase tracking-[0.28em] text-[#00843e] flex-shrink-0">
+            — Steg {phase === 'place' ? '01' : '02'}
           </div>
-          <h1 className="text-[26px] font-black leading-none tracking-tight mt-1">
+          <h1 className="text-[15px] font-black leading-none tracking-tight truncate">
             {phase === 'place' ? 'Bygg din last' : 'Säkra lasten'}<span className="text-[#00843e]">.</span>
           </h1>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
-          <div className="flex gap-1">
-            <div className={`w-6 h-[3px] ${phase === 'place' ? 'bg-[#00843e]' : 'bg-[#00843e]/40'}`} />
-            <div className={`w-6 h-[3px] ${phase === 'secure' ? 'bg-[#00843e]' : 'bg-black/15'}`} />
-          </div>
-          <span className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45">
-            {phase === 'place' ? '1 / 2' : '2 / 2'}
-          </span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className={`w-6 h-[3px] ${phase === 'place' ? 'bg-[#00843e]' : 'bg-[#00843e]/40'}`} />
+          <div className={`w-6 h-[3px] ${phase === 'secure' ? 'bg-[#00843e]' : 'bg-black/15'}`} />
         </div>
       </div>
 
       {phase === 'place' && (
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto min-h-0" data-scroll>
-          {/* Trailer */}
-          <div className="px-5 pt-3">
+          {/* Trailer (kapad höjd så CTA + palette alltid syns) */}
+          <div className="px-4 pt-2">
             <div
               className="relative w-full border border-black/15 overflow-hidden bg-[#0e1310]"
-              style={{ aspectRatio: `${TRAILER_COLS} / ${TRAILER_ROWS}`, boxShadow: 'inset 0 2px 12px rgba(0,0,0,.4)' }}
+              style={{ aspectRatio: `${TRAILER_COLS} / ${TRAILER_ROWS}`, maxHeight: '26vh', boxShadow: 'inset 0 2px 12px rgba(0,0,0,.4)' }}
             >
               <div ref={gridRef} className="absolute inset-0">
                 {/* framstam / bakdörrar */}
@@ -366,25 +339,25 @@ export function LoadingScreen() {
                 )}
               </div>
             </div>
-            <div className="flex justify-between mt-1.5">
-              <span className="text-[9px] font-black uppercase tracking-[0.22em] text-black/40">⟵ Framstam</span>
-              <span className="text-[9px] font-black uppercase tracking-[0.22em] text-black/40">Bakdörrar ⟶</span>
+            <div className="flex justify-between mt-1">
+              <span className="text-[8px] font-black uppercase tracking-[0.22em] text-black/35">⟵ Framstam</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.22em] text-black/35">Bakdörrar ⟶</span>
             </div>
           </div>
 
-          {/* Metrics */}
-          <div className="grid grid-cols-3 border-y border-black/8 mt-3">
+          {/* Metrics (slimmade) */}
+          <div className="grid grid-cols-3 border-y border-black/8 mt-2">
             <MetricCell label="Fyllnad" value={metrics.fillPercent} suffix="%" accent="green" />
-            <MetricCell label="Viktbalans" value={metrics.weightBalance} suffix="%" accent="amber" divider />
+            <MetricCell label="Balans" value={metrics.weightBalance} suffix="%" accent="amber" divider />
             <MetricCell label="Tyngdpunkt" value={100 - metrics.cogHeight} suffix="%" accent="blue" />
           </div>
 
-          {/* Feedback + selected */}
-          <div className="px-5 mt-3 flex flex-col">
+          {/* Feedback + selected (slimmat) */}
+          <div className="px-4 mt-2 flex flex-col">
             {metrics.feedback.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
+              <div className="flex gap-1.5 mb-2 overflow-x-auto scrollbar-hide" style={{ touchAction: 'pan-x' }}>
                 {metrics.feedback.slice(0, 3).map((f, i) => (
-                  <span key={i} className="text-[10px] font-bold px-2 py-1 border border-black/12 text-black/70 bg-white">{f}</span>
+                  <span key={i} className="flex-shrink-0 text-[9px] font-bold px-2 py-0.5 border border-black/12 text-black/70 bg-white whitespace-nowrap">{f}</span>
                 ))}
               </div>
             )}
@@ -409,8 +382,8 @@ export function LoadingScreen() {
             </AnimatePresence>
 
             {/* Palette header */}
-            <div className="mt-3 mb-2 flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55">— Att lasta · {queue.length} kvar</span>
+            <div className="mt-2 mb-1.5 flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55">— Att lasta · {queue.length}</span>
               {queue.length > 0 && (
                 <button onClick={autoArrange} className="text-[10px] font-black uppercase tracking-[0.22em] text-[#00843e] active:text-[#0a0a0a]">
                   ⚡ Autolasta
@@ -465,19 +438,19 @@ export function LoadingScreen() {
           </div>
           </div>
 
-          {/* Continue */}
-          <div className="px-5 pb-6 pt-3 border-t border-black/8 bg-[#f6f4ef] space-y-2">
+          {/* Continue (slimmad) */}
+          <div className="px-4 pt-2 pb-3 border-t border-black/8 bg-[#f6f4ef] flex-shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
             {loadDanger && placed.length > 0 && (
-              <div className={`px-3 py-2 text-[11px] font-bold flex items-center gap-2 border ${
+              <div className={`px-2.5 py-1.5 text-[10px] font-bold flex items-center gap-2 border mb-2 ${
                 loadDanger === 'critical'
                   ? 'bg-red-50 border-red-300 text-red-800'
                   : 'bg-amber-50 border-amber-300 text-amber-900'
               }`}>
                 <span>{loadDanger === 'critical' ? '⚠' : '△'}</span>
-                <span>
+                <span className="truncate">
                   {metrics.weightBalance < 25 ? 'Kritisk viktbalans – lasten kan tippa.'
-                    : metrics.cogHeight > 75 ? 'Tyngdpunkten är för hög – tippningsrisk.'
-                    : 'Dålig lastfördelning – omfördela godset.'}
+                    : metrics.cogHeight > 75 ? 'Tyngdpunkten är för hög.'
+                    : 'Dålig lastfördelning.'}
                 </span>
               </div>
             )}
@@ -485,7 +458,7 @@ export function LoadingScreen() {
               onClick={() => { setSelectedUid(null); setPhase('secure') }}
               disabled={placed.length === 0}
               className={
-                'w-full h-14 flex items-center justify-between px-5 text-[12px] font-black uppercase tracking-[0.22em] transition-colors ' +
+                'w-full h-12 flex items-center justify-between px-5 text-[11px] font-black uppercase tracking-[0.22em] transition-colors ' +
                 (placed.length === 0
                   ? 'bg-black/10 text-black/40 cursor-not-allowed'
                   : 'bg-[#0a0a0a] text-white active:bg-[#00843e]')
@@ -495,12 +468,6 @@ export function LoadingScreen() {
                 {placed.length === 0 ? 'Lasta minst ett gods' : queue.length > 0 ? `Nästa: Lastsäkring · ${queue.length} kvar` : 'Nästa: Lastsäkring'}
               </span>
               <span className="text-base">→</span>
-            </button>
-            <button
-              onClick={handleDevAutoLoadAndGo}
-              className="w-full h-9 text-[10px] font-black uppercase tracking-[0.22em] text-black/55 border border-black/12 bg-white active:bg-black/[0.04] transition-colors"
-            >
-              ⚡ Auto-lasta &amp; hoppa till Transport (dev)
             </button>
           </div>
         </div>

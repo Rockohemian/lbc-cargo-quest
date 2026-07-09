@@ -92,8 +92,8 @@ function TruckScene({ equipped, autoRotate }: { equipped: EquippedParts; autoRot
         <meshStandardMaterial color="#111" metalness={0.7} roughness={0.4} />
       </mesh>
 
-      {/* Trailer-hjul (3 axlar) */}
-      {[-3.5, -2.8, -2.1].map(x => (
+      {/* Trailer-hjul (2 axlar, 1 hjul per sida) */}
+      {[-3.2, -2.2].map(x => (
         <group key={x} position={[x, 0.35, 0]}>
           <Wheel side="left" rim={wheelRim} />
           <Wheel side="right" rim={wheelRim} />
@@ -118,18 +118,35 @@ function TruckScene({ equipped, autoRotate }: { equipped: EquippedParts; autoRot
       {/* ═════ DRAGBIL (framänden, x>2) ═════ */}
       <TractorBody />
 
-      {/* Framruta */}
-      <mesh position={[3.72, 2.5, 0]} rotation={[0, 0, -0.25]}>
-        <boxGeometry args={[0.05, 0.75, 1.85]} />
+      {/* Framruta — lutad glaspanel på hyttens framsida */}
+      <mesh position={[4.0, 2.55, 0]} rotation={[0, 0, Math.PI / 3]}>
+        <planeGeometry args={[1.9, 0.72]} />
         <meshPhysicalMaterial
-          color="#0f2a3a"
-          metalness={0.1}
+          color="#6ba7c9"
+          metalness={0.2}
           roughness={0.05}
-          transmission={0.8}
+          transmission={0.5}
           thickness={0.4}
           clearcoat={1}
-          clearcoatRoughness={0.05}
+          clearcoatRoughness={0.02}
+          transparent
+          opacity={0.7}
+          side={THREE.DoubleSide}
         />
+      </mesh>
+      {/* Framrutans mittstolpe (mörk ram) */}
+      <mesh position={[4.0, 2.55, 0]} rotation={[0, 0, Math.PI / 3]}>
+        <boxGeometry args={[0.04, 0.72, 0.06]} />
+        <meshStandardMaterial color="#0a0a0a" />
+      </mesh>
+      {/* Framrutans överkant + underkant (svart ram) */}
+      <mesh position={[3.87, 2.83, 0]}>
+        <boxGeometry args={[0.1, 0.06, 1.95]} />
+        <meshStandardMaterial color="#0a0a0a" />
+      </mesh>
+      <mesh position={[4.13, 2.28, 0]}>
+        <boxGeometry args={[0.1, 0.06, 1.95]} />
+        <meshStandardMaterial color="#0a0a0a" />
       </mesh>
 
       {/* Solskydd (roof-part) */}
@@ -168,8 +185,8 @@ function TruckScene({ equipped, autoRotate }: { equipped: EquippedParts; autoRot
         <meshStandardMaterial color={part('front') ? frontColor : '#2a2f2c'} metalness={0.6} roughness={0.4} />
       </mesh>
 
-      {/* Dragbil-hjul (framaxel + drivaxel) */}
-      {[2.6, 3.7].map(x => (
+      {/* Dragbil-hjul (1 framaxel med 1 hjul på vardera sida) */}
+      {[3.7].map(x => (
         <group key={x} position={[x, 0.35, 0]}>
           <Wheel side="left" rim={wheelRim} />
           <Wheel side="right" rim={wheelRim} />

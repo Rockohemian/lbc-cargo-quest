@@ -234,12 +234,12 @@ export function LoadingScreen() {
 
   return (
     <div
-      className="fixed inset-0 bg-[#f6f4ef] text-[#0a0a0a] flex flex-col overflow-hidden"
+      className="fixed inset-0 bg-[#f6f4ef] text-[#0a0a0a] flex flex-col overflow-hidden loading-screen-shell"
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui' }}
     >
       {/* ── Header (kompakt) ── */}
       <div
-        className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-black/8 flex-shrink-0"
+        className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-black/8 flex-shrink-0 loading-header"
         style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top))' }}
       >
         <div className="flex items-baseline gap-3 min-w-0">
@@ -257,12 +257,12 @@ export function LoadingScreen() {
       </div>
 
       {phase === 'place' && (
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto min-h-0" data-scroll>
+        <div className="flex-1 flex flex-col min-h-0 loading-phase">
+          <div className="flex-1 overflow-y-auto min-h-0 loading-scroll-area" data-scroll>
           {/* Trailer (kapad höjd så CTA + palette alltid syns) */}
-          <div className="px-4 pt-2">
+          <div className="px-4 pt-2 loading-trailer-wrap">
             <div
-              className="relative w-full border border-black/15 overflow-hidden bg-[#0e1310]"
+              className="relative w-full border border-black/15 overflow-hidden bg-[#0e1310] loading-trailer-box"
               style={{ aspectRatio: `${TRAILER_COLS} / ${TRAILER_ROWS}`, maxHeight: '26vh', boxShadow: 'inset 0 2px 12px rgba(0,0,0,.4)' }}
             >
               <div ref={gridRef} className="absolute inset-0">
@@ -346,14 +346,14 @@ export function LoadingScreen() {
           </div>
 
           {/* Metrics (slimmade) */}
-          <div className="grid grid-cols-3 border-y border-black/8 mt-2">
+          <div className="grid grid-cols-3 border-y border-black/8 mt-2 loading-metrics">
             <MetricCell label="Fyllnad" value={metrics.fillPercent} suffix="%" accent="green" />
             <MetricCell label="Balans" value={metrics.weightBalance} suffix="%" accent="amber" divider />
             <MetricCell label="Tyngdpunkt" value={100 - metrics.cogHeight} suffix="%" accent="blue" />
           </div>
 
           {/* Feedback + selected (slimmat) */}
-          <div className="px-4 mt-2 flex flex-col">
+          <div className="px-4 mt-2 flex flex-col loading-feedback">
             {metrics.feedback.length > 0 && (
               <div className="flex gap-1.5 mb-2 overflow-x-auto scrollbar-hide" style={{ touchAction: 'pan-x' }}>
                 {metrics.feedback.slice(0, 3).map((f, i) => (
@@ -439,7 +439,7 @@ export function LoadingScreen() {
           </div>
 
           {/* Continue (slimmad) */}
-          <div className="px-4 pt-2 pb-3 border-t border-black/8 bg-[#f6f4ef] flex-shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
+          <div className="px-4 pt-2 pb-3 border-t border-black/8 bg-[#f6f4ef] flex-shrink-0 loading-footer" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
             {loadDanger && placed.length > 0 && (
               <div className={`px-2.5 py-1.5 text-[10px] font-bold flex items-center gap-2 border mb-2 ${
                 loadDanger === 'critical'
@@ -474,10 +474,10 @@ export function LoadingScreen() {
       )}
 
       {phase === 'secure' && (
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto scrollbar-hide" data-scroll>
-            <div className="px-5 pt-3">
-              <div ref={secureRef} className="relative touch-none border border-black/15 bg-[#0e1310] overflow-hidden"
+        <div className="flex-1 flex flex-col min-h-0 loading-phase">
+          <div className="flex-1 overflow-y-auto scrollbar-hide loading-scroll-area" data-scroll>
+            <div className="px-5 pt-3 loading-trailer-wrap">
+              <div ref={secureRef} className="relative touch-none border border-black/15 bg-[#0e1310] overflow-hidden loading-trailer-box"
                 onPointerDown={onSecurePointerDown}
                 onPointerUp={onSecurePointerUp}
               >
@@ -489,7 +489,7 @@ export function LoadingScreen() {
             </div>
 
             {/* Securing meter */}
-            <div className="px-5 mt-4">
+            <div className="px-5 mt-4 loading-secure-meter">
               <div className="flex items-baseline justify-between mb-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55">— Lastsäkring</span>
                 <span className="text-[18px] font-black tabular-nums" style={{ color: metrics.securing >= 80 ? '#00843e' : metrics.securing >= 50 ? '#d4a017' : '#c93820' }}>
@@ -506,7 +506,7 @@ export function LoadingScreen() {
             </div>
 
             {/* Tools */}
-            <div className="grid grid-cols-2 border-y border-black/8 mt-4">
+            <div className="grid grid-cols-2 border-y border-black/8 mt-4 loading-tools-grid">
               <SecureTool
                 label="Spännband"
                 value={`${strapYs.length}`}
@@ -552,7 +552,7 @@ export function LoadingScreen() {
             )}
           </div>
 
-          <div className="px-5 pb-6 pt-3 border-t border-black/8 bg-[#f6f4ef] space-y-2">
+          <div className="px-5 pb-6 pt-3 border-t border-black/8 bg-[#f6f4ef] space-y-2 loading-footer">
             {secureDanger && (
               <div className={`px-3 py-2 text-[11px] font-bold flex items-center gap-2 border ${
                 secureDanger === 'critical' ? 'bg-red-50 border-red-300 text-red-800' : 'bg-amber-50 border-amber-300 text-amber-900'

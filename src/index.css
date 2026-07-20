@@ -7,6 +7,13 @@
   --font-display: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
   --bg-base: #08100a;
   --bg-deep: #050a06;
+  --app-viewport-h: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-h: 100dvh;
+  }
 }
 
 @layer base {
@@ -76,6 +83,69 @@
   .safe-area-top    { padding-top:    env(safe-area-inset-top); }
   .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
   .font-display { font-family: var(--font-display); }
+  .app-shell-height { height: var(--app-viewport-h); }
+}
+
+@media (max-height: 760px) {
+  .loading-header {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .loading-trailer-wrap {
+    padding-top: 0.35rem;
+  }
+
+  .loading-trailer-box {
+    max-height: 22vh !important;
+  }
+
+  .loading-metrics {
+    margin-top: 0.35rem;
+  }
+
+  .loading-feedback {
+    margin-top: 0.4rem;
+  }
+
+  .loading-secure-meter,
+  .loading-tools-grid {
+    margin-top: 0.65rem;
+  }
+
+  .loading-footer {
+    padding-top: 0.5rem;
+  }
+}
+
+@media (max-height: 650px) {
+  .loading-header {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .loading-trailer-wrap {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .loading-trailer-box {
+    max-height: 19vh !important;
+  }
+
+  .loading-scroll-area {
+    padding-bottom: 0.25rem;
+  }
+
+  .loading-footer {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .loading-footer button {
+    min-height: 44px;
+  }
 }
 
 /* CSS animation for Leaflet player icon pulse */

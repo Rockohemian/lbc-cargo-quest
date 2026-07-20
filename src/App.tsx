@@ -27,8 +27,9 @@ export default function App() {
         fixed children). Så vi slipper röra 14 skärmars layout.
       */}
       <div
-        className="relative w-full max-w-md h-full bg-surface-900 overflow-hidden"
+        className="relative w-full max-w-md app-shell-height bg-surface-900 overflow-hidden"
         style={{
+          height: 'var(--app-viewport-h)',
           transform: 'translateZ(0)',
           boxShadow: '0 0 60px rgba(0, 0, 0, 0.6)',
         }}

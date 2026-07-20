@@ -1,6 +1,7 @@
 import { memo } from 'react'
-import type { PlacedItem } from '../../types'
+import type { CargoNetState, PlacedItem } from '../../types'
 import { TRAILER_COLS, TRAILER_ROWS } from '../../utils/loadEngine'
+import { CargoNetOverlay } from './CargoNetOverlay'
 
 export interface ItemFx {
   dx?: number      // px shift
@@ -23,13 +24,14 @@ interface Props {
   itemFx?: Record<string, ItemFx>
   /** vertical strap positions as fractions of height (0 = top, 1 = floor) */
   strapYs?: number[]
-  net?: boolean
+  net?: boolean | CargoNetState
   divider?: boolean
   ghost?: GhostPreview | null
   showGrid?: boolean
   selectedUid?: string | null
   className?: string
   onItemPointerDown?: (uid: string, e: React.PointerEvent) => void
+  onNetPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void
 }
 
 const pctX = (c: number) => (c / TRAILER_COLS) * 100
@@ -37,8 +39,10 @@ const pctY = (r: number) => (r / TRAILER_ROWS) * 100
 
 function TrailerViewBase({
   items, tilt = 0, itemFx = {}, strapYs = [], net = false, divider = false,
-  ghost = null, showGrid = false, selectedUid = null, className = '', onItemPointerDown,
+  ghost = null, showGrid = false, selectedUid = null, className = '', onItemPointerDown, onNetPointerDown,
 }: Props) {
+  const netState = resolveNetState(net)
+
   return (
     <div
       className={`relative w-full ${className}`}
@@ -158,14 +162,7 @@ function TrailerViewBase({
           </div>
         ))}
 
-        {/* Rear load net */}
-        {net && (
-          <div className="absolute top-0 bottom-0 right-1 w-10 pointer-events-none opacity-70"
-            style={{
-              backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.4) 0 1px, transparent 1px 7px), repeating-linear-gradient(-45deg, rgba(255,255,255,.4) 0 1px, transparent 1px 7px)',
-            }}
-          />
-        )}
+        <CargoNetOverlay net={netState} onPointerDown={onNetPointerDown} />
       </div>
 
       {/* Floor / chassis with wheels */}
@@ -182,6 +179,16 @@ function TrailerViewBase({
       <div className="absolute -bottom-0.5 right-1 text-[8px] font-bold uppercase tracking-wider text-white/30">Bak</div>
     </div>
   )
+}
+
+function resolveNetState(net: boolean | CargoNetState): CargoNetState {
+  if (typeof net === 'boolean') {
+    return { enabled: net, col: TRAILER_COLS - 3, span: 3 }
+  }
+
+  const span = Math.max(1, Math.min(TRAILER_COLS, Math.round(net.span)))
+  const col = Math.max(0, Math.min(TRAILER_COLS - span, Math.round(net.col)))
+  return { enabled: !!net.enabled, col, span }
 }
 
 export const TrailerView = memo(TrailerViewBase)

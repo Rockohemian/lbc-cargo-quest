@@ -6,8 +6,10 @@ import {
   TRAILER_COLS, TRAILER_ROWS, settleRow, computeMetrics,
 } from '../../utils/loadEngine'
 import { CARGO_TYPES } from '../../data/cargoTypes'
-import type { CargoType, PlacedItem, SecuringState } from '../../types'
+import type { CargoNetState, CargoType, PlacedItem, SecuringState } from '../../types'
 import { ScrollHint } from '../ui/ScrollHint'
+import { useCargoNetDrag } from '../../hooks/useCargoNetDrag'
+import { computeNetCoverage, normalizeCargoNet } from '../../utils/securingEngine'
 
 let uidSeq = 0
 const newUid = () => `p${++uidSeq}-${Math.random().toString(36).slice(2, 6)}`
@@ -40,7 +42,7 @@ export function LoadingScreen() {
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null)
 
   const [strapYs, setStrapYs] = useState<number[]>([])
-  const [net, setNet] = useState(false)
+  const [net, setNet] = useState<CargoNetState>({ enabled: false, col: TRAILER_COLS - 3, span: 3 })
   const [divider, setDivider] = useState(false)
 
   const gridRef = useRef<HTMLDivElement>(null)
@@ -67,11 +69,13 @@ export function LoadingScreen() {
     }
   }, [placed])
 
+  const netState = useMemo(() => normalizeCargoNet(net, TRAILER_COLS), [net])
   const securing: SecuringState = useMemo(
-    () => ({ straps: strapYs.length, net, divider }),
-    [strapYs.length, net, divider]
+    () => ({ straps: strapYs.length, net: netState, divider }),
+    [strapYs.length, netState, divider]
   )
   const metrics = useMemo(() => computeMetrics(placed, securing), [placed, securing])
+  const netCoverage = useMemo(() => computeNetCoverage(placed, netState), [placed, netState])
 
   const loadDanger = useMemo<'critical' | 'warning' | null>(() => {
     if (placed.length === 0) return null
@@ -214,9 +218,19 @@ export function LoadingScreen() {
   }
 
   const secureRef = useRef<HTMLDivElement>(null)
+  const { onPointerDown: onNetPointerDown } = useCargoNetDrag({
+    containerRef: secureRef,
+    trailerCols: TRAILER_COLS,
+    netSpan: netState.span,
+    enabled: netState.enabled,
+    currentCol: netState.col,
+    onChangeCol: (nextCol) => setNet(prev => ({ ...prev, col: nextCol })),
+  })
+
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const onSecurePointerDown = (e: React.PointerEvent) => { swipeStart.current = { x: e.clientX, y: e.clientY } }
   const onSecurePointerUp = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('[data-net-handle]')) return
     const start = swipeStart.current
     swipeStart.current = null
     if (!start || !secureRef.current) return
@@ -483,7 +497,7 @@ export function LoadingScreen() {
                 onPointerDown={onSecurePointerDown}
                 onPointerUp={onSecurePointerUp}
               >
-                <TrailerView items={placed} strapYs={strapYs} net={net} divider={divider} />
+                <TrailerView items={placed} strapYs={strapYs} net={netState} divider={divider} onNetPointerDown={onNetPointerDown} />
               </div>
               <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/45 mt-1.5 text-center">
                 Svep horisontellt över lasten för att lägga till spännband
@@ -526,11 +540,11 @@ export function LoadingScreen() {
               />
               <SecureTool
                 label="Lastnät"
-                value={net ? 'PÅ' : 'AV'}
-                helper="Skydd baktill"
+                value={netState.enabled ? `${Math.round(netCoverage * 100)}%` : 'AV'}
+                helper={netState.enabled ? 'Dra nätet sidledes' : 'Aktivera lastnät'}
                 enabled
-                active={net}
-                onClick={() => setNet(v => !v)}
+                active={netState.enabled}
+                onClick={() => setNet(prev => ({ ...prev, enabled: !prev.enabled }))}
               />
               <SecureTool
                 label="Mellanvägg"

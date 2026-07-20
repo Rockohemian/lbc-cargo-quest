@@ -70,8 +70,14 @@ export interface PlacedItem {
 
 export interface SecuringState {
   straps: number       // number of tension straps applied
-  net: boolean         // rear load net
+  net: boolean | CargoNetState // backwards-compatible: legacy bool or movable net state
   divider: boolean     // intermediate wall
+}
+
+export interface CargoNetState {
+  enabled: boolean
+  col: number          // left column in trailer grid
+  span: number         // number of covered columns
 }
 
 export interface LoadMetrics {

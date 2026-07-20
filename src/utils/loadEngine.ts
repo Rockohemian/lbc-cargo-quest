@@ -1,4 +1,5 @@
 import type { PlacedItem, SecuringState, LoadMetrics } from '../types'
+import { computeSecuringScore } from './securingEngine'
 
 // Trailer side-view grid. Left = framstam (front), right = bakdörrar (rear),
 // bottom row = golv (floor).
@@ -61,20 +62,7 @@ export function settleRow(
 
 // ─── Metrics ──────────────────────────────────────────────────────────────
 export function computeSecuring(items: PlacedItem[], s: SecuringState): number {
-  if (items.length === 0) return 0
-  const riskItems = items.filter(
-    it => it.rows >= 3 || it.type.load.fragile || it.type.load.weightClass === 'heavy' || !it.type.load.stackable
-  )
-  const required = Math.max(1, riskItems.length)
-  const strapCoverage = Math.min(1, s.straps / required)
-  let score = strapCoverage * 58
-  if (s.net) score += 12
-  if (s.divider) score += 14
-
-  // Tall unstable items with too few straps cap securing low.
-  const tallUnstable = items.filter(it => it.rows >= 3 && !it.type.load.stackable).length
-  if (tallUnstable > 0 && s.straps < tallUnstable) score = Math.min(score, 55)
-  return Math.max(0, Math.min(100, Math.round(score)))
+  return computeSecuringScore(items, s, TRAILER_COLS)
 }
 
 export function computeMetrics(items: PlacedItem[], securing: SecuringState): LoadMetrics {

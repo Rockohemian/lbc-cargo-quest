@@ -7,6 +7,7 @@ import {
 } from '../../utils/loadEngine'
 import { CARGO_TYPES } from '../../data/cargoTypes'
 import type { CargoType, PlacedItem, SecuringState } from '../../types'
+import { ScrollHint } from '../ui/ScrollHint'
 
 let uidSeq = 0
 const newUid = () => `p${++uidSeq}-${Math.random().toString(36).slice(2, 6)}`
@@ -43,6 +44,7 @@ export function LoadingScreen() {
   const [divider, setDivider] = useState(false)
 
   const gridRef = useRef<HTMLDivElement>(null)
+  const phaseScrollRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<DragState | null>(null)
   dragRef.current = drag
 
@@ -258,7 +260,7 @@ export function LoadingScreen() {
 
       {phase === 'place' && (
         <div className="flex-1 flex flex-col min-h-0 loading-phase">
-          <div className="flex-1 overflow-y-auto min-h-0 loading-scroll-area" data-scroll>
+          <div ref={phaseScrollRef} className="flex-1 overflow-y-auto min-h-0 loading-scroll-area" data-scroll>
           {/* Trailer (kapad höjd så CTA + palette alltid syns) */}
           <div className="px-4 pt-2 loading-trailer-wrap">
             <div
@@ -475,7 +477,7 @@ export function LoadingScreen() {
 
       {phase === 'secure' && (
         <div className="flex-1 flex flex-col min-h-0 loading-phase">
-          <div className="flex-1 overflow-y-auto scrollbar-hide loading-scroll-area" data-scroll>
+          <div ref={phaseScrollRef} className="flex-1 overflow-y-auto scrollbar-hide loading-scroll-area" data-scroll>
             <div className="px-5 pt-3 loading-trailer-wrap">
               <div ref={secureRef} className="relative touch-none border border-black/15 bg-[#0e1310] overflow-hidden loading-trailer-box"
                 onPointerDown={onSecurePointerDown}
@@ -596,6 +598,8 @@ export function LoadingScreen() {
           </div>
         </div>
       )}
+
+      <ScrollHint targetRef={phaseScrollRef} bottomOffset={20} />
     </div>
   )
 }

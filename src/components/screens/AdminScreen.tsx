@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 import { useGameStore } from '../../store/gameStore'
 import { GlassCard } from '../ui/GlassCard'
 import { Button } from '../ui/Button'
+import { ScrollHint } from '../ui/ScrollHint'
 
 interface AdminEntry {
   id: string
@@ -20,6 +21,7 @@ const GRADE_COLORS: Record<string, string> = {
 
 export function AdminScreen() {
   const setScreen = useGameStore(s => s.setScreen)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState<string | null>(null)
@@ -127,7 +129,7 @@ export function AdminScreen() {
 
   // ── Admin view ────────────────────────────────────────────────────────────
   return (
-    <div data-scroll className="fixed inset-0 bg-surface-900 overflow-y-auto">
+    <div ref={scrollRef} data-scroll className="fixed inset-0 bg-surface-900 overflow-y-auto">
       <div className="min-h-full px-4 pt-14 pb-10">
         <div className="max-w-lg mx-auto space-y-4">
 
@@ -217,6 +219,7 @@ export function AdminScreen() {
           </Button>
         </div>
       </div>
+      <ScrollHint targetRef={scrollRef} bottomOffset={20} tone="light" />
     </div>
   )
 }

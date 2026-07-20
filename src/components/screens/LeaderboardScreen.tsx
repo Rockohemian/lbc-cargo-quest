@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useGameStore } from '../../store/gameStore'
 import { GlassCard } from '../ui/GlassCard'
 import { Button } from '../ui/Button'
+import { ScrollHint } from '../ui/ScrollHint'
 
 interface ScoreEntry {
   id: string
@@ -20,6 +21,7 @@ const GRADE_COLORS: Record<string, string> = {
 
 export function LeaderboardScreen() {
   const setScreen = useGameStore(s => s.setScreen)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [entries, setEntries] = useState<ScoreEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -57,7 +59,7 @@ export function LeaderboardScreen() {
   useEffect(() => { fetchTop3() }, [])
 
   return (
-    <div data-scroll className="fixed inset-0 bg-surface-900 overflow-y-auto">
+    <div ref={scrollRef} data-scroll className="fixed inset-0 bg-surface-900 overflow-y-auto">
       <div className="min-h-full flex flex-col items-center px-4 pt-14 pb-10">
         <div className="w-full max-w-sm space-y-4">
 
@@ -132,6 +134,7 @@ export function LeaderboardScreen() {
           </Button>
         </div>
       </div>
+      <ScrollHint targetRef={scrollRef} bottomOffset={20} tone="light" />
     </div>
   )
 }

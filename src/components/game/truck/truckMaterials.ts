@@ -17,11 +17,11 @@ export interface TruckPalette {
 
 export const TRUCK_PALETTE: TruckPalette = {
   cabPaint: '#f2f3f2',
-  cabTrim: '#252a28',
+  cabTrim: '#2f3432',
   chassisMetal: '#1b1f1d',
-  glassTint: '#375366',
+  glassTint: '#213543',
   tire: '#121514',
-  rim: '#8a9299',
+  rim: '#a0a8ae',
   trailerPaint: '#f6f7f6',
   trailerFrame: '#1d221f',
   electricAccent: '#00843e',
@@ -31,23 +31,23 @@ export const TRUCK_PALETTE: TruckPalette = {
 }
 
 export function createTruckMaterials(palette: TruckPalette) {
-  const cabBody = new THREE.MeshStandardMaterial({ color: palette.cabPaint, metalness: 0.28, roughness: 0.35 })
-  const cabTrim = new THREE.MeshStandardMaterial({ color: palette.cabTrim, metalness: 0.38, roughness: 0.58 })
+  const cabBody = new THREE.MeshStandardMaterial({ color: palette.cabPaint, metalness: 0.33, roughness: 0.31 })
+  const cabTrim = new THREE.MeshStandardMaterial({ color: palette.cabTrim, metalness: 0.2, roughness: 0.66 })
   const chassis = new THREE.MeshStandardMaterial({ color: palette.chassisMetal, metalness: 0.62, roughness: 0.42 })
-  const trailerBody = new THREE.MeshStandardMaterial({ color: palette.trailerPaint, metalness: 0.18, roughness: 0.5 })
+  const trailerBody = new THREE.MeshStandardMaterial({ color: palette.trailerPaint, metalness: 0.22, roughness: 0.45 })
   const trailerFrame = new THREE.MeshStandardMaterial({ color: palette.trailerFrame, metalness: 0.6, roughness: 0.48 })
   const tire = new THREE.MeshStandardMaterial({ color: palette.tire, metalness: 0.02, roughness: 0.92 })
   const rim = new THREE.MeshStandardMaterial({ color: palette.rim, metalness: 0.85, roughness: 0.24 })
   const glass = new THREE.MeshPhysicalMaterial({
     color: palette.glassTint,
     metalness: 0.08,
-    roughness: 0.11,
-    transmission: 0.5,
+    roughness: 0.09,
+    transmission: 0.44,
     thickness: 0.26,
-    clearcoat: 0.9,
-    clearcoatRoughness: 0.16,
+    clearcoat: 1,
+    clearcoatRoughness: 0.12,
     transparent: true,
-    opacity: 0.88,
+    opacity: 0.84,
   })
   const electricPanel = new THREE.MeshStandardMaterial({
     color: '#1f2522',

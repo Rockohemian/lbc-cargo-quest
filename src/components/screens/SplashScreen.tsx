@@ -100,9 +100,9 @@ export function SplashScreen() {
       <div data-scroll className="flex-1 overflow-y-auto scrollbar-hide" style={{ overscrollBehavior: 'contain' }}>
 
         {/* Hero */}
-        <div className="px-5 pt-8 pb-6 border-b border-black/8">
+        <div className="px-5 pt-8 pb-6 border-b border-black/8 splash-hero">
           <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#00843e] mb-4">— LBC Cargo Quest</div>
-          <h1 className="font-black leading-[0.88] tracking-[-0.02em] text-[64px] sm:text-[76px] relative inline-block">
+          <h1 className="font-black leading-[0.88] tracking-[-0.02em] text-[64px] sm:text-[76px] relative inline-block splash-title">
             PÅ GOD<br />VÄG<span className="text-[#00843e] relative">
               .
               {/* Invisible larger tap target over the period */}
@@ -121,7 +121,7 @@ export function SplashScreen() {
               Dev {devTaps}/5
             </div>
           )}
-          <p className="mt-5 text-[13px] text-black/60 leading-relaxed max-w-[24rem]">
+          <p className="mt-5 text-[13px] text-black/60 leading-relaxed max-w-[24rem] splash-lead">
             Sveriges smartaste transportäventyr — hitta gods i verkligheten, lasta smart, leverera hållbart.
           </p>
         </div>
@@ -137,7 +137,7 @@ export function SplashScreen() {
         <div className="grid grid-cols-2 border-b border-black/8">
           <button
             onClick={() => setEventMode(!eventMode)}
-            className="text-left px-5 py-5 border-r border-black/8 active:bg-black/[0.03] transition-colors"
+            className="text-left px-5 py-5 border-r border-black/8 active:bg-black/[0.03] transition-colors splash-tile"
           >
             <div className="flex items-start justify-between mb-2">
               <span className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50">Mässläge</span>
@@ -163,7 +163,7 @@ export function SplashScreen() {
 
           <button
             onClick={() => setStep('name')}
-            className="text-left px-5 py-5 active:bg-black/[0.03] transition-colors flex flex-col justify-between"
+            className="text-left px-5 py-5 active:bg-black/[0.03] transition-colors flex flex-col justify-between splash-tile"
           >
             <div className="flex items-start justify-between mb-2">
               <span className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50">Profil</span>
@@ -177,7 +177,7 @@ export function SplashScreen() {
         </div>
 
         {/* Mission brief tile */}
-        <div className="px-5 py-6 border-b border-black/8">
+        <div className="px-5 py-6 border-b border-black/8 splash-mission">
           <div className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50 mb-3">Uppdrag</div>
           <ul className="space-y-2.5 text-[13px] text-black/75">
             <MissionRow n="01" t="Hitta gods i verkligheten med GPS" />
@@ -265,7 +265,7 @@ export function SplashScreen() {
 
 function StatCell({ label, value, accent, last }: { label: string; value: string; accent?: boolean; last?: boolean }) {
   return (
-    <div className={'px-5 py-4 ' + (last ? '' : 'border-r border-black/8')}>
+    <div className={'px-5 py-4 splash-stat ' + (last ? '' : 'border-r border-black/8')}>
       <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45 mb-1">{label}</div>
       <div className={'text-[22px] font-black leading-none tracking-tight truncate ' + (accent ? 'text-[#00843e]' : '')}>
         {value}

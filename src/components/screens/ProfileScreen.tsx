@@ -58,10 +58,10 @@ export function ProfileScreen() {
       <div className="max-w-md mx-auto">
 
         {/* Hero */}
-        <section className="px-5 pt-8 pb-6 border-b border-black/8">
+        <section className="px-5 pt-8 pb-6 border-b border-black/8 profile-hero">
           <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#00843e] mb-3">— Min profil</div>
-          <h1 className="font-black leading-[0.9] tracking-tight text-[48px]">{player.name || '—'}<span className="text-[#00843e]">.</span></h1>
-          <p className="mt-3 text-[13px] text-black/60">
+          <h1 className="font-black leading-[0.9] tracking-tight text-[48px] profile-title">{player.name || '—'}<span className="text-[#00843e]">.</span></h1>
+          <p className="mt-3 text-[13px] text-black/60 profile-lead">
             {player.rank} · Nivå {player.level} · {player.company}
           </p>
         </section>
@@ -73,8 +73,9 @@ export function ProfileScreen() {
           <StatCell label="Poäng" value={garage.stats.lifetimePoints.toLocaleString('sv-SE')} last />
         </section>
 
-        {/* Nästa rang */}
-        <section className="px-5 py-5 border-b border-black/8">
+        {/* Läget på rangstegen. XP-mätaren och stegen sa tidigare samma sak i
+            två separata sektioner — hopslagna här så knapparna får plats. */}
+        <section className="px-5 py-5 border-b border-black/8 profile-section">
           <div className="flex items-baseline justify-between mb-2">
             <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/50">Nästa rang</span>
             <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/45 tabular-nums">{xpPct}%</span>
@@ -82,21 +83,44 @@ export function ProfileScreen() {
           <div className="h-[3px] bg-black/8 mb-2">
             <div className="h-full bg-[#00843e] transition-all duration-700" style={{ width: xpPct + '%' }} />
           </div>
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-baseline justify-between mb-3">
             <span className="text-[13px] font-black">{nextRank}</span>
             <span className="text-[11px] text-black/50">{player.xpToNext - player.xp} XP kvar</span>
           </div>
+          <ol className="flex items-end gap-1">
+            {RANKS.map((rank, i) => {
+              const isCurrent = i === rankIdx
+              const isPast = i < rankIdx
+              return (
+                <li key={rank} className="flex-1 flex flex-col items-center gap-1" title={rank}>
+                  <span className={
+                    'text-[9px] font-black tabular-nums leading-none ' +
+                    (isCurrent ? 'text-[#00843e]' : isPast ? 'text-black/40' : 'text-black/20')
+                  }>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span
+                    className="w-full"
+                    style={{
+                      height: isCurrent ? 12 : 5,
+                      background: isCurrent ? '#00843e' : isPast ? 'rgba(0,132,62,.35)' : 'rgba(0,0,0,.1)',
+                    }}
+                  />
+                </li>
+              )
+            })}
+          </ol>
         </section>
 
         {/* Lastbil / Garage */}
-        <section className="px-5 py-5 border-b border-black/8">
+        <section className="px-5 py-5 border-b border-black/8 profile-section">
           <div className="flex items-baseline justify-between mb-3">
             <span className="text-[10px] font-black uppercase tracking-[0.28em] text-black/50">Din lastbil</span>
             {garage.unlocked
               ? <span className="text-[10px] font-bold uppercase tracking-widest text-[#00843e]">{garage.ownedPartIds.length} delar</span>
               : <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Låst</span>}
           </div>
-          <div className="bg-white border border-black/10 mb-3">
+          <div className="bg-white border border-black/10 mb-3 mx-auto profile-truck">
             <TruckPreview equipped={garage.equipped} className="w-full" />
           </div>
 
@@ -120,36 +144,6 @@ export function ProfileScreen() {
           )}
         </section>
 
-        {/* Rangstege */}
-        <section className="px-5 py-5 border-b border-black/8">
-          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-black/50 mb-4">— Rangstege</div>
-          <ol className="space-y-1">
-            {RANKS.map((rank, i) => {
-              const isCurrent = i === rankIdx
-              const isPast = i < rankIdx
-              return (
-                <li key={rank} className="flex items-center gap-3 py-1.5">
-                  <span className={
-                    'text-[10px] font-black tracking-widest w-6 tabular-nums ' +
-                    (isCurrent ? 'text-[#00843e]' : isPast ? 'text-black/50' : 'text-black/25')
-                  }>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className={
-                    'text-[13px] flex-1 ' +
-                    (isCurrent ? 'font-black text-[#0a0a0a]' : isPast ? 'font-medium text-black/55' : 'font-medium text-black/30')
-                  }>
-                    {rank}
-                  </span>
-                  {isCurrent && (
-                    <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#00843e]">← Du</span>
-                  )}
-                </li>
-              )
-            })}
-          </ol>
-        </section>
-
         {/* Åtgärder */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -164,23 +158,25 @@ export function ProfileScreen() {
             <span className="text-[12px] font-black uppercase tracking-[0.22em]">Tillbaka till kartan</span>
             <span className="text-lg">→</span>
           </button>
-          <button
-            onClick={handleNewRound}
-            className="w-full h-12 bg-white border-t border-black/8 flex items-center justify-between px-5 active:bg-black/[0.03]"
-          >
-            <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#0a0a0a]">Ny omgång</span>
-            <span className="text-black/40">↻</span>
-          </button>
-          <button
-            onClick={() => setScreen('leaderboard')}
-            className="w-full h-12 bg-white border-t border-black/8 flex items-center justify-between px-5 active:bg-black/[0.03]"
-          >
-            <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#0a0a0a]">Dagens topplista</span>
-            <span className="text-black/40">↗</span>
-          </button>
+          <div className="grid grid-cols-2 border-t border-black/8">
+            <button
+              onClick={handleNewRound}
+              className="h-12 bg-white flex items-center justify-between px-4 border-r border-black/8 active:bg-black/[0.03]"
+            >
+              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#0a0a0a]">Ny omgång</span>
+              <span className="text-black/40">↻</span>
+            </button>
+            <button
+              onClick={() => setScreen('leaderboard')}
+              className="h-12 bg-white flex items-center justify-between px-4 active:bg-black/[0.03]"
+            >
+              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#0a0a0a]">Topplista</span>
+              <span className="text-black/40">↗</span>
+            </button>
+          </div>
         </motion.div>
 
-        <div className="py-6 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-black/35">
+        <div className="py-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-black/35">
           LBC Frakt i Värmland AB · På god väg
         </div>
 
@@ -192,7 +188,7 @@ export function ProfileScreen() {
 
 function StatCell({ label, value, accent, last }: { label: string; value: string; accent?: boolean; last?: boolean }) {
   return (
-    <div className={'px-5 py-4 ' + (last ? '' : 'border-r border-black/8')}>
+    <div className={'px-5 py-4 profile-stat ' + (last ? '' : 'border-r border-black/8')}>
       <div className="text-[9px] font-black uppercase tracking-[0.28em] text-black/45 mb-1 truncate">{label}</div>
       <div className={'text-[20px] font-black leading-none tracking-tight tabular-nums ' + (accent ? 'text-[#00843e]' : 'text-[#0a0a0a]')}>
         {value}

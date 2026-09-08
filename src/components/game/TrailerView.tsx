@@ -1,7 +1,8 @@
-import { memo } from 'react'
+import { memo, type Ref } from 'react'
 import type { CargoNetState, PlacedItem } from '../../types'
 import { TRAILER_COLS, TRAILER_ROWS } from '../../utils/loadEngine'
 import { CargoNetOverlay } from './CargoNetOverlay'
+import { Lastflak } from './Lastflak'
 import { LBC_TEMA, type Ekipagetema } from './ekipage/Ekipagegrafik'
 
 export interface ItemFx {
@@ -32,6 +33,10 @@ interface Props {
   selectedUid?: string | null
   /** Lackering från garaget. Utelämnad ger LBC:s standardlivé. */
   tema?: Ekipagetema
+  /** Ref till själva lastytan. Behövs av den som mäter sveptillslag mot
+   *  rutnätet — ytterlådan innehåller även hytt och hjul och har därför inte
+   *  samma koordinater som lasten. */
+  bedRef?: Ref<HTMLDivElement>
   className?: string
   onItemPointerDown?: (uid: string, e: React.PointerEvent) => void
   onNetPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void
@@ -42,52 +47,21 @@ const pctY = (r: number) => (r / TRAILER_ROWS) * 100
 
 function TrailerViewBase({
   items, tilt = 0, itemFx = {}, strapYs = [], net = false, divider = false,
-  ghost = null, showGrid = false, selectedUid = null, tema = LBC_TEMA, className = '',
+  ghost = null, showGrid = false, selectedUid = null, tema = LBC_TEMA, bedRef, className = '',
   onItemPointerDown, onNetPointerDown,
 }: Props) {
   const netState = resolveNetState(net)
 
   return (
-    <div
-      className={`relative w-full ${className}`}
-      style={{ aspectRatio: `${TRAILER_COLS} / ${TRAILER_ROWS + 1}` }}
-    >
-      {/* Truck cab hint (front / framstam is on the left) */}
-      <div
-        className="absolute -top-px left-0 bottom-7 w-2 rounded-l-xl"
-        style={{ background: `linear-gradient(90deg, ${tema.gron}99, transparent)` }}
-      />
-
-      {/* Trailer body */}
-      <div
-        className="absolute inset-0 bottom-7 rounded-2xl overflow-hidden border border-white/12"
-        style={{
-          background: 'linear-gradient(170deg, rgba(30,40,34,.95), rgba(12,18,14,.98))',
-          transform: `rotate(${tilt}deg)`,
-          transformOrigin: '50% 100%',
-          transition: 'transform 0.25s ease-out',
-          boxShadow: 'inset 0 2px 18px rgba(0,0,0,.5)',
-        }}
-      >
-        {/* Framstam (front wall) */}
-        <div
-          className="absolute left-0 top-0 bottom-0 w-1.5"
-          style={{ background: `linear-gradient(180deg, ${tema.gron}, ${tema.gron}55)` }}
-        />
-        {/* Bakdörrar (rear doors) */}
-        <div className="absolute right-0 top-0 bottom-0 w-2 flex flex-col">
-          <div className="flex-1 border-l border-white/15 bg-white/5" />
-          <div className="flex-1 border-l border-t border-white/15 bg-white/[.03]" />
-        </div>
-
+    <Lastflak ref={bedRef} tema={tema} tilt={tilt} className={className}>
         {/* Optional grid */}
         {showGrid && (
           <div className="absolute inset-0 pointer-events-none opacity-[.16]">
             {Array.from({ length: TRAILER_COLS - 1 }).map((_, i) => (
-              <div key={`v${i}`} className="absolute top-0 bottom-0 w-px bg-white" style={{ left: `${pctX(i + 1)}%` }} />
+              <div key={`v${i}`} className="absolute top-0 bottom-0 w-px bg-black" style={{ left: `${pctX(i + 1)}%` }} />
             ))}
             {Array.from({ length: TRAILER_ROWS - 1 }).map((_, i) => (
-              <div key={`h${i}`} className="absolute left-0 right-0 h-px bg-white" style={{ top: `${pctY(i + 1)}%` }} />
+              <div key={`h${i}`} className="absolute left-0 right-0 h-px bg-black" style={{ top: `${pctY(i + 1)}%` }} />
             ))}
           </div>
         )}
@@ -173,33 +147,7 @@ function TrailerViewBase({
         ))}
 
         <CargoNetOverlay net={netState} onPointerDown={onNetPointerDown} />
-      </div>
-
-      {/* Floor / chassis with wheels */}
-      <div className="absolute left-0 right-0 bottom-3 h-2 rounded bg-gradient-to-b from-[#2a2f2a] to-[#151915] border-y border-black/40" />
-      <div className="absolute bottom-0 flex gap-1.5" style={{ left: '14%' }}>
-        {[0, 1].map(i => (
-          <div
-            key={i}
-            className="w-4 h-4 rounded-full bg-[#1a1d1a]"
-            style={{ border: `2px solid ${tema.falg}` }}
-          />
-        ))}
-      </div>
-      <div className="absolute bottom-0 flex gap-1.5" style={{ right: '12%' }}>
-        {[0, 1, 2].map(i => (
-          <div
-            key={i}
-            className="w-4 h-4 rounded-full bg-[#1a1d1a]"
-            style={{ border: `2px solid ${tema.falg}` }}
-          />
-        ))}
-      </div>
-
-      {/* Labels */}
-      <div className="absolute -bottom-0.5 left-1 text-[8px] font-bold uppercase tracking-wider text-white/30">Fram</div>
-      <div className="absolute -bottom-0.5 right-1 text-[8px] font-bold uppercase tracking-wider text-white/30">Bak</div>
-    </div>
+    </Lastflak>
   )
 }
 

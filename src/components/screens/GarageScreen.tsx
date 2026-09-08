@@ -20,6 +20,9 @@ export function GarageScreen() {
 
   const [tab, setTab] = useState<PartCategory>('front')
   const [openingCrate, setOpeningCrate] = useState<CrateTier | null>(null)
+  /* Prestationerna är för skryt, inte för att bygga bilen. Fällda som default
+     så lastbilen, flikarna och delarna ryms utan att man behöver scrolla. */
+  const [visaPrestationer, setVisaPrestationer] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const owned = useMemo(() => new Set(garage.ownedPartIds), [garage.ownedPartIds])
@@ -64,8 +67,8 @@ export function GarageScreen() {
       {/* ── Scrollbart innehåll ── */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-hide" data-scroll>
         {/* ── Truck stage (vit, LBC-ren) ── */}
-        <div className="px-4 pt-3">
-          <div className="border border-black/12 bg-white overflow-hidden">
+        <div className="px-4 pt-3 garage-stage">
+          <div className="border border-black/12 bg-white overflow-hidden mx-auto garage-truck">
             <TruckPreview equipped={garage.equipped} className="w-full" />
           </div>
         </div>
@@ -93,16 +96,16 @@ export function GarageScreen() {
           </div>
         )}
 
-        {/* ── Kategori-flikar ── */}
-        <div className="px-4 mt-4">
-          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e] mb-2">— Delar</div>
+        {/* ── Kategori-flikar. Flikraden säger redan att det handlar om delar,
+            så rubriken ovanför var bara en rad som knuffade ned innehållet. ── */}
+        <div className="px-4 mt-4 garage-block">
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1" style={{ touchAction: 'pan-x' }}>
             {CATEGORY_ORDER.map(c => (
               <button
                 key={c}
                 onClick={() => setTab(c)}
                 className={
-                  'shrink-0 h-9 px-3 text-[11px] font-black uppercase tracking-[0.18em] flex items-center gap-1.5 border transition-colors ' +
+                  'shrink-0 h-9 px-3 text-[11px] font-black uppercase tracking-[0.18em] flex items-center gap-1.5 border transition-colors garage-tab ' +
                   (tab === c
                     ? 'bg-[#0a0a0a] text-white border-[#0a0a0a]'
                     : 'bg-white text-black/60 border-black/12 active:bg-black/[0.04]')
@@ -115,7 +118,7 @@ export function GarageScreen() {
         </div>
 
         {/* ── Parts-grid ── */}
-        <div className="px-4 mt-3 grid grid-cols-2 gap-2">
+        <div className="px-4 mt-3 grid grid-cols-3 gap-2">
           {partsForTab.map(part => {
             const isOwned = owned.has(part.id)
             const isEquipped = garage.equipped[tab] === part.id
@@ -126,23 +129,28 @@ export function GarageScreen() {
                 disabled={!isOwned}
                 onClick={() => isEquipped ? unequipPart(tab) : equipPart(tab, part.id)}
                 className={
-                  'relative text-left p-3 border transition-colors active:bg-black/[0.04] ' +
+                  'relative text-left p-2 border transition-colors active:bg-black/[0.04] garage-part ' +
                   (isEquipped
                     ? 'bg-white border-[#0a0a0a]'
                     : 'bg-white border-black/12 ' + (isOwned ? '' : 'opacity-50'))
                 }
               >
                 <div className="flex items-start justify-between">
-                  <div className="text-2xl" style={{ filter: isOwned ? 'none' : 'grayscale(1)' }}>{part.icon}</div>
-                  {!isOwned && <span className="text-black/40 text-sm">🔒</span>}
+                  <div className="text-xl leading-none" style={{ filter: isOwned ? 'none' : 'grayscale(1)' }}>{part.icon}</div>
+                  {!isOwned && <span className="text-black/40 text-xs">🔒</span>}
                   {isEquipped && (
-                    <span className="text-[9px] font-black uppercase tracking-[0.18em] text-white bg-[#00843e] px-1.5 py-0.5">PÅ</span>
+                    <span className="text-[8px] font-black uppercase tracking-[0.14em] text-white bg-[#00843e] px-1 py-0.5">PÅ</span>
                   )}
                 </div>
-                <div className="text-[12px] font-black text-[#0a0a0a] mt-1.5 leading-tight">{part.name}</div>
+                <div className="text-[11px] font-black text-[#0a0a0a] mt-1 leading-tight">{part.name}</div>
                 <RarityTag rarity={part.rarity} color={color} />
                 {!isOwned && (
-                  <div className="text-[10px] text-black/45 mt-1 leading-tight">{part.unlockHint}</div>
+                  <div
+                    className="text-[9px] text-black/45 mt-0.5 leading-tight overflow-hidden garage-hint"
+                    style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+                  >
+                    {part.unlockHint}
+                  </div>
                 )}
               </button>
             )
@@ -150,9 +158,21 @@ export function GarageScreen() {
         </div>
 
         {/* ── Prestationer ── */}
-        <div className="px-4 mt-5">
-          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e] mb-2">— Prestationer</div>
-          <div className="space-y-2">
+        <div className="px-4 mt-5 garage-block">
+          <button
+            onClick={() => setVisaPrestationer(v => !v)}
+            className="w-full flex items-center justify-between border border-black/12 bg-white px-3 h-10 active:bg-black/[0.04] garage-tab"
+          >
+            <span className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e]">— Prestationer</span>
+            <span className="flex items-center gap-2">
+              <span className="text-[10px] font-black tabular-nums text-black/45">
+                {garage.achievementsUnlocked.length} / {ACHIEVEMENTS.length}
+              </span>
+              <span className="text-black/40 text-xs">{visaPrestationer ? '⌃' : '⌄'}</span>
+            </span>
+          </button>
+          {visaPrestationer && (
+          <div className="space-y-2 mt-2">
             {ACHIEVEMENTS.map(a => {
               const done = garage.achievementsUnlocked.includes(a.id)
               const cur = Math.min(achStat(a.metric), a.goal)
@@ -184,10 +204,12 @@ export function GarageScreen() {
               )
             })}
           </div>
+          )}
         </div>
 
-        {/* Bottenmarginal så innehåll inte fastnar under CTA */}
-        <div className="h-24" />
+        {/* Liten bottenmarginal. CTA:n ligger utanför scrollytan, så innehållet
+            fastnar inte under den — det behövs bara luft att sluta på. */}
+        <div className="h-2 garage-tail" />
       </div>
 
       {/* ── Sticky CTA ── */}

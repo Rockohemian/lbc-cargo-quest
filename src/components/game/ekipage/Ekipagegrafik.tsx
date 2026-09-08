@@ -46,6 +46,49 @@ const BIL = {
 const FLAK = { golv: 1.28, fram: 2.56, lastX0: 2.68 };
 const FLAK_BAK = FLAK.lastX0 + PALL_KOLUMNER * PALL_L + 0.1;
 
+/** Lastrymdens standardhöjd: två pallvarv. Garaget visar bilen så. */
+const RYMD_STANDARD = PALL_RADER * PALL_H;
+
+/** Bildrutans fasta kanter. Överkanten är rörlig och räknas ur lastrymden. */
+const VY = { x: 6, bredd: 512, botten: 226 };
+
+/** Bildrutan för en given lastrymd. Marginalen på 0,2 m är vald så att
+ *  standardrymden landar på exakt y=40 — garagebilden ska inte flytta sig av
+ *  att lastvyn behöver en högre rymd. */
+function vyruta(rymd: number) {
+  const y = Math.min(40, Y(FLAK.golv + rymd + 0.2));
+  return { x: VY.x, y, bredd: VY.bredd, hojd: VY.botten - y };
+}
+
+/**
+ * Lastytans läge i bilden, uttryckt som andelar 0–1 av bildrutan.
+ *
+ * Lastvyn lägger ett interaktivt rutnät ovanpå SVG:n. Måtten får inte skrivas
+ * av för hand på två ställen — då glider rutnätet ifrån flaket så fort någon
+ * rör geometrin här.
+ */
+export function flakruta(rymd: number = RYMD_STANDARD) {
+  const v = vyruta(rymd);
+  return {
+    aspekt: v.bredd / v.hojd,
+    vanster: (X(FLAK.lastX0) - v.x) / v.bredd,
+    bredd: L(FLAK_BAK - FLAK.lastX0) / v.bredd,
+    topp: (Y(FLAK.golv + rymd) - v.y) / v.hojd,
+    hojd: L(rymd) / v.hojd,
+  };
+}
+
+/**
+ * Den lastrymd som ger kvadratiska rutor för ett rutnät på `kolumner × rader`.
+ *
+ * För spelets 12×6 blir det 3,18 m last över ett golv på 1,28 m, alltså 4,46 m
+ * totalhöjd — precis under den svenska gränsen på 4,5 m. Bilen blir alltså inte
+ * orimlig av att rutorna blir kvadratiska.
+ */
+export function rymdForRutnat(kolumner: number, rader: number): number {
+  return ((FLAK_BAK - FLAK.lastX0) / kolumner) * rader;
+}
+
 const GRON = "#00843e";
 const GRA = "#a4a9ac";
 const TRA_LJUS = "#d8b485";
@@ -368,12 +411,30 @@ export interface EkipagegrafikProps {
   dampad?: boolean;
   /** Lackering. Utelämnad ger LBC:s standardlivré. */
   tema?: Partial<Ekipagetema>;
+  /** Lastrymdens höjd i meter över flakgolvet. Utelämnad ger pallhöjden.
+   *  Lastvyn skickar in en högre rymd för att få kvadratiska spelrutor. */
+  lastrymd?: number;
+  /** Rita de streckade lediga pallplatserna. Lastvyn ritar ett eget rutnät
+   *  och stänger av dem. */
+  visaLediga?: boolean;
+  /** Skärmläsaretikett. */
+  etikett?: string;
   className?: string;
 }
 
-export function Ekipagegrafik({ last, dampad = false, tema, className }: EkipagegrafikProps) {
+export function Ekipagegrafik({
+  last,
+  dampad = false,
+  tema,
+  lastrymd,
+  visaLediga = true,
+  etikett = "Lastbilens pallast",
+  className,
+}: EkipagegrafikProps) {
   const id = useId().replace(/:/g, "");
   const t: Ekipagetema = { ...LBC_TEMA, ...tema };
+  const rymd = lastrymd ?? RYMD_STANDARD;
+  const vy = vyruta(rymd);
   const gronL = blanda(t.gron, "#ffffff", 0.28);
   const gronM = blanda(t.gron, "#000000", 0.28);
   const falgL = blanda(t.falg, "#ffffff", 0.45);
@@ -382,10 +443,10 @@ export function Ekipagegrafik({ last, dampad = false, tema, className }: Ekipage
   const upptagen = new Set(pallar.map((p) => `${p.kolumn}:${p.rad}`));
   return (
     <svg
-      viewBox="6 40 512 186"
+      viewBox={`${vy.x} ${vy.y.toFixed(2)} ${vy.bredd} ${vy.hojd.toFixed(2)}`}
       className={className}
       role="img"
-      aria-label="Lastbilens pallast"
+      aria-label={etikett}
       fontFamily="Manrope, Segoe UI, system-ui, sans-serif"
     >
       <defs>
@@ -466,17 +527,39 @@ export function Ekipagegrafik({ last, dampad = false, tema, className }: Ekipage
         opacity={0.85}
       />
 
-      {/* Framstam mot hytten och bakläm. Låga nog att lasten syns hela vägen —
-          det är lasten som är poängen med vyn, inte lämmarna. */}
+      {/* Lastkarmen: framstam mot hytten, bakre stolpe och en taklinje mellan
+          dem. Utan karm läser en hög last som klossar staplade i luften ovanför
+          flaket; med karm läser den som last i ett skåp. Baklämmen är låg och
+          fällbar, så lasten syns hela vägen bakifrån. */}
       <rect
         x={X(FLAK.fram)}
-        y={Y(FLAK.golv + 0.62)}
+        y={Y(FLAK.golv + rymd)}
         width={L(0.1)}
-        height={L(0.62)}
+        height={L(rymd)}
         rx={1}
         fill={`url(#${id}Vit)`}
         stroke="#9aa0a8"
         strokeWidth={0.8}
+      />
+      <rect
+        x={X(FLAK_BAK - 0.08)}
+        y={Y(FLAK.golv + rymd)}
+        width={L(0.08)}
+        height={L(rymd)}
+        rx={1}
+        fill={`url(#${id}Vit)`}
+        stroke="#9aa0a8"
+        strokeWidth={0.8}
+      />
+      <rect
+        x={X(FLAK.fram)}
+        y={Y(FLAK.golv + rymd) - 3}
+        width={L(FLAK_BAK - FLAK.fram)}
+        height={4}
+        rx={1.5}
+        fill={`url(#${id}Vit)`}
+        stroke="#9aa0a8"
+        strokeWidth={0.7}
       />
       <rect
         x={X(FLAK_BAK - 0.1)}
@@ -639,7 +722,7 @@ export function Ekipagegrafik({ last, dampad = false, tema, className }: Ekipage
 
       {/* Lediga pallplatser ritas som en streckad kontur, inte som ingenting.
           Flaket har alltid tio platser; att de står tomma är en uppgift. */}
-      {Array.from({ length: PALL_KOLUMNER }, (_, k) =>
+      {visaLediga && Array.from({ length: PALL_KOLUMNER }, (_, k) =>
         Array.from({ length: PALL_RADER }, (_, r) =>
           upptagen.has(`${k}:${r}`) ? null : (
             <rect

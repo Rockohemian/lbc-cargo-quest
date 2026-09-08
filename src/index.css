@@ -97,10 +97,6 @@
     padding-top: 0.35rem;
   }
 
-  .loading-trailer-box {
-    max-height: 22vh !important;
-  }
-
   .loading-balance {
     margin-top: 0.2rem;
   }
@@ -133,20 +129,9 @@
     padding-right: 0.75rem;
   }
 
-  .loading-trailer-wrap {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-  }
-
-  .loading-trailer-box {
-    max-height: 19vh !important;
-  }
-
-  .loading-balance {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-  }
-
+  /* Bilen skalas ENBART med bredden. En höjdgräns hade låtit SVG:n brevlådefalla
+     inuti rutan medan rutnätet ovanpå fortsatt räknas i procent av rutan — och
+     då hamnar godset bredvid flaket i stället för på det. */
   .loading-balance > div:first-child {
     height: 18px;
   }
@@ -162,6 +147,136 @@
 
   .loading-footer button {
     min-height: 44px;
+  }
+}
+
+/* Startsidan. Rubriken är tilltagen för att göra intryck, men på en låg skärm
+   är intrycket att uppdragslistan är avklippt. Då krymper hellre rubriken. */
+@media (max-height: 760px) {
+  .splash-hero {
+    padding-top: 1.25rem;
+    padding-bottom: 1rem;
+  }
+
+  .splash-title {
+    font-size: 48px;
+  }
+
+  .splash-lead {
+    margin-top: 0.75rem;
+  }
+
+  .splash-stat {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+
+  .splash-tile {
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+
+  .splash-mission {
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+  }
+}
+
+@media (max-height: 650px) {
+  .splash-hero {
+    padding-top: 0.85rem;
+    padding-bottom: 0.7rem;
+  }
+
+  .splash-title {
+    font-size: 40px;
+  }
+
+  .splash-mission {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+}
+
+/* Profilen. Namnet är skylten, men den ska inte kosta knapparna längst ned. */
+@media (max-height: 760px) {
+  .profile-hero {
+    padding-top: 1rem;
+    padding-bottom: 0.85rem;
+  }
+
+  .profile-title {
+    font-size: 32px;
+  }
+
+  .profile-lead {
+    margin-top: 0.5rem;
+  }
+
+  .profile-stat {
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+  }
+
+  .profile-section {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+
+  /* Bilden är dekor här, inte spelplan — den får ge plats åt knapparna. */
+  .profile-truck {
+    width: 66%;
+  }
+}
+
+@media (max-height: 650px) {
+  .profile-hero {
+    padding-top: 0.7rem;
+    padding-bottom: 0.6rem;
+  }
+
+  .profile-title {
+    font-size: 26px;
+  }
+
+  .profile-section {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Garaget. Bottenmarginalen fanns för en CTA som numera ligger utanför
+   scrollytan, så den är ren luft. */
+@media (max-height: 760px) {
+  .garage-block {
+    margin-top: 0.55rem;
+  }
+
+  /* Bilen är resultatet man bygger, men den behöver inte fylla halva skärmen
+     för att man ska se vad man ändrar. */
+  .garage-truck {
+    width: 62%;
+  }
+
+  .garage-tab {
+    height: 2rem;
+  }
+
+  /* Tipset får en rad. Rariteten ovanför berättar ändå ungefär var delen finns. */
+  .garage-hint {
+    -webkit-line-clamp: 1;
+  }
+
+  .garage-part {
+    padding: 0.3rem;
+  }
+
+  .garage-tail {
+    height: 0;
+  }
+
+  .garage-stage {
+    padding-top: 0.2rem;
   }
 }
 

@@ -8,6 +8,10 @@ import {
 
 interface Props {
   profil: WeightProfile
+  /** Stapelns vågräta läge i procent, för att linjera den mot flaket i bilden.
+   *  Bara stapeln flyttas — texten under går i full bredd, annars radbryts den
+   *  på smala skärmar och då knuffas allt nedanför ur bild. */
+  inset?: { left: number; width: number }
   className?: string
 }
 
@@ -28,7 +32,7 @@ const MAX_STAPEL = 0.92
  * Målfönstret är medvetet ett BAND och inte en linje. Perfekt balans är varken
  * uppnåelig eller nödvändig; det som ska undvikas är att ligga utanför.
  */
-function LoadBalanceBarBase({ profil, className = '' }: Props) {
+function LoadBalanceBarBase({ profil, inset, className = '' }: Props) {
   const { totalWeight, comCol, perColumn, heaviestColumn, frontAxlePct, rearAxlePct } = profil
   const tom = totalWeight <= 0
 
@@ -41,8 +45,11 @@ function LoadBalanceBarBase({ profil, className = '' }: Props) {
   const fonsterBredd = pct(Math.min(TRAILER_COLS, 2 * COM_TOLERANCE))
 
   return (
-    <div className={`px-4 mt-1 loading-balance ${className}`}>
-      <div className="relative h-[26px] bg-[#0e1310] border border-black/15 overflow-hidden">
+    <div className={`mt-1 loading-balance ${className}`}>
+      <div
+        className="relative h-[26px] bg-[#0e1310] border border-black/15 overflow-hidden"
+        style={inset ? { marginLeft: `${inset.left}%`, width: `${inset.width}%` } : undefined}
+      >
         {/* Vikt per kolumn. */}
         {perColumn.map((kg, i) => {
           const h = heaviestColumn > 0 ? (kg / heaviestColumn) * MAX_STAPEL : 0

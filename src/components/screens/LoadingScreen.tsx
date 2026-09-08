@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { TrailerView, type GhostPreview } from '../game/TrailerView'
+import { Lastflak, FLAKRUTA } from '../game/Lastflak'
 import { LoadBalanceBar } from '../game/LoadBalanceBar'
 import { temaFor } from '../game/ekipage/garagetema'
 import {
   TRAILER_COLS, TRAILER_ROWS, settleRow, computeMetrics, computeWeightProfile,
+  IDEAL_COM_COL,
 } from '../../utils/loadEngine'
 import { CARGO_TYPES } from '../../data/cargoTypes'
 import type { CargoNetState, CargoType, PlacedItem, SecuringState } from '../../types'
@@ -206,24 +208,47 @@ export function LoadingScreen() {
     setSelectedUid(null)
   }
 
+  /**
+   * Autolasta.
+   *
+   * Den gamla varianten tog första lediga kolumn från framstammen och fyllde
+   * bakåt. Resultatet blev en bil med all vikt över framaxeln — alltså exakt
+   * det fel spelet är byggt för att lära ut. Nu provas varje giltig kolumn och
+   * den väljs som håller tyngdpunkten närmast mitten och lasten lågt.
+   */
   const autoArrange = () => {
     const all = [...placed.map(p => p.type), ...queue.map(q => q.type)]
-    const sorted = [...all].sort((a, b) => (b.load.cols * b.load.rows) - (a.load.cols * a.load.rows) || b.weight - a.weight)
+    const sorted = [...all].sort((a, b) =>
+      (b.load.cols * b.load.rows) - (a.load.cols * a.load.rows) || b.weight - a.weight)
+
     const result: PlacedItem[] = []
     for (const type of sorted) {
-      let best: { col: number; row: number } | null = null
-      for (let c = 0; c <= TRAILER_COLS - type.load.cols; c++) {
-        const s = settleRow(result, c, type.load.cols, type.load.rows)
-        if (s !== null) { best = { col: c, row: s }; break }
+      const { cols, rows } = type.load
+      let best: { col: number; row: number; kostnad: number } | null = null
+      for (let c = 0; c <= TRAILER_COLS - cols; c++) {
+        const row = settleRow(result, c, cols, rows)
+        if (row === null) continue
+        const prov: PlacedItem = { uid: 'prov', type, col: c, row, cols, rows, rotated: false }
+        const avvikelse = Math.abs(computeWeightProfile([...result, prov]).comCol - IDEAL_COM_COL)
+        // Balansen väger tyngst; höjden är en tiebreaker som håller nere
+        // tyngdpunkten när flera kolumner är likvärdiga.
+        const kostnad = avvikelse * 10 + (TRAILER_ROWS - row - rows)
+        if (!best || kostnad < best.kostnad) best = { col: c, row, kostnad }
       }
-      if (best) result.push({ uid: newUid(), type, col: best.col, row: best.row, cols: type.load.cols, rows: type.load.rows, rotated: false })
+      if (best) {
+        result.push({ uid: newUid(), type, col: best.col, row: best.row, cols, rows, rotated: false })
+      }
     }
     setPlaced(result); setQueue([]); setSelectedUid(null)
   }
 
   const secureRef = useRef<HTMLDivElement>(null)
+  // Sveptillslagen ska mätas mot LASTYTAN, inte mot bilbilden. Ytterlådan
+  // rymmer även hytt och hjul, så ett svep mitt i bilden ligger inte mitt i
+  // lasten — band och nät hade hamnat systematiskt fel.
+  const bedRef = useRef<HTMLDivElement>(null)
   const { onPointerDown: onNetPointerDown } = useCargoNetDrag({
-    containerRef: secureRef,
+    containerRef: bedRef,
     trailerCols: TRAILER_COLS,
     netSpan: netState.span,
     enabled: netState.enabled,
@@ -237,10 +262,10 @@ export function LoadingScreen() {
     if ((e.target as HTMLElement).closest('[data-net-handle]')) return
     const start = swipeStart.current
     swipeStart.current = null
-    if (!start || !secureRef.current) return
+    if (!start || !bedRef.current) return
     const dx = Math.abs(e.clientX - start.x)
     if (dx < 40) return
-    const rect = secureRef.current.getBoundingClientRect()
+    const rect = bedRef.current.getBoundingClientRect()
     const y = Math.max(0.05, Math.min(0.92, (start.y - rect.top) / rect.height))
     setStrapYs(prev => (prev.length >= 6 ? prev : [...prev, y]))
   }
@@ -279,26 +304,16 @@ export function LoadingScreen() {
       {phase === 'place' && (
         <div className="flex-1 flex flex-col min-h-0 loading-phase">
           <div ref={phaseScrollRef} className="flex-1 overflow-y-auto min-h-0 loading-scroll-area" data-scroll>
-          {/* Trailer (kapad höjd så CTA + palette alltid syns) */}
-          <div className="px-4 pt-2 loading-trailer-wrap">
-            <div
-              className="relative w-full border border-black/15 overflow-hidden bg-[#0e1310] loading-trailer-box"
-              style={{ aspectRatio: `${TRAILER_COLS} / ${TRAILER_ROWS}`, maxHeight: '26vh', boxShadow: 'inset 0 2px 12px rgba(0,0,0,.4)' }}
-            >
-              <div ref={gridRef} className="absolute inset-0">
-                {/* framstam / bakdörrar */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-1.5 z-20 pointer-events-none"
-                  style={{ background: tema.gron }}
-                />
-                <div className="absolute right-0 top-0 bottom-0 w-1.5 border-l border-white/25 bg-white/10 z-20 pointer-events-none" />
-                {/* rutnät */}
-                <div className="absolute inset-0 pointer-events-none opacity-[.12]">
+          {/* Lastbilen är spelplanen — samma ekipage som i garaget. */}
+          <div className="px-2 pt-2 loading-trailer-wrap">
+            <Lastflak ref={gridRef} tema={tema} className="loading-trailer-box">
+                {/* Rutnätet. Ljust flak kräver mörka linjer, tvärtom mot förr. */}
+                <div className="absolute inset-0 pointer-events-none opacity-[.16]">
                   {Array.from({ length: TRAILER_COLS - 1 }).map((_, i) => (
-                    <div key={`v${i}`} className="absolute top-0 bottom-0 w-px bg-white" style={{ left: `${pctX(i + 1)}%` }} />
+                    <div key={`v${i}`} className="absolute top-0 bottom-0 w-px bg-black" style={{ left: `${pctX(i + 1)}%` }} />
                   ))}
                   {Array.from({ length: TRAILER_ROWS - 1 }).map((_, i) => (
-                    <div key={`h${i}`} className="absolute left-0 right-0 h-px bg-white" style={{ top: `${pctY(i + 1)}%` }} />
+                    <div key={`h${i}`} className="absolute left-0 right-0 h-px bg-black" style={{ top: `${pctY(i + 1)}%` }} />
                   ))}
                 </div>
 
@@ -360,17 +375,21 @@ export function LoadingScreen() {
                     )}
                   </div>
                 )}
-              </div>
-            </div>
-            <div className="flex justify-between mt-1">
+            </Lastflak>
+            <div className="flex justify-between mt-1 px-2">
               <span className="text-[8px] font-black uppercase tracking-[0.22em] text-black/35">⟵ Framstam</span>
-              <span className="text-[8px] font-black uppercase tracking-[0.22em] text-black/35">Bakdörrar ⟶</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.22em] text-black/35">Bakläm ⟶</span>
             </div>
           </div>
 
-          {/* Viktfördelning — ligger i linje med rutnätet ovanför, så en tung
-              kolumn syns rakt under det gods som orsakar den. */}
-          <LoadBalanceBar profil={weightProfile} />
+          {/* Viktfördelning — stapeln linjerad exakt mot flaket ovanför, så en
+              tung kolumn syns rakt under det gods som orsakar den. */}
+          <div className="px-2">
+            <LoadBalanceBar
+              profil={weightProfile}
+              inset={{ left: FLAKRUTA.vanster * 100, width: FLAKRUTA.bredd * 100 }}
+            />
+          </div>
 
           {/* Metrics (slimmade) */}
           <div className="grid grid-cols-3 border-y border-black/8 mt-2 loading-metrics">
@@ -503,12 +522,12 @@ export function LoadingScreen() {
       {phase === 'secure' && (
         <div className="flex-1 flex flex-col min-h-0 loading-phase">
           <div ref={phaseScrollRef} className="flex-1 overflow-y-auto scrollbar-hide loading-scroll-area" data-scroll>
-            <div className="px-5 pt-3 loading-trailer-wrap">
-              <div ref={secureRef} className="relative touch-none border border-black/15 bg-[#0e1310] overflow-hidden loading-trailer-box"
+            <div className="px-2 pt-3 loading-trailer-wrap">
+              <div ref={secureRef} className="relative touch-none loading-trailer-box"
                 onPointerDown={onSecurePointerDown}
                 onPointerUp={onSecurePointerUp}
               >
-                <TrailerView items={placed} strapYs={strapYs} net={netState} divider={divider} tema={tema} onNetPointerDown={onNetPointerDown} />
+                <TrailerView items={placed} strapYs={strapYs} net={netState} divider={divider} tema={tema} bedRef={bedRef} onNetPointerDown={onNetPointerDown} />
               </div>
               <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/45 mt-1.5 text-center">
                 Svep horisontellt över lasten för att lägga till spännband

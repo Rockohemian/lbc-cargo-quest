@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { TrailerView, type ItemFx } from '../game/TrailerView'
+import { temaFor } from '../game/ekipage/garagetema'
 import { calcRoundResult, simulateDamage } from '../../utils/scoring'
 
 const WEATHERS = [
@@ -50,7 +51,8 @@ function formatEta(totalKm: number, progressPct: number): string {
 }
 
 export function TransportScreen() {
-  const { loadPlan, finishRound, setScreen } = useGameStore()
+  const { loadPlan, garage, finishRound, setScreen } = useGameStore()
+  const tema = useMemo(() => temaFor(garage.equipped), [garage.equipped])
 
   const [phase, setPhase] = useState<'briefing' | 'running' | 'done'>('briefing')
   const [progress, setProgress] = useState(0)
@@ -259,6 +261,7 @@ export function TransportScreen() {
               items={loadPlan.items} tilt={tilt} itemFx={itemFx}
               strapYs={strapsToYs(loadPlan.securing.straps)}
               net={loadPlan.securing.net} divider={loadPlan.securing.divider}
+              tema={tema}
             />
           </div>
         </div>

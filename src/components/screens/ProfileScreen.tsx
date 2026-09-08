@@ -97,7 +97,7 @@ export function ProfileScreen() {
               : <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Låst</span>}
           </div>
           <div className="bg-white border border-black/10 mb-3">
-            <TruckPreview equipped={garage.equipped} view="side" className="w-full" />
+            <TruckPreview equipped={garage.equipped} className="w-full" />
           </div>
 
           {garage.unlocked ? (

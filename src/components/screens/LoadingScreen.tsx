@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { TrailerView, type GhostPreview } from '../game/TrailerView'
+import { LoadBalanceBar } from '../game/LoadBalanceBar'
+import { temaFor } from '../game/ekipage/garagetema'
 import {
-  TRAILER_COLS, TRAILER_ROWS, settleRow, computeMetrics,
+  TRAILER_COLS, TRAILER_ROWS, settleRow, computeMetrics, computeWeightProfile,
 } from '../../utils/loadEngine'
 import { CARGO_TYPES } from '../../data/cargoTypes'
 import type { CargoNetState, CargoType, PlacedItem, SecuringState } from '../../types'
@@ -29,7 +31,7 @@ const pctX = (c: number) => (c / TRAILER_COLS) * 100
 const pctY = (r: number) => (r / TRAILER_ROWS) * 100
 
 export function LoadingScreen() {
-  const { inventory, setLoadPlan, setScreen } = useGameStore()
+  const { inventory, garage, setLoadPlan, setScreen } = useGameStore()
 
   const [phase, setPhase] = useState<'place' | 'secure'>('place')
   const [queue, setQueue] = useState<QueueItem[]>(() =>
@@ -75,6 +77,8 @@ export function LoadingScreen() {
     [strapYs.length, netState, divider]
   )
   const metrics = useMemo(() => computeMetrics(placed, securing), [placed, securing])
+  const weightProfile = useMemo(() => computeWeightProfile(placed), [placed])
+  const tema = useMemo(() => temaFor(garage.equipped), [garage.equipped])
   const netCoverage = useMemo(() => computeNetCoverage(placed, netState), [placed, netState])
 
   const loadDanger = useMemo<'critical' | 'warning' | null>(() => {
@@ -283,7 +287,10 @@ export function LoadingScreen() {
             >
               <div ref={gridRef} className="absolute inset-0">
                 {/* framstam / bakdörrar */}
-                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#00843e] z-20 pointer-events-none" />
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-1.5 z-20 pointer-events-none"
+                  style={{ background: tema.gron }}
+                />
                 <div className="absolute right-0 top-0 bottom-0 w-1.5 border-l border-white/25 bg-white/10 z-20 pointer-events-none" />
                 {/* rutnät */}
                 <div className="absolute inset-0 pointer-events-none opacity-[.12]">
@@ -360,6 +367,10 @@ export function LoadingScreen() {
               <span className="text-[8px] font-black uppercase tracking-[0.22em] text-black/35">Bakdörrar ⟶</span>
             </div>
           </div>
+
+          {/* Viktfördelning — ligger i linje med rutnätet ovanför, så en tung
+              kolumn syns rakt under det gods som orsakar den. */}
+          <LoadBalanceBar profil={weightProfile} />
 
           {/* Metrics (slimmade) */}
           <div className="grid grid-cols-3 border-y border-black/8 mt-2 loading-metrics">
@@ -497,7 +508,7 @@ export function LoadingScreen() {
                 onPointerDown={onSecurePointerDown}
                 onPointerUp={onSecurePointerUp}
               >
-                <TrailerView items={placed} strapYs={strapYs} net={netState} divider={divider} onNetPointerDown={onNetPointerDown} />
+                <TrailerView items={placed} strapYs={strapYs} net={netState} divider={divider} tema={tema} onNetPointerDown={onNetPointerDown} />
               </div>
               <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/45 mt-1.5 text-center">
                 Svep horisontellt över lasten för att lägga till spännband

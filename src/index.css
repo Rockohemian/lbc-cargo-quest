@@ -101,6 +101,14 @@
     max-height: 22vh !important;
   }
 
+  .loading-balance {
+    margin-top: 0.2rem;
+  }
+
+  .loading-balance > div:first-child {
+    height: 22px;
+  }
+
   .loading-metrics {
     margin-top: 0.35rem;
   }
@@ -132,6 +140,15 @@
 
   .loading-trailer-box {
     max-height: 19vh !important;
+  }
+
+  .loading-balance {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .loading-balance > div:first-child {
+    height: 18px;
   }
 
   .loading-scroll-area {

@@ -1,0 +1,5 @@
+# Screenshots och jämförelsebilder från utvecklingsarbetet — inte källkod.
+artifacts/
+
+# Vites lokala dev-cache. Byggs om vid behov och hör inte hemma i repot.
+node_modules/.vite/

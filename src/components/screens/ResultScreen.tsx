@@ -167,7 +167,7 @@ export function ResultScreen() {
             </button>
           </div>
           <div className="bg-white border border-black/12">
-            <TruckPreview equipped={garage.equipped} view="side" className="w-full" />
+            <TruckPreview equipped={garage.equipped} className="w-full" />
           </div>
         </section>
       )}

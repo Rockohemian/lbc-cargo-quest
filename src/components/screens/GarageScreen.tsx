@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { motion, AnimatePresence, type PanInfo } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import {
   TRUCK_PARTS, PART_BY_ID, PART_RARITY_COLORS, PART_RARITY_LABELS,
@@ -11,10 +11,6 @@ import { TruckPreview } from '../game/TruckPreview'
 import { CrateOpenModal } from '../garage/CrateOpenModal'
 import { ScrollHint } from '../ui/ScrollHint'
 
-type View = 'side' | 'front' | 'back'
-const VIEWS: View[] = ['front', 'side', 'back']
-const VIEW_LABELS: Record<View, string> = { side: 'Sida', front: 'Front', back: 'Bak' }
-
 export function GarageScreen() {
   const garage = useGameStore(s => s.garage)
   const player = useGameStore(s => s.player)
@@ -22,21 +18,11 @@ export function GarageScreen() {
   const unequipPart = useGameStore(s => s.unequipPart)
   const setScreen = useGameStore(s => s.setScreen)
 
-  const [view, setView] = useState<View>('side')
   const [tab, setTab] = useState<PartCategory>('front')
   const [openingCrate, setOpeningCrate] = useState<CrateTier | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const owned = useMemo(() => new Set(garage.ownedPartIds), [garage.ownedPartIds])
-
-  const rotate = (dir: -1 | 1) => {
-    const idx = VIEWS.indexOf(view)
-    setView(VIEWS[(idx + dir + VIEWS.length) % VIEWS.length])
-  }
-  const onDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.x < -60) rotate(1)
-    else if (info.offset.x > 60) rotate(-1)
-  }
 
   const crateCounts = useMemo(() => {
     const c: Partial<Record<CrateTier, number>> = {}
@@ -80,43 +66,7 @@ export function GarageScreen() {
         {/* ── Truck stage (vit, LBC-ren) ── */}
         <div className="px-4 pt-3">
           <div className="border border-black/12 bg-white overflow-hidden">
-            <motion.div
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.18}
-              onDragEnd={onDragEnd}
-              className="relative flex items-center justify-center cursor-grab active:cursor-grabbing"
-              style={{ aspectRatio: '16/9', touchAction: 'pan-y' }}
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={view}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="w-full h-full"
-                >
-                  <TruckPreview equipped={garage.equipped} view={view} className="w-full h-full" />
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-
-            {/* View-kontroller — LBC-tegel */}
-            <div className="grid grid-cols-3 border-t border-black/12">
-              {VIEWS.map(v => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={
-                    'h-10 text-[11px] font-black uppercase tracking-[0.22em] transition-colors border-r border-black/12 last:border-r-0 ' +
-                    (view === v ? 'bg-[#0a0a0a] text-white' : 'bg-white text-black/60 active:bg-black/[0.04]')
-                  }
-                >
-                  {VIEW_LABELS[v]}
-                </button>
-              ))}
-            </div>
+            <TruckPreview equipped={garage.equipped} className="w-full" />
           </div>
         </div>
 

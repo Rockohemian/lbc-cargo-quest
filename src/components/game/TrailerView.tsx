@@ -2,6 +2,7 @@ import { memo } from 'react'
 import type { CargoNetState, PlacedItem } from '../../types'
 import { TRAILER_COLS, TRAILER_ROWS } from '../../utils/loadEngine'
 import { CargoNetOverlay } from './CargoNetOverlay'
+import { LBC_TEMA, type Ekipagetema } from './ekipage/Ekipagegrafik'
 
 export interface ItemFx {
   dx?: number      // px shift
@@ -29,6 +30,8 @@ interface Props {
   ghost?: GhostPreview | null
   showGrid?: boolean
   selectedUid?: string | null
+  /** Lackering från garaget. Utelämnad ger LBC:s standardlivé. */
+  tema?: Ekipagetema
   className?: string
   onItemPointerDown?: (uid: string, e: React.PointerEvent) => void
   onNetPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void
@@ -39,7 +42,8 @@ const pctY = (r: number) => (r / TRAILER_ROWS) * 100
 
 function TrailerViewBase({
   items, tilt = 0, itemFx = {}, strapYs = [], net = false, divider = false,
-  ghost = null, showGrid = false, selectedUid = null, className = '', onItemPointerDown, onNetPointerDown,
+  ghost = null, showGrid = false, selectedUid = null, tema = LBC_TEMA, className = '',
+  onItemPointerDown, onNetPointerDown,
 }: Props) {
   const netState = resolveNetState(net)
 
@@ -49,7 +53,10 @@ function TrailerViewBase({
       style={{ aspectRatio: `${TRAILER_COLS} / ${TRAILER_ROWS + 1}` }}
     >
       {/* Truck cab hint (front / framstam is on the left) */}
-      <div className="absolute -top-px left-0 bottom-7 w-2 rounded-l-xl bg-gradient-to-r from-lbc-green/60 to-transparent" />
+      <div
+        className="absolute -top-px left-0 bottom-7 w-2 rounded-l-xl"
+        style={{ background: `linear-gradient(90deg, ${tema.gron}99, transparent)` }}
+      />
 
       {/* Trailer body */}
       <div
@@ -63,7 +70,10 @@ function TrailerViewBase({
         }}
       >
         {/* Framstam (front wall) */}
-        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-white/20 to-white/5" />
+        <div
+          className="absolute left-0 top-0 bottom-0 w-1.5"
+          style={{ background: `linear-gradient(180deg, ${tema.gron}, ${tema.gron}55)` }}
+        />
         {/* Bakdörrar (rear doors) */}
         <div className="absolute right-0 top-0 bottom-0 w-2 flex flex-col">
           <div className="flex-1 border-l border-white/15 bg-white/5" />
@@ -168,10 +178,22 @@ function TrailerViewBase({
       {/* Floor / chassis with wheels */}
       <div className="absolute left-0 right-0 bottom-3 h-2 rounded bg-gradient-to-b from-[#2a2f2a] to-[#151915] border-y border-black/40" />
       <div className="absolute bottom-0 flex gap-1.5" style={{ left: '14%' }}>
-        {[0, 1].map(i => <div key={i} className="w-4 h-4 rounded-full bg-[#1a1d1a] border-2 border-[#333]" />)}
+        {[0, 1].map(i => (
+          <div
+            key={i}
+            className="w-4 h-4 rounded-full bg-[#1a1d1a]"
+            style={{ border: `2px solid ${tema.falg}` }}
+          />
+        ))}
       </div>
       <div className="absolute bottom-0 flex gap-1.5" style={{ right: '12%' }}>
-        {[0, 1, 2].map(i => <div key={i} className="w-4 h-4 rounded-full bg-[#1a1d1a] border-2 border-[#333]" />)}
+        {[0, 1, 2].map(i => (
+          <div
+            key={i}
+            className="w-4 h-4 rounded-full bg-[#1a1d1a]"
+            style={{ border: `2px solid ${tema.falg}` }}
+          />
+        ))}
       </div>
 
       {/* Labels */}

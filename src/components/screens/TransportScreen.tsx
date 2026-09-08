@@ -63,6 +63,9 @@ export function TransportScreen() {
 
   const rafRef = useRef<number | null>(null)
   const firedRef = useRef<Set<number>>(new Set())
+  // Varje körhändelse lägger en återställning på klösan. Avbryter man transporten
+  // mitt i en kurva ligger de kvar och skriver state till en skärm som inte finns.
+  const fxTimersRef = useRef<number[]>([])
 
   const weather = useMemo(() => WEATHERS[Math.floor(Math.random() * WEATHERS.length)], [])
   const traffic = useMemo(() => TRAFFICS[Math.floor(Math.random() * TRAFFICS.length)], [])
@@ -109,7 +112,7 @@ export function TransportScreen() {
     })
     setItemFx(fx)
 
-    window.setTimeout(() => {
+    const settle = window.setTimeout(() => {
       setTilt(0); setEventLabel(null)
       if (severity <= 0.35) setItemFx({})
       else {
@@ -122,6 +125,7 @@ export function TransportScreen() {
         })
       }
     }, 650)
+    fxTimersRef.current.push(settle)
   }
 
   const startSim = () => {
@@ -155,7 +159,10 @@ export function TransportScreen() {
     return () => window.clearTimeout(t)
   }, [phase, loadPlan, targetDamage, finishRound, setScreen])
 
-  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }, [])
+  useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    fxTimersRef.current.forEach(t => window.clearTimeout(t))
+  }, [])
 
   if (!loadPlan) return null
   const cargoState = liveDamage <= 8 ? 'Stabilt' : liveDamage <= 25 ? 'Viss förskjutning' : 'Lasten rör sig'

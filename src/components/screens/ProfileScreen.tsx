@@ -11,9 +11,13 @@ export function ProfileScreen() {
   const { player, garage, resetRound, setCargoItems, playerPosition, setScreen, setEventMode } = useGameStore()
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const rankIdx = RANKS.indexOf(player.rank)
+  // En sparad profil kan bära en rang som inte längre finns i listan. Då ger
+  // indexOf -1, och utan golvet hamnar man på "steg 0" med tom nästa rang.
+  const rankIdx = Math.max(0, RANKS.indexOf(player.rank))
   const nextRank = RANKS[Math.min(rankIdx + 1, RANKS.length - 1)]
-  const xpPct = Math.min(100, Math.round((player.xp / player.xpToNext) * 100))
+  const xpPct = player.xpToNext > 0
+    ? Math.min(100, Math.round((player.xp / player.xpToNext) * 100))
+    : 100
   const garagePct = Math.min(100, Math.round((garage.stats.lifetimePoints / GARAGE_UNLOCK_POINTS) * 100))
 
   const handleNewRound = () => {

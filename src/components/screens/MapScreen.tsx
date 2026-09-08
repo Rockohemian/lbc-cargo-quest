@@ -139,18 +139,22 @@ export function MapScreen() {
   const [previewItem, setPreviewItem] = useState<(CargoItem & { dist: number }) | null>(null)
   const [showReadyToLoad, setShowReadyToLoad] = useState(false)
   const prevInventoryLen = useRef(0)
+  const readyTimerRef = useRef<number | null>(null)
   // Ready-to-load popup
   useEffect(() => {
     const minLoad = LOAD_MIN
     if (prevInventoryLen.current < minLoad && inventory.length >= minLoad) {
       setShowReadyToLoad(true)
-      window.setTimeout(() => setShowReadyToLoad(false), 4000)
+      if (readyTimerRef.current) window.clearTimeout(readyTimerRef.current)
+      readyTimerRef.current = window.setTimeout(() => setShowReadyToLoad(false), 4000)
     }
     prevInventoryLen.current = inventory.length
   }, [inventory.length])
 
+  // Timern lever längre än skärmen om man går vidare direkt till lastningen.
+  useEffect(() => () => { if (readyTimerRef.current) window.clearTimeout(readyTimerRef.current) }, [])
+
   const spawnedRef = useRef(false)
-  const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // Track last position for spawn engine — use ref to avoid effect dependency loop
   const lastSpawnPosRef = useRef<LatLng>(playerPosition)
   // Keep eventMode accessible inside interval callbacks
@@ -246,6 +250,11 @@ export function MapScreen() {
   playerPositionRef.current = playerPosition
   const cargoItemsRef = useRef(cargoItems)
   cargoItemsRef.current = cargoItems
+  // Rivalerna läses inne i ett interval. Utan ref hade intervallet antingen
+  // sett en fryst lista eller behövt startas om varannan sekund.
+  const rivalsRef = useRef(rivals)
+  rivalsRef.current = rivals
+  const noticeTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     // Spawn first rival after delay, then periodically
@@ -263,59 +272,63 @@ export function MapScreen() {
     const spawnTimer = window.setTimeout(spawnRival, RIVAL_SPAWN_DELAY_MS)
     const respawnTimer = window.setInterval(spawnRival, RIVAL_RESPAWN_MS)
 
-    // Movement + steal tick
+    // Movement + steal tick.
+    //
+    // Uträkningen ligger MEDVETET utanför setRivals. En state-uppdaterare måste
+    // vara ren — React kör den fler än en gång i strict mode, och gjorde vi
+    // stölden där inne försvann två kollin per stöld och notisen dubblerades.
     const moveTick = window.setInterval(() => {
-      const cargo = cargoItemsRef.current
-      const uncollected = cargo.filter(i => !i.collected)
+      const uncollected = cargoItemsRef.current.filter(i => !i.collected)
+      const prev = rivalsRef.current
+      if (prev.length === 0 || uncollected.length === 0) return
 
-      setRivals(prev => {
-        if (prev.length === 0 || uncollected.length === 0) return prev
-        let stolen: string | null = null
+      let stolen: string | null = null
 
-        const next = prev.map(r => {
-          // Pick target
-          let target = r.targetId ? uncollected.find(c => c.id === r.targetId) : null
-          if (!target) {
-            // Pick closest uncollected that no other rival is already targeting
-            const taken = new Set(prev.filter(x => x.id !== r.id).map(x => x.targetId))
-            target = uncollected
-              .filter(c => !taken.has(c.id))
-              .sort((a, b) => getDistanceMeters(r.position, a.position) - getDistanceMeters(r.position, b.position))[0]
-              ?? uncollected[0]
+      const next = prev.map(r => {
+        // Pick target
+        let target = r.targetId ? uncollected.find(c => c.id === r.targetId) : null
+        if (!target) {
+          // Pick closest uncollected that no other rival is already targeting
+          const taken = new Set(prev.filter(x => x.id !== r.id).map(x => x.targetId))
+          target = uncollected
+            .filter(c => !taken.has(c.id))
+            .sort((a, b) => getDistanceMeters(r.position, a.position) - getDistanceMeters(r.position, b.position))[0]
+            ?? uncollected[0]
+        }
+        if (!target) return r
+
+        const dist = getDistanceMeters(r.position, target.position)
+        const stepM = RIVAL_SPEED_MPS * (RIVAL_TICK_MS / 1000)
+
+        if (dist <= RIVAL_STEAL_RANGE) {
+          const newDwell = r.dwellSec + RIVAL_TICK_MS / 1000
+          if (newDwell >= RIVAL_STEAL_SECONDS) {
+            // Steal it!
+            stolen = target.id
+            return { ...r, targetId: null, dwellSec: 0, position: r.position }
           }
-          if (!target) return r
-
-          const dist = getDistanceMeters(r.position, target.position)
-          const stepM = RIVAL_SPEED_MPS * (RIVAL_TICK_MS / 1000)
-
-          if (dist <= RIVAL_STEAL_RANGE) {
-            const newDwell = r.dwellSec + RIVAL_TICK_MS / 1000
-            if (newDwell >= RIVAL_STEAL_SECONDS) {
-              // Steal it!
-              stolen = target.id
-              return { ...r, targetId: null, dwellSec: 0, position: r.position }
-            }
-            return { ...r, targetId: target.id, dwellSec: newDwell }
-          }
-
-          const newPos = stepToward(r.position, target.position, stepM)
-          return { ...r, position: newPos, targetId: target.id, dwellSec: 0 }
-        })
-
-        if (stolen) {
-          setCargoItems(cargoItemsRef.current.filter(c => c.id !== stolen))
-          setStolenNotice('💨 Konkurrenten stal ett kolli!')
-          window.setTimeout(() => setStolenNotice(null), 3500)
+          return { ...r, targetId: target.id, dwellSec: newDwell }
         }
 
-        return next
+        const newPos = stepToward(r.position, target.position, stepM)
+        return { ...r, position: newPos, targetId: target.id, dwellSec: 0 }
       })
+
+      setRivals(next)
+
+      if (stolen) {
+        setCargoItems(cargoItemsRef.current.filter(c => c.id !== stolen))
+        setStolenNotice('💨 Konkurrenten stal ett kolli!')
+        if (noticeTimerRef.current) window.clearTimeout(noticeTimerRef.current)
+        noticeTimerRef.current = window.setTimeout(() => setStolenNotice(null), 3500)
+      }
     }, RIVAL_TICK_MS)
 
     return () => {
       window.clearTimeout(spawnTimer)
       window.clearInterval(respawnTimer)
       window.clearInterval(moveTick)
+      if (noticeTimerRef.current) window.clearTimeout(noticeTimerRef.current)
     }
   }, [setCargoItems])
 

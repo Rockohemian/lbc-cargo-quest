@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { supabase } from '../../lib/supabase'
+import { supabase, harSupabase } from '../../lib/supabase'
 import { useGameStore } from '../../store/gameStore'
 import { GlassCard } from '../ui/GlassCard'
 import { Button } from '../ui/Button'
@@ -32,6 +32,7 @@ export function AdminScreen() {
 
   const handleLogin = async () => {
     setLoginError(null)
+    if (!harSupabase) { setLoginError('Databasen är inte konfigurerad (VITE_SUPABASE_URL saknas)'); return }
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     setLoading(false)

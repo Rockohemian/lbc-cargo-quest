@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { TruckPreview } from '../game/TruckPreview'
 import { generateCargoItems } from '../../utils/cargoGenerator'
-import { supabase } from '../../lib/supabase'
+import { supabase, harSupabase } from '../../lib/supabase'
 import { ScrollHint } from '../ui/ScrollHint'
 
 const GRADE_COLORS: Record<string, string> = { S: '#c98a00', A: '#00843e', B: '#0f5a99', C: '#c98a00', D: '#c93820' }
@@ -12,26 +12,30 @@ const GRADE_LABELS: Record<string, string> = { S: 'Legendarisk', A: 'Utmärkt', 
 export function ResultScreen() {
   const { lastResult, player, garage, resetRound, setCargoItems, playerPosition, setScreen } = useGameStore()
 
-  if (!lastResult) { setScreen('map'); return null }
-
-  const {
-    grade, totalPoints, totalXP, cargoCount,
-    fillPercent, weightBalance, securing, cargoDamage,
-    ecoScore, safetyScore, qualityScore, badges, summary,
-  } = lastResult
-  const gradeColor = GRADE_COLORS[grade]
-
   const [phoneInput, setPhoneInput] = useState('')
   const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // Utan resultat finns inget att visa. Omdirigeringen måste ske i en effekt —
+  // ett setScreen mitt i renderingen skriver till storen medan React ritar och
+  // ger en oändlig uppdateringsloop i stället för en karta.
+  useEffect(() => {
+    if (!lastResult) setScreen('map')
+  }, [lastResult, setScreen])
+
   const handleSubmitScore = async () => {
+    if (!lastResult) return
     const phone = phoneInput.trim()
     if (!phone) return
     setSubmitState('submitting'); setSubmitError(null)
+    if (!harSupabase) {
+      setSubmitState('error')
+      setSubmitError('Tävlingsdatabasen är inte inkopplad ännu. Anmäl dig i montern.')
+      return
+    }
     const { data: scoreData, error: scoreErr } = await supabase
-      .from('scores').insert({ player_name: player.name, score: totalPoints, grade })
+      .from('scores').insert({ player_name: player.name, score: lastResult.totalPoints, grade: lastResult.grade })
       .select('id').single()
     if (scoreErr || !scoreData) { setSubmitState('error'); setSubmitError('Kunde inte skicka in. Kontrollera anslutning.'); return }
     const { error: contactErr } = await supabase
@@ -45,6 +49,15 @@ export function ResultScreen() {
     setCargoItems(generateCargoItems(playerPosition))
     setScreen('map')
   }
+
+  if (!lastResult) return null
+
+  const {
+    grade, totalPoints, totalXP, cargoCount,
+    fillPercent, weightBalance, securing, cargoDamage,
+    ecoScore, safetyScore, qualityScore, badges, summary,
+  } = lastResult
+  const gradeColor = GRADE_COLORS[grade]
 
   return (
     <div

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { supabase } from '../../lib/supabase'
+import { supabase, harSupabase } from '../../lib/supabase'
 import { useGameStore } from '../../store/gameStore'
 import { GlassCard } from '../ui/GlassCard'
 import { Button } from '../ui/Button'
@@ -43,6 +43,7 @@ export function LeaderboardScreen() {
   const fetchTop3 = async () => {
     setLoading(true)
     setError(false)
+    if (!harSupabase) { setError(true); setLoading(false); return }
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const { data, error: err } = await supabase
@@ -57,6 +58,9 @@ export function LeaderboardScreen() {
   }
 
   useEffect(() => { fetchTop3() }, [])
+
+  // Admin-räknarens timer överlever annars skärmen.
+  useEffect(() => () => { if (adminTimer.current) clearTimeout(adminTimer.current) }, [])
 
   return (
     <div ref={scrollRef} data-scroll className="fixed inset-0 bg-surface-900 overflow-y-auto">

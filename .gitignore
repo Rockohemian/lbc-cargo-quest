@@ -1,5 +1,21 @@
+# Beroenden installeras om med "npm ci" från package-lock.json.
+# De ska aldrig ligga i repot — de gör varje clone och pull onödigt tung.
+node_modules/
+
+# Byggresultatet. GitHub Actions bygger om det vid varje push till main,
+# så en incheckad kopia kan bara hamna i otakt med källkoden.
+dist/
+
 # Screenshots och jämförelsebilder från utvecklingsarbetet — inte källkod.
 artifacts/
 
-# Vites lokala dev-cache. Byggs om vid behov och hör inte hemma i repot.
-node_modules/.vite/
+# Lokala miljövariabler. Får aldrig checkas in.
+.env
+.env.local
+.env.*.local
+
+# Loggar och OS-skräp.
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db

@@ -7,6 +7,7 @@ import { LoadBalanceBar } from '../game/LoadBalanceBar'
 import { temaFor } from '../game/ekipage/garagetema'
 import {
   TRAILER_COLS, TRAILER_ROWS, settleRow, computeMetrics, computeWeightProfile,
+  placementRuleCost,
   IDEAL_COM_COL,
 } from '../../utils/loadEngine'
 import { CARGO_TYPES } from '../../data/cargoTypes'
@@ -218,8 +219,16 @@ export function LoadingScreen() {
    */
   const autoArrange = () => {
     const all = [...placed.map(p => p.type), ...queue.map(q => q.type)]
+    // Tungt och ostapelbart först — det ska hamna på golvet. Ömtåligt sist så
+    // att det alltid hamnar överst och aldrig får något ovanpå sig.
+    const rank = (t: typeof all[number]) =>
+      (t.load.fragile ? 0 : 1) +
+      (t.load.stackable ? 0 : 2) +
+      ({ light: 0, medium: 2, heavy: 4 }[t.load.weightClass])
     const sorted = [...all].sort((a, b) =>
-      (b.load.cols * b.load.rows) - (a.load.cols * a.load.rows) || b.weight - a.weight)
+      rank(b) - rank(a) ||
+      (b.load.cols * b.load.rows) - (a.load.cols * a.load.rows) ||
+      b.weight - a.weight)
 
     const result: PlacedItem[] = []
     for (const type of sorted) {
@@ -230,9 +239,10 @@ export function LoadingScreen() {
         if (row === null) continue
         const prov: PlacedItem = { uid: 'prov', type, col: c, row, cols, rows, rotated: false }
         const avvikelse = Math.abs(computeWeightProfile([...result, prov]).comCol - IDEAL_COM_COL)
-        // Balansen väger tyngst; höjden är en tiebreaker som håller nere
-        // tyngdpunkten när flera kolumner är likvärdiga.
-        const kostnad = avvikelse * 10 + (TRAILER_ROWS - row - rows)
+        // Regelbrott är dyrast av allt — autolastningen ska aldrig föreslå en
+        // last som spelet sedan underkänner. Därefter väger balansen tyngst och
+        // höjden är tiebreaker som håller nere tyngdpunkten.
+        const kostnad = placementRuleCost(result, prov) * 100 + avvikelse * 10 + (TRAILER_ROWS - row - rows)
         if (!best || kostnad < best.kostnad) best = { col: c, row, kostnad }
       }
       if (best) {
@@ -392,10 +402,11 @@ export function LoadingScreen() {
           </div>
 
           {/* Metrics (slimmade) */}
-          <div className="grid grid-cols-3 border-y border-black/8 mt-2 loading-metrics">
+          <div className="grid grid-cols-4 border-y border-black/8 mt-2 loading-metrics">
             <MetricCell label="Fyllnad" value={metrics.fillPercent} suffix="%" accent="green" />
             <MetricCell label="Balans" value={metrics.weightBalance} suffix="%" accent="amber" divider />
-            <MetricCell label="Tyngdpunkt" value={100 - metrics.cogHeight} suffix="%" accent="blue" />
+            <MetricCell label="Tyngdpunkt" value={100 - metrics.cogHeight} suffix="%" accent="blue" divider />
+            <MetricCell label="Lastregler" value={metrics.stackScore} suffix="%" accent={metrics.stackScore >= 80 ? 'green' : 'red'} divider />
           </div>
 
           {/* Feedback + selected (slimmat) */}
@@ -650,9 +661,13 @@ export function LoadingScreen() {
 
 // ─── Helpers ────────────────────────────────────────────
 function MetricCell({ label, value, suffix, accent, divider }: {
-  label: string; value: number; suffix?: string; accent?: 'green' | 'amber' | 'blue'; divider?: boolean
+  label: string; value: number; suffix?: string; accent?: 'green' | 'amber' | 'blue' | 'red'; divider?: boolean
 }) {
-  const color = accent === 'green' ? '#00843e' : accent === 'amber' ? '#c98a00' : '#0f5a99'
+  const color =
+    accent === 'green' ? '#00843e' :
+    accent === 'amber' ? '#c98a00' :
+    accent === 'red'   ? '#c93820' :
+                         '#0f5a99'
   return (
     <div className={'px-3 py-3 ' + (divider ? 'border-x border-black/8' : '')}>
       <div className="text-[9px] font-black uppercase tracking-[0.22em] text-black/45 mb-1">{label}</div>

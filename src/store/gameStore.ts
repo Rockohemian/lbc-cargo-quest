@@ -10,10 +10,19 @@ import {
   crateForLevel, rollCratePart, TRUCK_PARTS,
 } from '../data/garageParts'
 
+/**
+ * Hur spelaren samlar in gods.
+ * - 'gps'  = gå fysiskt till godset (kräver platsbehörighet)
+ * - 'tap'  = samla direkt från kartan, ingen GPS behövs (inomhus/mässa)
+ * - null   = spelaren har inte valt än
+ */
+export type CollectMode = 'gps' | 'tap'
+
 interface GameState {
   screen: GameScreen
   testMode: boolean
   eventMode: boolean
+  collectMode: CollectMode | null
   player: Player
   playerPosition: LatLng
   cargoItems: CargoItem[]
@@ -26,6 +35,7 @@ interface GameState {
   setScreen: (s: GameScreen) => void
   setTestMode: (enabled: boolean) => void
   setEventMode: (enabled: boolean) => void
+  setCollectMode: (mode: CollectMode | null) => void
   setPlayerName: (n: string) => void
   setPlayerPosition: (p: LatLng) => void
   setCargoItems: (items: CargoItem[]) => void
@@ -73,6 +83,7 @@ export const useGameStore = create<GameState>()(
       screen: 'splash',
       testMode: false,
       eventMode: false,
+      collectMode: null,
       player: DEFAULT_PLAYER,
       playerPosition: DEFAULT_POS,
       cargoItems: [],
@@ -85,6 +96,7 @@ export const useGameStore = create<GameState>()(
       setScreen: (screen) => set({ screen }),
       setTestMode: (testMode) => set({ testMode }),
       setEventMode: (eventMode) => set({ eventMode }),
+      setCollectMode: (collectMode) => set({ collectMode }),
       setPlayerName: (name) => set((s) => ({ player: { ...s.player, name } })),
       setPlayerPosition: (playerPosition) => set({ playerPosition }),
       setCargoItems: (cargoItems) => set({ cargoItems }),
@@ -278,7 +290,12 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'lcq-v1',
-      partialize: (s) => ({ player: s.player, testMode: s.testMode, garage: s.garage }),
+      partialize: (s) => ({
+        player: s.player,
+        testMode: s.testMode,
+        collectMode: s.collectMode,
+        garage: s.garage,
+      }),
     }
   )
 )

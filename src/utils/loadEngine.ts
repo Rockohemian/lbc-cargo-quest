@@ -1,4 +1,6 @@
-import type { PlacedItem, SecuringState, LoadMetrics } from '../types'
+import type {
+  PlacedItem, SecuringState, LoadMetrics, LoadViolation, LoadRuleSeverity,
+} from '../types'
 import { computeSecuringScore } from './securingEngine'
 
 // Trailer side-view grid. Left = framstam (front), right = bakdörrar (rear),
@@ -149,7 +151,206 @@ export function computeWeightProfile(items: PlacedItem[]): WeightProfile {
   }
 }
 
+// ─── Lastregler ───────────────────────────────────────────────────────────
+//
+// Poängen ska belöna last som är byggd som den ska i verkligheten, inte bara
+// last som fyller ytan. Reglerna nedan är de som en chaufför faktiskt bedöms
+// efter: tungt underst, ömtåligt fritt från tryck, inget staplat på det som
+// inte tål det, tyngdpunkten låg, och lasten tight mot framstammen utan glapp.
+
+const WEIGHT_RANK: Record<string, number> = { light: 1, medium: 2, heavy: 3 }
+
+const SEVERITY_PENALTY: Record<LoadRuleSeverity, number> = {
+  critical: 20,
+  major: 9,
+  minor: 5,
+}
+
+/** Kollin som vilar direkt ovanpå `base`. */
+function itemsRestingOn(items: PlacedItem[], base: PlacedItem): PlacedItem[] {
+  return items.filter(
+    (it) =>
+      it.uid !== base.uid &&
+      it.row + it.rows === base.row &&
+      it.col < base.col + base.cols &&
+      it.col + it.cols > base.col
+  )
+}
+
+/** Kollin som bär upp `upper`. */
+function supportersOf(items: PlacedItem[], upper: PlacedItem): PlacedItem[] {
+  return items.filter(
+    (it) =>
+      it.uid !== upper.uid &&
+      it.row === upper.row + upper.rows &&
+      it.col < upper.col + upper.cols &&
+      it.col + it.cols > upper.col
+  )
+}
+
+export interface LoadRuleReport {
+  violations: LoadViolation[]
+  /** 0–100. 100 = lastat helt enligt regelverket. */
+  stackScore: number
+}
+
+/**
+ * Hur många regelbrott en tänkt placering skulle orsaka.
+ * Används av autolastningen för att aldrig föreslå en last som bryter mot
+ * reglerna spelet själv bedömer efter.
+ */
+export function placementRuleCost(items: PlacedItem[], candidate: PlacedItem): number {
+  let cost = 0
+  const onFloor = candidate.row + candidate.rows === TRAILER_ROWS
+  for (const s of supportersOf(items, candidate)) {
+    if (s.type.load.fragile) cost += 3
+    if (!s.type.load.stackable) cost += 3
+    if (WEIGHT_RANK[candidate.type.load.weightClass] > WEIGHT_RANK[s.type.load.weightClass]) cost += 3
+  }
+  if (candidate.type.load.weightClass === 'heavy' && !onFloor) cost += 1
+  return cost
+}
+
+/**
+ * Granska lasten mot lastningsreglerna.
+ *
+ * Returnerar både en lista att visa för spelaren och en sammanvägd siffra som
+ * poängräkningen använder. Varje överträdelse straffar efter allvarlighetsgrad
+ * och antal, så en enstaka miss sänker betyget medan en genomgående slarvig
+ * last rasar.
+ */
+export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
+  if (items.length === 0) return { violations: [], stackScore: 0 }
+
+  const found = new Map<string, LoadViolation>()
+  const add = (
+    id: string,
+    severity: LoadRuleSeverity,
+    title: string,
+    detail: string,
+    uid: string
+  ) => {
+    const existing = found.get(id)
+    if (existing) {
+      if (!existing.uids.includes(uid)) {
+        existing.uids.push(uid)
+        existing.count = existing.uids.length
+      }
+      return
+    }
+    found.set(id, { id, severity, title, detail, count: 1, uids: [uid] })
+  }
+
+  for (const base of items) {
+    const above = itemsRestingOn(items, base)
+    if (above.length === 0) continue
+
+    if (base.type.load.fragile) {
+      add(
+        'crushed-fragile',
+        'critical',
+        'Ömtåligt under last',
+        'Ömtåligt gods ska stå överst eller avskilt. Last ovanpå ger krosskador.',
+        base.uid
+      )
+    }
+    if (!base.type.load.stackable) {
+      add(
+        'stacked-on-unstackable',
+        'critical',
+        'Staplat på ostapelbart',
+        'Godset är märkt som ej stapelbart. Inget får lastas ovanpå det.',
+        base.uid
+      )
+    }
+    for (const upper of above) {
+      if (WEIGHT_RANK[upper.type.load.weightClass] > WEIGHT_RANK[base.type.load.weightClass]) {
+        add(
+          'heavy-on-light',
+          'critical',
+          'Tungt ovanpå lätt',
+          'Tungt gods lastas underst och lätt överst — annars trycks underlaget sönder och tyngdpunkten hamnar högt.',
+          upper.uid
+        )
+      }
+    }
+  }
+
+  for (const it of items) {
+    const onFloor = it.row + it.rows === TRAILER_ROWS
+    if (it.type.load.weightClass === 'heavy' && !onFloor) {
+      add(
+        'heavy-high',
+        'major',
+        'Tung last högt upp',
+        'Tunga kollin hör hemma på golvet. Högt placerad tyngd höjer tyngdpunkten och ökar tipprisken.',
+        it.uid
+      )
+    }
+    if (supportersOf(items, it).length === 0 && !onFloor) {
+      add(
+        'unsupported',
+        'critical',
+        'Gods utan underlag',
+        'Lasten måste vila mot golv eller underliggande gods i hela sin bredd.',
+        it.uid
+      )
+    }
+  }
+
+  // Bottenraden: tight mot framstammen och utan glapp.
+  const floorRow = TRAILER_ROWS - 1
+  const floorOccupied = new Array<PlacedItem | null>(TRAILER_COLS).fill(null)
+  for (const it of items) {
+    if (it.row + it.rows - 1 < floorRow) continue
+    if (it.row > floorRow) continue
+    for (let c = it.col; c < it.col + it.cols; c++) {
+      if (c >= 0 && c < TRAILER_COLS) floorOccupied[c] = it
+    }
+  }
+  const firstCol = floorOccupied.findIndex((v) => v !== null)
+  const lastCol = floorOccupied.length - 1 - [...floorOccupied].reverse().findIndex((v) => v !== null)
+
+  if (firstCol >= 2 && floorOccupied[firstCol]) {
+    add(
+      'headboard-gap',
+      'minor',
+      'Ej mot framstam',
+      'Lasta framifrån och tight mot framstammen. Ett stort tomrum där gör att lasten kan kasta sig framåt vid inbromsning.',
+      floorOccupied[firstCol]!.uid
+    )
+  }
+  if (firstCol >= 0) {
+    for (let c = firstCol; c < lastCol; c++) {
+      if (floorOccupied[c] === null) {
+        const nextItem = floorOccupied.slice(c).find((v) => v !== null)
+        if (nextItem) {
+          add(
+            'load-gap',
+            'major',
+            'Glapp i lasten',
+            'Tomrum mellan kollin låter lasten förskjutas i sidled och längsled. Lasta tight eller fyll ut.',
+            nextItem.uid
+          )
+        }
+      }
+    }
+  }
+
+  const violations = [...found.values()].sort(
+    (a, b) => SEVERITY_PENALTY[b.severity] * b.count - SEVERITY_PENALTY[a.severity] * a.count
+  )
+
+  const penalty = violations.reduce(
+    (sum, v) => sum + SEVERITY_PENALTY[v.severity] * Math.min(v.count, 3),
+    0
+  )
+
+  return { violations, stackScore: Math.max(0, Math.min(100, Math.round(100 - penalty))) }
+}
+
 export function computeMetrics(items: PlacedItem[], securing: SecuringState): LoadMetrics {
+
   const usedCells = items.reduce((sum, it) => sum + it.cols * it.rows, 0)
   const fillPercent = Math.min(100, Math.round((usedCells / TOTAL_CELLS) * 100))
 
@@ -184,11 +385,17 @@ export function computeMetrics(items: PlacedItem[], securing: SecuringState): Lo
   }
 
   const securingScore = computeSecuring(items, securing)
+  const { violations, stackScore } = evaluateLoadRules(items)
 
   const feedback: string[] = []
   if (items.length === 0) {
     feedback.push('Dra in gods i trailern för att börja lasta.')
   } else {
+    // Regelbrotten först — de är det som kostar mest poäng.
+    for (const v of violations.slice(0, 2)) {
+      feedback.push(v.count > 1 ? `⚠ ${v.title} ×${v.count}` : `⚠ ${v.title}`)
+    }
+
     if (fillPercent >= 80) feedback.push('Hög fyllnadsgrad – effektiv transport.')
     else if (fillPercent < 40) feedback.push('Tomma ytor minskar fyllnadsgraden.')
 
@@ -200,7 +407,12 @@ export function computeMetrics(items: PlacedItem[], securing: SecuringState): Lo
 
     if (securingScore < 45) feedback.push('Lasten behöver säkras bättre.')
     else if (securingScore >= 80) feedback.push('Lasten är väl säkrad.')
+
+    if (violations.length === 0) feedback.unshift('✓ Lastat enligt regelverket.')
   }
 
-  return { fillPercent, weightBalance, cogHeight, frontBias, securing: securingScore, feedback }
+  return {
+    fillPercent, weightBalance, cogHeight, frontBias,
+    securing: securingScore, stackScore, violations, feedback,
+  }
 }

@@ -5,9 +5,10 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import { useGameStore } from '../../store/gameStore'
-import { useGeolocation, type GpsStatus } from '../../hooks/useGeolocation'
+import { useGeolocation, formatAccuracy, GPS_PENDING, type GpsInfo } from '../../hooks/useGeolocation'
 import {
   generateCargoField,
+  generateNearbyTestCargoItems,
   generateEventCargoField,
   applySafetyFilter,
   ensureMinimumCargoNearby,
@@ -127,9 +128,17 @@ export function MapScreen() {
   const {
     playerPosition, setPlayerPosition, cargoItems, setCargoItems,
     selectCargo, setScreen, inventory, eventMode,
+    collectMode, setCollectMode,
   } = useGameStore()
 
-  const [gpsStatus, setGpsStatus] = useState<GpsStatus>('pending')
+  const isTapMode = collectMode === 'tap'
+  const [showModePicker, setShowModePicker] = useState(false)
+  const [gpsHintDismissed, setGpsHintDismissed] = useState(false)
+
+  const [gps, setGps] = useState<GpsInfo>(GPS_PENDING)
+  const gpsStatus = gps.status
+  const gpsBlocked = gpsStatus === 'denied' || gpsStatus === 'unavailable' || gpsStatus === 'insecure'
+  const gpsImprecise = gpsBlocked || gpsStatus === 'coarse'
   const [followPlayer, setFollowPlayer] = useState(true)
   const [mapTheme, setMapTheme] = useState<'night' | 'day'>(
     () => (localStorage.getItem('lcq-map-theme') as 'night' | 'day') || 'day'
@@ -160,34 +169,43 @@ export function MapScreen() {
   // Keep eventMode accessible inside interval callbacks
   const eventModeRef = useRef(eventMode)
   eventModeRef.current = eventMode
+  const tapModeRef = useRef(isTapMode)
+  tapModeRef.current = isTapMode
 
-  // GPS with status
+  // GPS with status — avstängd helt i tap-läget (ingen behörighetsfråga ställs)
   useGeolocation(
     useCallback((pos: LatLng) => {
       setPlayerPosition(pos)
     }, [setPlayerPosition]),
-    { enabled: true, onStatus: setGpsStatus }
+    { enabled: collectMode === 'gps', onStatus: setGps }
   )
 
-  // Initial cargo field — runs once
+  // Initial cargo field — körs när spelaren valt insamlingsläge
   useEffect(() => {
+    if (!collectMode) return
     if (spawnedRef.current) return
     spawnedRef.current = true
     const isEvent = eventMode
     const spawnCenter = isEvent ? CURRENT_EVENT.center : playerPosition
     const maxR = isEvent ? CURRENT_EVENT.spawnRadius : 300
-    const initial = isEvent ? generateEventCargoField(CURRENT_EVENT) : generateCargoField(playerPosition)
+    const initial = isEvent
+      ? generateEventCargoField(CURRENT_EVENT)
+      : collectMode === 'tap'
+        ? generateNearbyTestCargoItems(playerPosition, 12)
+        : generateCargoField(playerPosition)
     setCargoItems(initial)
     lastSpawnPosRef.current = spawnCenter
+    if (collectMode === 'tap' && !isEvent) return // tätt fält behöver ingen vägfiltrering
     // Async safety pass — runs in background, removes any rail/motorway spawns
     applySafetyFilter(initial, spawnCenter, maxR).then(safe => {
       if (safe.length !== initial.length) setCargoItems(safe)
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [collectMode])
 
-  // When GPS gets first real fix: regenerate cargo around actual position.
-  // Always regen (no distance threshold) as long as player hasn't collected anything yet.
+  // När GPS ger sin första SKARPA fix: lägg om godsfältet runt den riktiga
+  // positionen. En grov nätverksposition duger inte — den ligger typiskt mitt i
+  // stan, och då skulle vi spränga ut godset på helt fel plats.
   const gpsFirstFixRef = useRef(false)
   useEffect(() => {
     if (gpsStatus !== 'ok' || gpsFirstFixRef.current) return
@@ -217,7 +235,7 @@ export function MapScreen() {
           pos,
           eventModeRef.current
             ? { eventBoundCenter: CURRENT_EVENT.center, eventBoundRadius: CURRENT_EVENT.spawnRadius }
-            : {}
+            : { testMode: tapModeRef.current }
         )
         // Only update if something actually changed (reference will differ)
         if (updated !== state.cargoItems) {
@@ -233,15 +251,32 @@ export function MapScreen() {
     .map(i => ({ ...i, dist: getDistanceMeters(playerPosition, i.position) }))
     .sort((a, b) => a.dist - b.dist)
 
-  const inRange = nearest.filter(i => i.dist <= COLLECT_RADIUS)
+  const inRange = isTapMode ? nearest : nearest.filter(i => i.dist <= COLLECT_RADIUS)
 
   const handleCollect = (item: CargoItem) => {
     selectCargo(item)
     setScreen('collect')
   }
 
+  const chooseMode = (mode: 'gps' | 'tap') => {
+    const changed = mode !== collectMode
+    setCollectMode(mode)
+    setShowModePicker(false)
+    setGpsHintDismissed(false)
+    if (changed) {
+      // Nytt läge → nytt fält så avstånden stämmer med spelsättet
+      spawnedRef.current = false
+      setGps(GPS_PENDING)
+      gpsFirstFixRef.current = false
+    }
+  }
+
   const handleRespawn = () => {
-    setCargoItems(generateCargoField(playerPosition))
+    setCargoItems(
+      isTapMode
+        ? generateNearbyTestCargoItems(playerPosition, 12)
+        : generateCargoField(playerPosition)
+    )
     spawnedRef.current = true
   }
 
@@ -410,6 +445,15 @@ export function MapScreen() {
 
           <Marker position={[playerPosition.lat, playerPosition.lng]} icon={playerIcon()} />
 
+          {/* Osäkerhetsradie — gör det synligt när positionen bara är ungefärlig */}
+          {!isTapMode && gpsStatus === 'coarse' && gps.accuracy != null && (
+            <Circle
+              center={[playerPosition.lat, playerPosition.lng]}
+              radius={gps.accuracy}
+              pathOptions={{ color: '#c98a00', fillColor: '#c98a00', fillOpacity: 0.08, weight: 1.5, dashArray: '6 6' }}
+            />
+          )}
+
           {rivalIcons.map(({ r, icon }) => (
             <Marker key={r.id} position={[r.position.lat, r.position.lng]} icon={icon} />
           ))}
@@ -463,7 +507,9 @@ export function MapScreen() {
                     <div className="text-sm font-black leading-tight">{item.type.name}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-white/50">{Math.round(item.dist)}m</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                      {isTapMode ? 'Utan GPS' : Math.round(item.dist) + 'm'}
+                    </div>
                     <div className="text-[13px] font-black text-[#00a34c]">+{item.type.xpReward} XP</div>
                   </div>
                 </button>
@@ -503,20 +549,34 @@ export function MapScreen() {
           <div className="flex items-center justify-between gap-2 px-5 h-11 border-b border-black/8">
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-black text-[#0a0a0a] uppercase tracking-[0.28em]">Sök gods</span>
-              <span className={[
-                'text-[10px] font-bold uppercase tracking-[0.22em] inline-flex items-center gap-1.5',
-                gpsStatus === 'ok'       ? 'text-[#00843e]' :
-                gpsStatus === 'fallback' ? 'text-amber-700' :
-                                           'text-black/40',
-              ].join(' ')}>
+              <button
+                onClick={() => setShowModePicker(true)}
+                className={[
+                  'text-[10px] font-bold uppercase tracking-[0.22em] inline-flex items-center gap-1.5 active:opacity-60',
+                  isTapMode          ? 'text-[#0a0a0a]' :
+                  gpsStatus === 'ok' ? 'text-[#00843e]' :
+                  gpsBlocked         ? 'text-red-700' :
+                  gpsStatus === 'coarse' ? 'text-amber-700' :
+                                       'text-black/40',
+                ].join(' ')}
+              >
                 <span className={[
                   'w-1.5 h-1.5 rounded-full',
-                  gpsStatus === 'ok'       ? 'bg-[#00843e]' :
-                  gpsStatus === 'fallback' ? 'bg-amber-600' :
-                                             'bg-black/25',
+                  isTapMode          ? 'bg-[#0a0a0a]' :
+                  gpsStatus === 'ok' ? 'bg-[#00843e]' :
+                  gpsBlocked         ? 'bg-red-600' :
+                  gpsStatus === 'coarse' ? 'bg-amber-600' :
+                                       'bg-black/25',
                 ].join(' ')} />
-                {gpsStatus === 'ok' ? 'GPS' : gpsStatus === 'fallback' ? 'GPS saknas' : 'Hämtar GPS'}
-              </span>
+                {isTapMode ? 'Utan GPS'
+                  : gpsStatus === 'ok'          ? `GPS ${formatAccuracy(gps.accuracy)}`
+                  : gpsStatus === 'coarse'      ? `Ungefärlig ${formatAccuracy(gps.accuracy)}`
+                  : gpsStatus === 'denied'      ? 'Plats nekad'
+                  : gpsStatus === 'insecure'    ? 'Blockerad'
+                  : gpsStatus === 'unavailable' ? 'GPS saknas'
+                  :                               'Hämtar GPS'}
+                <span className="text-black/30 normal-case tracking-normal font-medium">· byt</span>
+              </button>
             </div>
             <span className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50 tabular-nums">{inventory.length}/{LOAD_MIN} kolli</span>
           </div>
@@ -524,7 +584,9 @@ export function MapScreen() {
           {/* Hjälptext */}
           {inventory.length < LOAD_MIN && cargoItems.length > 0 && (
             <div className="px-5 py-2 text-[11px] text-black/50 text-center border-b border-black/8">
-              Tryck på en godsikon på kartan för att se detaljer
+              {isTapMode
+                ? 'Tryck på en godsikon på kartan och samla in direkt — ingen GPS behövs'
+                : 'Tryck på en godsikon på kartan för att se detaljer'}
             </div>
           )}
 
@@ -616,7 +678,7 @@ export function MapScreen() {
               {/* Stats grid — 3 kolumner med tunna avdelare */}
               <div className="grid grid-cols-3 border-b border-black/8">
                 {([
-                  ['Avstånd', Math.round(previewItem.dist) + ' m'],
+                  ['Avstånd', isTapMode ? '—' : Math.round(previewItem.dist) + ' m'],
                   ['XP', '+' + previewItem.type.xpReward],
                   ['Värde', previewItem.type.value + ' kr'],
                 ] as [string, string][]).map(([label, value], i) => (
@@ -653,7 +715,7 @@ export function MapScreen() {
 
               {/* CTA */}
               <div className="px-5 pt-4">
-                {previewItem.dist <= COLLECT_RADIUS ? (
+                {isTapMode || previewItem.dist <= COLLECT_RADIUS ? (
                   <button
                     onClick={() => { handleCollect(previewItem); setPreviewItem(null) }}
                     className="w-full bg-[#0a0a0a] text-white h-14 flex items-center justify-between px-5 active:bg-[#00843e] transition-colors"
@@ -673,6 +735,123 @@ export function MapScreen() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* GPS otillförlitlig — erbjud byte till läget utan GPS */}
+      <AnimatePresence>
+        {!isTapMode && collectMode === 'gps' && gpsImprecise && !gpsHintDismissed && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            className="absolute top-3 left-4 right-4 z-[1150]"
+          >
+            <div className="bg-[#0a0a0a] text-white px-4 py-3 shadow-[0_8px_24px_rgba(0,0,0,.3)]">
+              <div className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-400">
+                {gpsStatus === 'coarse'
+                  ? `Ungefärlig position ${formatAccuracy(gps.accuracy)}`
+                  : gpsStatus === 'denied'
+                    ? 'Platsbehörighet saknas'
+                    : gpsStatus === 'insecure'
+                      ? 'Plats blockerad'
+                      : 'Ingen position'}
+              </div>
+              <p className="text-[12px] text-white/70 mt-1 leading-snug">
+                {gps.message ?? 'Vi hittar inte din position. Du kan spela vidare utan GPS och samla gods direkt från kartan.'}
+              </p>
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => chooseMode('tap')}
+                  className="flex-1 h-10 bg-white text-[#0a0a0a] text-[11px] font-black uppercase tracking-[0.22em] active:bg-[#00843e] active:text-white"
+                >
+                  Spela utan GPS
+                </button>
+                <button
+                  onClick={() => setGpsHintDismissed(true)}
+                  className="h-10 px-4 border border-white/25 text-white/70 text-[11px] font-black uppercase tracking-[0.22em] active:bg-white/10"
+                >
+                  Fortsätt
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Välj insamlingssätt — visas första gången och vid manuellt byte */}
+      <AnimatePresence>
+        {(!collectMode || showModePicker) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[1300] bg-[#0a0a0a]/85 backdrop-blur-sm flex items-end sm:items-center justify-center"
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="w-full max-w-lg bg-[#f6f4ef] border-t border-black/10"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
+            >
+              <div className="px-5 pt-5 pb-4 border-b border-black/8">
+                <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#00843e]">— Välj spelsätt</div>
+                <h2 className="text-[22px] font-black tracking-tight text-[#0a0a0a] mt-1 leading-tight">
+                  Hur vill du samla in godset?
+                </h2>
+                <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
+                  Du kan byta när som helst via statusraden längst ner.
+                </p>
+              </div>
+
+              <button
+                onClick={() => chooseMode('gps')}
+                className="w-full text-left px-5 py-4 border-b border-black/8 bg-white active:bg-black/[0.03] flex items-start gap-4"
+              >
+                <span className="text-3xl leading-none mt-0.5">🚶</span>
+                <span className="flex-1">
+                  <span className="block text-[15px] font-black text-[#0a0a0a]">Gå och samla</span>
+                  <span className="block text-[12px] text-black/55 mt-0.5 leading-snug">
+                    Godset ligger utspritt runt dig. Du måste gå inom 20 meter för att plocka upp det.
+                  </span>
+                  <span className="block text-[10px] font-black uppercase tracking-[0.22em] text-[#00843e] mt-2">
+                    Kräver platsbehörighet
+                  </span>
+                </span>
+                {collectMode === 'gps' && <span className="text-[#00843e] text-lg font-black">✓</span>}
+              </button>
+
+              <button
+                onClick={() => chooseMode('tap')}
+                className="w-full text-left px-5 py-4 border-b border-black/8 bg-white active:bg-black/[0.03] flex items-start gap-4"
+              >
+                <span className="text-3xl leading-none mt-0.5">👆</span>
+                <span className="flex-1">
+                  <span className="block text-[15px] font-black text-[#0a0a0a]">Samla från kartan</span>
+                  <span className="block text-[12px] text-black/55 mt-0.5 leading-snug">
+                    Tryck på godset och plocka upp det direkt — stå still, sitt ner, spela inomhus.
+                  </span>
+                  <span className="block text-[10px] font-black uppercase tracking-[0.22em] text-black/45 mt-2">
+                    Ingen GPS behövs
+                  </span>
+                </span>
+                {collectMode === 'tap' && <span className="text-[#00843e] text-lg font-black">✓</span>}
+              </button>
+
+              {collectMode && (
+                <div className="px-5 pt-3">
+                  <button
+                    onClick={() => setShowModePicker(false)}
+                    className="w-full h-12 border border-black/15 text-[11px] font-black uppercase tracking-[0.22em] text-black/60 active:bg-black/[0.03]"
+                  >
+                    Avbryt
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

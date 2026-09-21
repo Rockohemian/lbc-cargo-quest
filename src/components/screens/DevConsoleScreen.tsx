@@ -171,6 +171,8 @@ export function DevConsoleScreen() {
       fillPercent: plan.metrics.fillPercent,
       weightBalance: plan.metrics.weightBalance,
       securing: plan.metrics.securing,
+      stackScore: plan.metrics.stackScore,
+      violations: plan.metrics.violations,
       cargoDamage: grade === 'S' ? 0 : grade === 'D' ? 25 : 5,
       ecoScore: g.eco,
       safetyScore: g.safety,

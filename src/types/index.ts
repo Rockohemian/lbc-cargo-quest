@@ -80,12 +80,26 @@ export interface CargoNetState {
   span: number         // number of covered columns
 }
 
+export type LoadRuleSeverity = 'critical' | 'major' | 'minor'
+
+/** Ett brott mot hur gods ska lastas i verkligheten. */
+export interface LoadViolation {
+  id: string
+  severity: LoadRuleSeverity
+  title: string            // kort etikett i UI
+  detail: string           // regeln förklarad
+  count: number            // antal kollin som bryter mot regeln
+  uids: string[]           // berörda placeringar
+}
+
 export interface LoadMetrics {
   fillPercent: number      // lastutnyttjande
   weightBalance: number    // viktfördelning (0–100, 100 = perfekt)
   cogHeight: number        // tyngdpunktshöjd (0–100, lägre = bättre stabilitet)
   frontBias: number        // -100 (bak) .. +100 (fram), 0 = balanserat
   securing: number         // lastsäkring 0–100
+  stackScore: number       // lastning enligt regelverket 0–100
+  violations: LoadViolation[]
   feedback: string[]       // realtidsfeedback
 }
 
@@ -101,6 +115,8 @@ export interface RoundResult {
   fillPercent: number       // lastutnyttjande %
   weightBalance: number     // viktfördelning %
   securing: number          // lastsäkring %
+  stackScore: number        // lastning enligt regelverk %
+  violations: LoadViolation[]
   cargoDamage: number       // godsskador %
   ecoScore: number          // 0–100
   safetyScore: number       // 0–100

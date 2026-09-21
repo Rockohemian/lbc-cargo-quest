@@ -55,6 +55,7 @@ export function ResultScreen() {
   const {
     grade, totalPoints, totalXP, cargoCount,
     fillPercent, weightBalance, securing, cargoDamage,
+    stackScore, violations,
     ecoScore, safetyScore, qualityScore, badges, summary,
   } = lastResult
   const gradeColor = GRADE_COLORS[grade]
@@ -113,9 +114,46 @@ export function ResultScreen() {
           <StatBar label={`Lastutnyttjande · ${cargoCount} kolli`} value={fillPercent} color="#00843e" />
           <StatBar label="Viktfördelning" value={weightBalance} color="#c98a00" />
           <StatBar label="Lastsäkring" value={securing} color="#0f5a99" />
+          <StatBar label="Lastning enligt regelverk" value={stackScore} color={stackScore >= 80 ? '#00843e' : '#c93820'} />
           <StatBar label="Godsskick (oskadat)" value={100 - cargoDamage} color="#00a34c" />
         </div>
       </section>
+
+      {/* Lastningsanmärkningar */}
+      {violations.length > 0 && (
+        <section className="px-5 py-5 border-b border-black/8">
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55 mb-3">— Lastningsanmärkningar</div>
+          <div className="space-y-2">
+            {violations.map((v) => (
+              <div
+                key={v.id}
+                className={
+                  'border px-3 py-2.5 ' +
+                  (v.severity === 'critical'
+                    ? 'border-red-300 bg-red-50'
+                    : v.severity === 'major'
+                      ? 'border-amber-300 bg-amber-50'
+                      : 'border-black/12 bg-white')
+                }
+              >
+                <div className="flex items-center gap-2">
+                  <span className={
+                    'text-[9px] font-black uppercase tracking-[0.22em] ' +
+                    (v.severity === 'critical' ? 'text-red-700' : v.severity === 'major' ? 'text-amber-700' : 'text-black/50')
+                  }>
+                    {v.severity === 'critical' ? 'Allvarligt' : v.severity === 'major' ? 'Anmärkning' : 'Noterat'}
+                  </span>
+                  <span className="text-[13px] font-black text-[#0a0a0a]">{v.title}</span>
+                  {v.count > 1 && (
+                    <span className="text-[10px] font-black text-black/45 tabular-nums">×{v.count}</span>
+                  )}
+                </div>
+                <p className="text-[12px] text-black/60 leading-snug mt-1">{v.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Delbetyg */}
       <section className="grid grid-cols-3 border-b border-black/8">

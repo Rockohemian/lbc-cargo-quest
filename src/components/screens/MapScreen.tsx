@@ -17,7 +17,7 @@ import {
   offset,
 } from '../../utils/cargoGenerator'
 import { CURRENT_EVENT } from '../../data/events'
-import { RARITY_COLORS } from '../../data/cargoTypes'
+import { RARITY_COLORS, LOAD_MIN } from '../../data/cargoTypes'
 import { Button } from '../ui/Button'
 import { GlassCard } from '../ui/GlassCard'
 import type { CargoItem, LatLng } from '../../types'
@@ -114,7 +114,6 @@ function RecenterMap({ pos, follow }: { pos: LatLng; follow: boolean }) {
 }
 
 const COLLECT_RADIUS = 20
-const LOAD_MIN = 10
 
 const RARITY_LABEL: Record<string, string> = {
   common: 'Vanlig', uncommon: 'Ovanlig', rare: 'Sällsynt', epic: 'Episk',
@@ -581,6 +580,34 @@ export function MapScreen() {
             <span className="text-[10px] font-black uppercase tracking-[0.22em] text-black/50 tabular-nums">{inventory.length}/{LOAD_MIN} kolli</span>
           </div>
 
+          {/* Uppdragsrad — hur många kollin som krävs och hur långt man kommit */}
+          <div className="px-5 py-2.5 border-b border-black/8">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-[11px] font-black text-[#0a0a0a]">
+                {inventory.length >= LOAD_MIN
+                  ? `Fullt uppdrag — ${inventory.length} kolli redo att lastas`
+                  : `Samla in ${LOAD_MIN} kolli för att få lasta`}
+              </span>
+              <span className={
+                'text-[11px] font-black tabular-nums whitespace-nowrap ' +
+                (inventory.length >= LOAD_MIN ? 'text-[#00843e]' : 'text-black/45')
+              }>
+                {inventory.length >= LOAD_MIN
+                  ? '✓ Klart'
+                  : `${LOAD_MIN - inventory.length} kvar`}
+              </span>
+            </div>
+            <div className="mt-1.5 h-1 bg-black/10 overflow-hidden">
+              <div
+                className="h-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(100, (inventory.length / LOAD_MIN) * 100)}%`,
+                  background: inventory.length >= LOAD_MIN ? '#00843e' : '#0a0a0a',
+                }}
+              />
+            </div>
+          </div>
+
           {/* Hjälptext */}
           {inventory.length < LOAD_MIN && cargoItems.length > 0 && (
             <div className="px-5 py-2 text-[11px] text-black/50 text-center border-b border-black/8">
@@ -614,7 +641,7 @@ export function MapScreen() {
               }
             >
               {inventory.length < LOAD_MIN
-                ? <span>{inventory.length}/{LOAD_MIN}</span>
+                ? <span className="tabular-nums">{LOAD_MIN - inventory.length} kvar</span>
                 : <><span>Lasta</span><span className="text-lg">→</span></>}
             </button>
           </div>
@@ -802,7 +829,8 @@ export function MapScreen() {
                   Hur vill du samla in godset?
                 </h2>
                 <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
-                  Du kan byta när som helst via statusraden längst ner.
+                  Målet är att samla in <strong className="text-[#0a0a0a]">{LOAD_MIN} kolli</strong>, lasta bilen rätt och köra hem poäng.
+                  Du kan byta spelsätt när som helst via statusraden längst ner.
                 </p>
               </div>
 

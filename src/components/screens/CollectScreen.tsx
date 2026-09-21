@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { GlassCard } from '../ui/GlassCard'
 import { Button } from '../ui/Button'
-import { RARITY_COLORS, RARITY_LABELS } from '../../data/cargoTypes'
+import { RARITY_COLORS, RARITY_LABELS, LOAD_MIN } from '../../data/cargoTypes'
 
 export function CollectScreen() {
   const { selectedCargo, collectCargo, setScreen, inventory } = useGameStore()
@@ -14,6 +14,8 @@ export function CollectScreen() {
 
   if (!selectedCargo) return null
   const { type } = selectedCargo
+  const afterCollect = Math.min(LOAD_MIN, inventory.length + 1)
+  const remaining = Math.max(0, LOAD_MIN - (inventory.length + 1))
 
   const handleCollect = () => {
     collectCargo(selectedCargo.id)
@@ -99,12 +101,33 @@ export function CollectScreen() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.35 }}
-        className="flex items-center gap-1.5 mb-6"
+        className="w-full max-w-sm mb-6"
       >
-        {[...inventory, type].slice(-6).map((c, i) => (
-          <span key={i} className="text-2xl">{c.emoji}</span>
-        ))}
-        <span className="text-white/30 text-sm ml-1">+1</span>
+        <div className="flex items-center justify-center gap-1.5 mb-2">
+          {[...inventory, type].slice(-6).map((c, i) => (
+            <span key={i} className="text-2xl">{c.emoji}</span>
+          ))}
+          <span className="text-white/30 text-sm ml-1">+1</span>
+        </div>
+
+        {/* Uppdragsprogress — hur många kollin som behövs för att få lasta */}
+        <div className="flex items-baseline justify-between text-xs mb-1.5">
+          <span className="text-white/55 font-bold tabular-nums">
+            {afterCollect}/{LOAD_MIN} kolli
+          </span>
+          <span className={remaining === 0 ? 'text-lbc-green font-black' : 'text-white/45 font-bold'}>
+            {remaining === 0 ? '✓ Redo att lasta' : `${remaining} kvar till lastning`}
+          </span>
+        </div>
+        <div className="h-1 bg-white/15 overflow-hidden rounded-full">
+          <motion.div
+            className="h-full rounded-full"
+            initial={{ width: `${(inventory.length / LOAD_MIN) * 100}%` }}
+            animate={{ width: `${(afterCollect / LOAD_MIN) * 100}%` }}
+            transition={{ delay: 0.45, duration: 0.5 }}
+            style={{ background: remaining === 0 ? '#00a34c' : '#ffffff' }}
+          />
+        </div>
       </motion.div>
 
       <motion.div

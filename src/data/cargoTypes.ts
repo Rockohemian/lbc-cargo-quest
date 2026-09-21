@@ -113,3 +113,6 @@ export const RARITY_COLORS: Record<string, string> = {
 export const RARITY_LABELS: Record<string, string> = {
   common: 'Vanlig', uncommon: 'Ovanlig', rare: 'Sällsynt', epic: 'Episk',
 }
+
+/** Antal kollin som krävs innan spelaren får gå vidare till lastningen. */
+export const LOAD_MIN = 10

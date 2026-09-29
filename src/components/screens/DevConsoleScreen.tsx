@@ -178,6 +178,7 @@ export function DevConsoleScreen() {
       safetyScore: g.safety,
       qualityScore: g.quality,
       totalXP: g.xp,
+      bonusPoints: 0,
       totalPoints: g.total,
       grade,
       badges,

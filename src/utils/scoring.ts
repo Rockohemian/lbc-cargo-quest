@@ -52,8 +52,10 @@ function buildSummary(r: {
  * Build the final round result from the load plan and the simulated cargo damage.
  * @param plan        the completed load plan with metrics
  * @param cargoDamage 0–100, produced by the transport simulation
+ * @param bonusPoints bonus från kunskapsstjärnor; läggs på efter betygssättningen
+ *                    så att betyget alltid speglar själva lastningen
  */
-export function calcRoundResult(plan: LoadPlan, cargoDamage: number): RoundResult {
+export function calcRoundResult(plan: LoadPlan, cargoDamage: number, bonusPoints = 0): RoundResult {
   const m = plan.metrics
   const cargoCount = plan.items.length
   const damage = clamp(cargoDamage)
@@ -127,7 +129,8 @@ export function calcRoundResult(plan: LoadPlan, cargoDamage: number): RoundResul
     safetyScore,
     qualityScore,
     totalXP,
-    totalPoints: Math.max(0, totalPoints),
+    bonusPoints,
+    totalPoints: Math.max(0, totalPoints) + bonusPoints,
     grade: g,
     badges,
     summary,

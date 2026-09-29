@@ -51,7 +51,7 @@ function formatEta(totalKm: number, progressPct: number): string {
 }
 
 export function TransportScreen() {
-  const { loadPlan, garage, finishRound, setScreen } = useGameStore()
+  const { loadPlan, garage, quizBonus, finishRound, setScreen } = useGameStore()
   const tema = useMemo(() => temaFor(garage.equipped), [garage.equipped])
 
   const [phase, setPhase] = useState<'briefing' | 'running' | 'done'>('briefing')
@@ -152,12 +152,12 @@ export function TransportScreen() {
   useEffect(() => {
     if (phase !== 'done' || !loadPlan) return
     const t = window.setTimeout(() => {
-      const result = calcRoundResult(loadPlan, targetDamage)
+      const result = calcRoundResult(loadPlan, targetDamage, quizBonus)
       finishRound(result)
       setScreen('result')
     }, 1400)
     return () => window.clearTimeout(t)
-  }, [phase, loadPlan, targetDamage, finishRound, setScreen])
+  }, [phase, loadPlan, targetDamage, quizBonus, finishRound, setScreen])
 
   useEffect(() => () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)

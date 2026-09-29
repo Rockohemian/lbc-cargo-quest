@@ -39,6 +39,12 @@ export interface CargoItem {
   spawnTime: number
 }
 
+/** En kunskapsstjärna utplacerad på kartan i den pågående rundan. */
+export interface QuizStarPin {
+  id: string
+  position: LatLng
+}
+
 export interface Player {
   name: string
   level: number
@@ -122,6 +128,7 @@ export interface RoundResult {
   safetyScore: number       // 0–100
   qualityScore: number      // 0–100
   totalXP: number
+  bonusPoints: number      // bonus från kunskapsstjärnor
   totalPoints: number
   grade: 'S' | 'A' | 'B' | 'C' | 'D'
   badges: Badge[]

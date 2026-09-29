@@ -3,8 +3,10 @@ import { persist } from 'zustand/middleware'
 import type {
   GameScreen, CargoType, CargoItem, Player, LatLng, RoundResult, LoadPlan,
   GarageState, EquippedParts, CrateTier, PartCategory, TruckPart, UnlockNotice,
+  QuizStarPin,
 } from '../types'
 import { RANKS } from '../data/cargoTypes'
+import { QUIZ_STAR_POINTS } from '../data/quizStars'
 import {
   ACHIEVEMENTS, GARAGE_UNLOCK_POINTS,
   crateForLevel, rollCratePart, TRUCK_PARTS,
@@ -32,6 +34,11 @@ interface GameState {
   lastResult: RoundResult | null
   garage: GarageState
 
+  /** Kunskapsstjärnor i den pågående rundan. Nollställs mellan rundor. */
+  quizStars: QuizStarPin[]
+  quizAnswers: Record<string, boolean>
+  quizBonus: number
+
   setScreen: (s: GameScreen) => void
   setTestMode: (enabled: boolean) => void
   setEventMode: (enabled: boolean) => void
@@ -44,6 +51,8 @@ interface GameState {
   setLoadPlan: (plan: LoadPlan) => void
   finishRound: (result: RoundResult) => void
   resetRound: () => void
+  setQuizStars: (pins: QuizStarPin[]) => void
+  answerQuizStar: (id: string, correct: boolean) => void
   openCrate: (tier: CrateTier) => TruckPart
   equipPart: (category: PartCategory, partId: string) => void
   unequipPart: (category: PartCategory) => void
@@ -92,6 +101,9 @@ export const useGameStore = create<GameState>()(
       loadPlan: null,
       lastResult: null,
       garage: DEFAULT_GARAGE,
+      quizStars: [],
+      quizAnswers: {},
+      quizBonus: 0,
 
       setScreen: (screen) => set({ screen }),
       setTestMode: (testMode) => set({ testMode }),
@@ -175,6 +187,19 @@ export const useGameStore = create<GameState>()(
 
       resetRound: () => set({
         inventory: [], selectedCargo: null, loadPlan: null,
+        quizStars: [], quizAnswers: {}, quizBonus: 0,
+      }),
+
+      setQuizStars: (quizStars) => set({ quizStars }),
+
+      // En stjärna kan bara besvaras en gång per runda — annars går det att
+      // gissa sig till full bonus.
+      answerQuizStar: (id, correct) => set((s) => {
+        if (id in s.quizAnswers) return s
+        return {
+          quizAnswers: { ...s.quizAnswers, [id]: correct },
+          quizBonus: s.quizBonus + (correct ? QUIZ_STAR_POINTS : 0),
+        }
       }),
 
       openCrate: (tier) => {
@@ -272,6 +297,9 @@ export const useGameStore = create<GameState>()(
         selectedCargo: null,
         loadPlan: null,
         lastResult: null,
+        quizStars: [],
+        quizAnswers: {},
+        quizBonus: 0,
       }),
 
       resetEverything: () => set({
@@ -286,6 +314,9 @@ export const useGameStore = create<GameState>()(
         loadPlan: null,
         lastResult: null,
         garage: DEFAULT_GARAGE,
+        quizStars: [],
+        quizAnswers: {},
+        quizBonus: 0,
       }),
     }),
     {

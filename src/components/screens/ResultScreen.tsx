@@ -61,7 +61,7 @@ export function ResultScreen() {
   if (!lastResult) return null
 
   const {
-    grade, totalPoints, totalXP, cargoCount,
+    grade, totalPoints, totalXP, cargoCount, bonusPoints,
     fillPercent, weightBalance, securing, cargoDamage,
     stackScore, violations,
     ecoScore, safetyScore, qualityScore, badges, summary,
@@ -104,6 +104,11 @@ export function ResultScreen() {
           {totalPoints.toLocaleString('sv-SE')}
         </div>
         <div className="text-[10px] font-black uppercase tracking-[0.22em] text-black/45 mt-1">Totalpoäng</div>
+        {bonusPoints > 0 && (
+          <div className="mt-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#c98a00]">
+            ⭐ Inklusive {bonusPoints.toLocaleString('sv-SE')} p från kunskapsstjärnor
+          </div>
+        )}
         <div className="mt-3 inline-block bg-[#00843e] text-white px-3 py-1 text-[12px] font-black tracking-wider">
           +{totalXP} XP
         </div>

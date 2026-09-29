@@ -18,9 +18,10 @@ import {
 } from '../../utils/cargoGenerator'
 import { CURRENT_EVENT } from '../../data/events'
 import { RARITY_COLORS, LOAD_MIN } from '../../data/cargoTypes'
+import { QUIZ_STARS, QUIZ_STAR_POINTS, STAR_LAYOUT } from '../../data/quizStars'
 import { Button } from '../ui/Button'
 import { GlassCard } from '../ui/GlassCard'
-import type { CargoItem, LatLng } from '../../types'
+import type { CargoItem, LatLng, QuizStarPin } from '../../types'
 
 // ─── Rival trucks ───────────────────────────────────────────────────────────────
 const RIVAL_SPEED_MPS = 1.4        // meter per sekund (~gång+)
@@ -92,6 +93,44 @@ function cargoIcon(emoji: string, rarity: string, collected: boolean) {
   })
 }
 
+/** Kunskapsstjärna. Besvarade stjärnor tonas ner och märks med resultatet. */
+function starIcon(state: 'open' | 'correct' | 'wrong') {
+  const answered = state !== 'open'
+  const bg = state === 'correct' ? '#00843e' : state === 'wrong' ? '#8a8a8a' : '#c98a00'
+  const mark = state === 'correct' ? '&#10003;' : state === 'wrong' ? '&#10005;' : '&#11088;'
+  const pulse = answered
+    ? ''
+    : '<div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(201,138,0,.22);' +
+      'animation:pulse 2s infinite"></div>'
+  return L.divIcon({
+    className: '',
+    html:
+      '<div style="width:48px;height:58px;display:flex;flex-direction:column;align-items:center;' +
+      'opacity:' + (answered ? 0.7 : 1) + '">' +
+      '<div style="position:relative;width:40px;height:40px;display:flex;align-items:center;' +
+      'justify-content:center">' + pulse +
+      '<div style="position:relative;width:40px;height:40px;display:flex;align-items:center;' +
+      'justify-content:center;background:' + bg + ';border:2px solid #0a0a0a;border-radius:50%;' +
+      'font-size:18px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.25)">' + mark + '</div></div>' +
+      '<div style="font-size:8px;font-weight:900;letter-spacing:.18em;color:#0a0a0a;' +
+      'text-transform:uppercase;margin-top:3px;background:#fff;padding:1px 4px;' +
+      'border:1px solid rgba(0,0,0,.15)">QUIZ</div>' +
+      '</div>',
+    iconSize: [48, 58], iconAnchor: [24, 20],
+  })
+}
+
+/** Placerar de tre stjärnorna runt en mittpunkt. */
+function makeQuizStars(center: LatLng, tapMode: boolean): QuizStarPin[] {
+  return QUIZ_STARS.map((s, i) => {
+    const layout = STAR_LAYOUT[i % STAR_LAYOUT.length]
+    return {
+      id: s.id,
+      position: offset(center, tapMode ? layout.tapMeters : layout.meters, layout.bearing),
+    }
+  })
+}
+
 function playerIcon() {
   return L.divIcon({
     className: '',
@@ -128,6 +167,7 @@ export function MapScreen() {
     playerPosition, setPlayerPosition, cargoItems, setCargoItems,
     selectCargo, setScreen, inventory, eventMode,
     collectMode, setCollectMode,
+    quizStars, setQuizStars, quizAnswers, answerQuizStar, quizBonus,
   } = useGameStore()
 
   const isTapMode = collectMode === 'tap'
@@ -145,6 +185,8 @@ export function MapScreen() {
   const [rivals, setRivals] = useState<Rival[]>([])
   const [stolenNotice, setStolenNotice] = useState<string | null>(null)
   const [previewItem, setPreviewItem] = useState<(CargoItem & { dist: number }) | null>(null)
+  const [activeStarId, setActiveStarId] = useState<string | null>(null)
+  const [starPicked, setStarPicked] = useState<number | null>(null)
   const [showReadyToLoad, setShowReadyToLoad] = useState(false)
   const prevInventoryLen = useRef(0)
   const readyTimerRef = useRef<number | null>(null)
@@ -193,6 +235,7 @@ export function MapScreen() {
         ? generateNearbyTestCargoItems(playerPosition, 12)
         : generateCargoField(playerPosition)
     setCargoItems(initial)
+    setQuizStars(makeQuizStars(spawnCenter, collectMode === 'tap'))
     lastSpawnPosRef.current = spawnCenter
     if (collectMode === 'tap' && !isEvent) return // tätt fält behöver ingen vägfiltrering
     // Async safety pass — runs in background, removes any rail/motorway spawns
@@ -214,6 +257,7 @@ export function MapScreen() {
     if (currentInventory.length > 0) return // don't disrupt ongoing round
     const newField = generateCargoField(playerPosition)
     setCargoItems(newField)
+    setQuizStars(makeQuizStars(playerPosition, false))
     lastSpawnPosRef.current = playerPosition
     applySafetyFilter(newField, playerPosition, 300).then(safe => {
       if (safe.length !== newField.length) setCargoItems(safe)
@@ -251,6 +295,30 @@ export function MapScreen() {
     .sort((a, b) => a.dist - b.dist)
 
   const inRange = isTapMode ? nearest : nearest.filter(i => i.dist <= COLLECT_RADIUS)
+
+  // ── Kunskapsstjärnor ─────────────────────────────────────────────────────
+  const starPins = quizStars.flatMap(pin => {
+    const star = QUIZ_STARS.find(s => s.id === pin.id)
+    if (!star) return []
+    return [{
+      ...pin,
+      star,
+      dist: getDistanceMeters(playerPosition, pin.position),
+      answered: pin.id in quizAnswers,
+      correct: quizAnswers[pin.id] === true,
+    }]
+  })
+  const activeStar = starPins.find(p => p.id === activeStarId) ?? null
+  const starsAnswered = starPins.filter(p => p.answered).length
+  const starReachable = !activeStar || isTapMode || activeStar.dist <= COLLECT_RADIUS
+
+  const closeStar = () => { setActiveStarId(null); setStarPicked(null) }
+
+  const pickStarAnswer = (index: number) => {
+    if (!activeStar || activeStar.answered) return
+    setStarPicked(index)
+    answerQuizStar(activeStar.id, index === activeStar.star.correctIndex)
+  }
 
   const handleCollect = (item: CargoItem) => {
     selectCargo(item)
@@ -442,8 +510,16 @@ export function MapScreen() {
             />
           ))}
 
-          <Marker position={[playerPosition.lat, playerPosition.lng]} icon={playerIcon()} />
+          {starPins.map(pin => (
+            <Marker
+              key={pin.id}
+              position={[pin.position.lat, pin.position.lng]}
+              icon={starIcon(pin.answered ? (pin.correct ? 'correct' : 'wrong') : 'open')}
+              eventHandlers={{ click: () => { setStarPicked(null); setActiveStarId(pin.id) } }}
+            />
+          ))}
 
+          <Marker position={[playerPosition.lat, playerPosition.lng]} icon={playerIcon()} />
           {/* Osäkerhetsradie — gör det synligt när positionen bara är ungefärlig */}
           {!isTapMode && gpsStatus === 'coarse' && gps.accuracy != null && (
             <Circle
@@ -608,6 +684,28 @@ export function MapScreen() {
             </div>
           </div>
 
+          {/* Kunskapsstjärnor — bonuspoäng för rätt svar om LBC Frakt */}
+          {starPins.length > 0 && (
+            <button
+              onClick={() => {
+                const next = starPins.find(p => !p.answered) ?? starPins[0]
+                setStarPicked(null)
+                setActiveStarId(next.id)
+              }}
+              className="w-full flex items-center justify-between gap-3 px-5 py-2 border-b border-black/8 active:bg-black/[0.03]"
+            >
+              <span className="text-[11px] font-black text-[#0a0a0a] flex items-center gap-2">
+                <span className="text-[13px]">⭐</span>
+                {starsAnswered < starPins.length
+                  ? 'Hitta kunskapsstjärnorna på kartan'
+                  : 'Alla stjärnor besvarade'}
+              </span>
+              <span className="text-[11px] font-black tabular-nums whitespace-nowrap text-[#c98a00]">
+                {starsAnswered}/{starPins.length} · {quizBonus} p
+              </span>
+            </button>
+          )}
+
           {/* Hjälptext */}
           {inventory.length < LOAD_MIN && cargoItems.length > 0 && (
             <div className="px-5 py-2 text-[11px] text-black/50 text-center border-b border-black/8">
@@ -760,6 +858,125 @@ export function MapScreen() {
                   </button>
                 )}
               </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Kunskapsstjärna — fråga om LBC Frakt */}
+      <AnimatePresence>
+        {activeStar && (
+          <>
+            <motion.div
+              key="star-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeStar}
+              className="absolute inset-0 z-[1190] bg-black/45"
+            />
+            <motion.div
+              key="star-sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 z-[1195] bg-[#f6f4ef] border-t border-black/10 max-h-[88%] overflow-y-auto"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
+            >
+              <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mt-3 mb-2" />
+
+              <div className="flex items-center justify-between px-5 h-9 border-b border-black/8">
+                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-[#c98a00]">
+                  — {activeStar.star.label}
+                </span>
+                <button onClick={closeStar} className="text-black/40 active:text-[#0a0a0a] text-lg" aria-label="Stäng">✕</button>
+              </div>
+
+              {!starReachable ? (
+                <div className="px-5 py-6">
+                  <h2 className="text-[19px] font-black leading-snug tracking-tight text-[#0a0a0a]">
+                    Kunskapsstjärna
+                  </h2>
+                  <p className="mt-2 text-[13px] text-black/60 leading-relaxed">
+                    Gå fram till stjärnan för att svara på frågan och tjäna {QUIZ_STAR_POINTS} bonuspoäng.
+                  </p>
+                  <button
+                    onClick={closeStar}
+                    className="mt-4 w-full bg-white border border-black/15 h-14 flex items-center justify-between px-5 active:bg-black/[0.03] transition-colors"
+                  >
+                    <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#0a0a0a]">Gå dit</span>
+                    <span className="text-[12px] font-bold text-black/60">{Math.round(activeStar.dist)} m bort</span>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="px-5 pt-5 pb-4">
+                    <h2 className="text-[19px] font-black leading-snug tracking-tight text-[#0a0a0a]">
+                      {activeStar.star.question}
+                    </h2>
+                    <p className="mt-2 text-[10px] font-black uppercase tracking-[0.22em] text-black/45">
+                      {activeStar.answered
+                        ? (activeStar.correct ? `+${QUIZ_STAR_POINTS} poäng` : '0 poäng')
+                        : `${QUIZ_STAR_POINTS} poäng för rätt svar · ett försök`}
+                    </p>
+                  </div>
+
+                  <div className="px-5 space-y-2">
+                    {activeStar.star.options.map((opt, i) => {
+                      const isCorrect = i === activeStar.star.correctIndex
+                      const chosen = starPicked === i
+                      const reveal = activeStar.answered
+                      const style = !reveal
+                        ? 'bg-white border-black/15 active:bg-black/[0.04]'
+                        : isCorrect
+                          ? 'bg-[#00843e]/10 border-[#00843e]'
+                          : chosen
+                            ? 'bg-red-50 border-red-400'
+                            : 'bg-white border-black/10 opacity-55'
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => pickStarAnswer(i)}
+                          disabled={reveal}
+                          className={'w-full text-left border px-4 py-3 flex items-center gap-3 transition-colors ' + style}
+                        >
+                          <span className="w-6 h-6 flex-shrink-0 flex items-center justify-center border border-black/20 text-[11px] font-black text-[#0a0a0a]">
+                            {reveal && isCorrect ? '✓' : reveal && chosen ? '✕' : String.fromCharCode(65 + i)}
+                          </span>
+                          <span className="text-[13px] font-bold leading-snug text-[#0a0a0a]">{opt}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {activeStar.answered && (
+                    <div className="px-5 pt-4">
+                      <div
+                        className={
+                          'border px-4 py-3 ' +
+                          (activeStar.correct ? 'border-[#00843e] bg-[#00843e]/8' : 'border-black/15 bg-white')
+                        }
+                      >
+                        <div
+                          className="text-[10px] font-black uppercase tracking-[0.28em] mb-1.5"
+                          style={{ color: activeStar.correct ? '#00843e' : '#c93820' }}
+                        >
+                          {activeStar.correct ? `Rätt svar · +${QUIZ_STAR_POINTS} p` : 'Fel svar · 0 p'}
+                        </div>
+                        <p className="text-[12.5px] leading-relaxed text-black/75">{activeStar.star.explanation}</p>
+                      </div>
+                      <button
+                        onClick={closeStar}
+                        className="mt-4 w-full bg-[#0a0a0a] text-white h-14 flex items-center justify-between px-5 active:bg-[#00843e] transition-colors"
+                      >
+                        <span className="text-[12px] font-black uppercase tracking-[0.22em]">Tillbaka till kartan</span>
+                        <span className="text-[12px] font-black text-[#00a34c]">{quizBonus} p bonus →</span>
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </motion.div>
           </>
         )}

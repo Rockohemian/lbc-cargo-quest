@@ -37,10 +37,18 @@ export function ResultScreen() {
     const { data: scoreData, error: scoreErr } = await supabase
       .from('scores').insert({ player_name: player.name, score: lastResult.totalPoints, grade: lastResult.grade })
       .select('id').single()
-    if (scoreErr || !scoreData) { setSubmitState('error'); setSubmitError('Kunde inte skicka in. Kontrollera anslutning.'); return }
+    if (scoreErr || !scoreData) {
+      setSubmitState('error')
+      setSubmitError(`Kunde inte skicka in. ${scoreErr?.message ?? 'Kontrollera anslutning.'}`)
+      return
+    }
     const { error: contactErr } = await supabase
       .from('contacts').insert({ score_id: scoreData.id, phone_number: phone })
-    if (contactErr) { setSubmitState('error'); setSubmitError('Poängen sparades men numret kunde inte kopplas.'); return }
+    if (contactErr) {
+      setSubmitState('error')
+      setSubmitError(`Poängen sparades men numret kunde inte kopplas. ${contactErr.message}`)
+      return
+    }
     setSubmitState('done')
   }
 

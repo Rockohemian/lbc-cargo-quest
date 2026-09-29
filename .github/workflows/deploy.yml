@@ -24,7 +24,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Supabase-uppgifterna måste finnas vid BYGGET — Vite bakar in dem i
+      # bundlen. Saknas de blir spelet utan databas och adminvyn kan inte
+      # logga in. Lägg dem under Settings → Secrets and variables → Actions.
       - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

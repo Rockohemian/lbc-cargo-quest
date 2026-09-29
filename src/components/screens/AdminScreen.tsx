@@ -28,7 +28,9 @@ export function AdminScreen() {
   const [loggedIn, setLoggedIn] = useState(false)
   const [entries, setEntries] = useState<AdminEntry[]>([])
   const [loading, setLoading] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [dateFilter, setDateFilter] = useState<'today' | 'all'>('today')
+  const [winner, setWinner] = useState<AdminEntry | null>(null)
 
   const handleLogin = async () => {
     setLoginError(null)
@@ -42,6 +44,7 @@ export function AdminScreen() {
 
   const fetchEntries = useCallback(async () => {
     setLoading(true)
+    setFetchError(null)
     let q = supabase
       .from('scores')
       .select('id, player_name, score, grade, submitted_at, contacts(phone_number)')
@@ -51,7 +54,10 @@ export function AdminScreen() {
       today.setHours(0, 0, 0, 0)
       q = q.gte('submitted_at', today.toISOString())
     }
-    const { data } = await q
+    const { data, error } = await q
+    // Ett tyst fel här är värre än inget svar alls — en tom lista ser likadan ut
+    // som "ingen har spelat", och då letar man fel när det är bråttom.
+    if (error) setFetchError(error.message)
     setEntries((data as AdminEntry[]) ?? [])
     setLoading(false)
   }, [dateFilter])
@@ -72,6 +78,41 @@ export function AdminScreen() {
     return new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
   }
 
+  /** Exportera deltagarlistan så dragningen kan göras och sparas utanför appen. */
+  const exportCsv = () => {
+    const rows = [
+      ['Placering', 'Namn', 'Poang', 'Betyg', 'Telefon', 'Inlamnat'],
+      ...entries.map((e, i) => [
+        String(i + 1),
+        e.player_name,
+        String(e.score),
+        e.grade,
+        e.contacts?.[0]?.phone_number ?? '',
+        new Date(e.submitted_at).toLocaleString('sv-SE'),
+      ]),
+    ]
+    const csv = rows
+      .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';'))
+      .join('\r\n')
+    // BOM så att Excel läser åäö rätt.
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `cargo-quest-${dateFilter === 'today' ? new Date().toISOString().slice(0, 10) : 'alla'}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  /** Slumpa fram en vinnare bland dem som lämnat telefonnummer. */
+  const drawWinner = () => {
+    const deltagare = entries.filter(e => e.contacts?.[0]?.phone_number)
+    if (deltagare.length === 0) return
+    const buf = new Uint32Array(1)
+    crypto.getRandomValues(buf)
+    setWinner(deltagare[buf[0] % deltagare.length])
+  }
+
   // ── Login screen ─────────────────────────────────────────────────────────
   if (!loggedIn) {
     return (
@@ -86,6 +127,20 @@ export function AdminScreen() {
             <h1 className="text-xl font-black text-white">Admin-inloggning</h1>
             <p className="text-white/40 text-xs mt-1">LBC Cargo Quest</p>
           </motion.div>
+
+          {!harSupabase && (
+            <div className="border border-amber-500/40 bg-amber-500/10 px-4 py-3 rounded-xl">
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Databasen är inte inkopplad</div>
+              <p className="text-amber-100/80 text-xs mt-1.5 leading-relaxed">
+                Bygget saknar <code className="font-mono">VITE_SUPABASE_URL</code> och{' '}
+                <code className="font-mono">VITE_SUPABASE_ANON_KEY</code>. Inga resultat sparas och
+                ingen inloggning kan göras förrän de finns med i bygget.
+              </p>
+              <p className="text-amber-100/60 text-[11px] mt-2 leading-relaxed">
+                Lägg in dem som GitHub-secrets och kör om deployen, så följer de med nästa build.
+              </p>
+            </div>
+          )}
 
           <GlassCard className="p-5 space-y-4">
             <div>
@@ -170,6 +225,61 @@ export function AdminScreen() {
               🔄
             </button>
           </div>
+
+          {/* Vinstdragning och export */}
+          <div className="flex gap-2">
+            <button
+              onClick={drawWinner}
+              disabled={entries.length === 0}
+              className={
+                'flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors ' +
+                (entries.length === 0
+                  ? 'bg-white/5 text-white/25 cursor-not-allowed'
+                  : 'bg-lbc-green text-white')
+              }
+            >
+              🎲 Dra vinnare
+            </button>
+            <button
+              onClick={exportCsv}
+              disabled={entries.length === 0}
+              className={
+                'flex-1 py-2.5 rounded-xl text-xs font-bold border transition-colors ' +
+                (entries.length === 0
+                  ? 'bg-white/5 text-white/25 border-white/10 cursor-not-allowed'
+                  : 'bg-white/8 text-white/70 border-white/15')
+              }
+            >
+              ⬇ Exportera CSV
+            </button>
+          </div>
+
+          {winner && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="border border-lbc-green/50 bg-lbc-green/10 px-4 py-4 rounded-xl"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-black uppercase tracking-[0.22em] text-lbc-green">🎉 Vinnare</div>
+                  <div className="text-white font-black text-lg mt-1 truncate">{winner.player_name}</div>
+                  <div className="text-white/70 text-sm font-mono mt-0.5">📞 {winner.contacts?.[0]?.phone_number ?? '—'}</div>
+                  <div className="text-white/40 text-xs mt-1">
+                    {winner.score.toLocaleString('sv-SE')} p · betyg {winner.grade} · {formatTime(winner.submitted_at)}
+                  </div>
+                </div>
+                <button onClick={() => setWinner(null)} className="text-white/40 text-lg leading-none" aria-label="Stäng">✕</button>
+              </div>
+            </motion.div>
+          )}
+
+          {fetchError && (
+            <div className="border border-red-500/40 bg-red-500/10 px-4 py-3 rounded-xl">
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-red-300">Kunde inte hämta resultat</div>
+              <p className="text-red-100/80 text-xs mt-1.5 font-mono break-words">{fetchError}</p>
+            </div>
+          )}
 
           {loading ? (
             <div className="text-center py-12 text-white/40">Laddar...</div>

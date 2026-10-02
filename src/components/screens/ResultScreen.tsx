@@ -135,7 +135,10 @@ export function ResultScreen() {
       {/* Lastningsanmärkningar */}
       {violations.length > 0 && (
         <section className="px-5 py-5 border-b border-black/8">
-          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55 mb-3">— Lastningsanmärkningar</div>
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-black/55 mb-1">— Lastningsanmärkningar</div>
+          <p className="text-[12px] text-black/55 leading-relaxed mb-3">
+            Så här hade lasten blivit bättre. Rätta till det här så lyfter både betyget och poängen nästa körning.
+          </p>
           <div className="space-y-2">
             {violations.map((v) => (
               <div
@@ -162,6 +165,9 @@ export function ResultScreen() {
                   )}
                 </div>
                 <p className="text-[12px] text-black/60 leading-snug mt-1">{v.detail}</p>
+                <p className="text-[12px] text-[#0a0a0a] leading-snug mt-2">
+                  <span className="font-black">Så lastar du i stället: </span>{v.fix}
+                </p>
               </div>
             ))}
           </div>

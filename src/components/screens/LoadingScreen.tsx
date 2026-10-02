@@ -13,6 +13,8 @@ import {
 import { CARGO_TYPES } from '../../data/cargoTypes'
 import type { CargoNetState, CargoType, PlacedItem, SecuringState } from '../../types'
 import { ScrollHint } from '../ui/ScrollHint'
+import { LoadCoach } from '../game/LoadCoach'
+import { HowToPlaySheet } from '../game/HowToPlaySheet'
 import { useCargoNetDrag } from '../../hooks/useCargoNetDrag'
 import { computeNetCoverage, normalizeCargoNet } from '../../utils/securingEngine'
 
@@ -49,6 +51,7 @@ export function LoadingScreen() {
   const [strapYs, setStrapYs] = useState<number[]>([])
   const [net, setNet] = useState<CargoNetState>({ enabled: false, col: TRAILER_COLS - 3, span: 3 })
   const [divider, setDivider] = useState(false)
+  const [showSchool, setShowSchool] = useState(false)
 
   const gridRef = useRef<HTMLDivElement>(null)
   const phaseScrollRef = useRef<HTMLDivElement>(null)
@@ -409,16 +412,18 @@ export function LoadingScreen() {
             <MetricCell label="Lastregler" value={metrics.stackScore} suffix="%" accent={metrics.stackScore >= 80 ? 'green' : 'red'} divider />
           </div>
 
-          {/* Feedback + selected (slimmat) */}
-          <div className="px-4 mt-2 flex flex-col loading-feedback">
-            {metrics.feedback.length > 0 && (
-              <div className="flex gap-1.5 mb-2 overflow-x-auto scrollbar-hide" style={{ touchAction: 'pan-x' }}>
-                {metrics.feedback.slice(0, 3).map((f, i) => (
-                  <span key={i} className="flex-shrink-0 text-[9px] font-bold px-2 py-0.5 border border-black/12 text-black/70 bg-white whitespace-nowrap">{f}</span>
-                ))}
-              </div>
-            )}
+          {/* Lastkoll — vad som är fel och hur spelaren rättar till det */}
+          <div className="mt-2">
+            <LoadCoach
+              metrics={metrics}
+              profile={weightProfile}
+              hasItems={placed.length > 0}
+              onOpenSchool={() => setShowSchool(true)}
+            />
+          </div>
 
+          {/* Vald + palett */}
+          <div className="px-4 mt-2 flex flex-col loading-feedback">
             <AnimatePresence>
               {selectedItem && (
                 <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -598,15 +603,14 @@ export function LoadingScreen() {
               />
             </div>
 
-            {metrics.feedback.length > 0 && (
-              <div className="px-5 mt-3 mb-4">
-                <div className="flex flex-wrap gap-1.5">
-                  {metrics.feedback.map((f, i) => (
-                    <span key={i} className="text-[10px] font-bold px-2 py-1 border border-black/12 text-black/70 bg-white">{f}</span>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="mt-3 mb-4">
+              <LoadCoach
+                metrics={metrics}
+                profile={weightProfile}
+                hasItems={placed.length > 0}
+                onOpenSchool={() => setShowSchool(true)}
+              />
+            </div>
           </div>
 
           <div className="px-5 pb-6 pt-3 border-t border-black/8 bg-[#f6f4ef] space-y-2 loading-footer">
@@ -655,6 +659,14 @@ export function LoadingScreen() {
       )}
 
       <ScrollHint targetRef={phaseScrollRef} bottomOffset={20} />
+
+      {/* Lastskolan — reglerna till hands medan man lastar */}
+      <HowToPlaySheet
+        open={showSchool}
+        onClose={() => setShowSchool(false)}
+        initialTab="skola"
+        closeLabel="Tillbaka till lasten"
+      />
     </div>
   )
 }

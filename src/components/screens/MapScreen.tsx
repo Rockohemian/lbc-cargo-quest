@@ -21,6 +21,7 @@ import { RARITY_COLORS, LOAD_MIN } from '../../data/cargoTypes'
 import { QUIZ_STARS, QUIZ_STAR_POINTS, STAR_LAYOUT } from '../../data/quizStars'
 import { Button } from '../ui/Button'
 import { GlassCard } from '../ui/GlassCard'
+import { HowToPlaySheet } from '../game/HowToPlaySheet'
 import type { CargoItem, LatLng, QuizStarPin } from '../../types'
 
 // ─── Rival trucks ───────────────────────────────────────────────────────────────
@@ -42,30 +43,45 @@ interface Rival {
 let rivalSeq = 0
 function rivalId() { return `rival-${++rivalSeq}` }
 
+// ─── Gemensamt formspråk för alla kartmarkörer ──────────────────────────────
+const PIN_SHADOW = '0 8px 18px rgba(12,20,15,.20), 0 2px 5px rgba(12,20,15,.14)'
+const PIN_FONT = "700 8px/1 'Inter',system-ui,sans-serif"
+
+/** Nedåtpekande spets i markörens accentfärg. */
+function pinTail(accent: string) {
+  return '<div style="width:0;height:0;margin-top:-2px;border-left:5px solid transparent;' +
+    'border-right:5px solid transparent;border-top:9px solid ' + accent + '"></div>'
+}
+
+/** Liten versal etikett under spetsen. */
+function pinLabel(text: string, accent: string) {
+  return '<div style="margin-top:4px;font:' + PIN_FONT + ';letter-spacing:.16em;color:#fff;' +
+    'background:' + accent + ';padding:3px 5px;border-radius:3px;' +
+    'box-shadow:0 2px 6px rgba(12,20,15,.22)">' + text + '</div>'
+}
+
 function rivalIcon(dwellSec: number, stealTotal: number) {
   const pct = Math.min(100, Math.round((dwellSec / stealTotal) * 100))
   const stealing = pct > 0
-  const bg = stealing ? 'rgba(130,10,5,.97)' : 'rgba(12,9,7,.97)'
-  const border = stealing ? '#a01808' : '#1e1e1e'
-  const glow = stealing ? '0 0 18px rgba(190,35,15,.85)' : '0 0 10px rgba(0,0,0,.9)'
-  const pctBg = pct > 60 ? '#d03010' : '#b07800'
+  const accent = stealing ? '#b63a28' : '#3c423d'
+  const ring = stealing ? ', 0 0 0 5px rgba(182,58,40,.16)' : ''
   const progress = stealing
-    ? '<div style="width:44px;height:3px;background:#1a1a1a;border-radius:2px;overflow:hidden;margin-top:2px">' +
-      '<div style="height:100%;width:' + pct + '%;background:' + pctBg + ';border-radius:2px"></div></div>'
+    ? '<div style="width:38px;height:3px;margin-top:5px;background:rgba(12,20,15,.18);' +
+      'border-radius:2px;overflow:hidden"><div style="height:100%;width:' + pct + '%;' +
+      'background:' + accent + ';border-radius:2px"></div></div>'
     : ''
   return L.divIcon({
     className: '',
     html:
-      '<div style="display:flex;flex-direction:column;align-items:center">' +
-      '<div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center;' +
-      'background:' + bg + ';border:2px solid ' + border + ';border-radius:10px;font-size:22px;' +
-      'box-shadow:' + glow + ';filter:grayscale(0.65) brightness(0.6) sepia(0.4)">' +
-      '&#x1F69B;</div>' +
+      '<div style="width:54px;height:76px;display:flex;flex-direction:column;align-items:center">' +
+      '<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;' +
+      'background:#1b211d;border:2px solid ' + accent + ';border-radius:50%;font-size:18px;line-height:1;' +
+      'box-shadow:' + PIN_SHADOW + ring + '">&#x1F69B;</div>' +
+      pinTail(accent) +
       progress +
-      '<div style="font-size:8px;font-weight:900;letter-spacing:0.18em;color:#666;' +
-      'text-transform:uppercase;text-shadow:0 1px 4px #000;margin-top:2px">RIVAL</div>' +
+      pinLabel('RIVAL', accent) +
       '</div>',
-    iconSize: [46, 66], iconAnchor: [23, 23],
+    iconSize: [54, 76], iconAnchor: [27, 47],
   })
 }
 
@@ -79,44 +95,45 @@ L.Icon.Default.mergeOptions({
 })
 
 function cargoIcon(emoji: string, rarity: string, collected: boolean) {
-  const c = collected ? '#9ca3af' : (RARITY_COLORS[rarity] ?? '#9EA3A5')
-  const op = collected ? 0.35 : 1
+  const accent = collected ? '#b4b9b3' : (RARITY_COLORS[rarity] ?? '#9EA3A5')
+  const op = collected ? 0.4 : 1
+  const gray = collected ? 'filter:grayscale(1);' : ''
   return L.divIcon({
     className: '',
-    html: `<div style="width:44px;height:52px;display:flex;flex-direction:column;align-items:center;opacity:${op}">` +
+    html:
+      `<div style="width:48px;height:52px;display:flex;flex-direction:column;align-items:center;opacity:${op}">` +
       `<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;` +
-      `background:#ffffff;border:1.5px solid #0a0a0a;font-size:20px;` +
-      `box-shadow:0 4px 12px rgba(0,0,0,.18)">${emoji}</div>` +
-      `<div style="width:24px;height:3px;background:${c};margin-top:2px"></div>` +
+      `background:#fff;border:2px solid ${accent};border-radius:50%;font-size:19px;line-height:1;` +
+      `box-shadow:${PIN_SHADOW};${gray}">${emoji}</div>` +
+      pinTail(accent) +
       `</div>`,
-    iconSize: [44, 52], iconAnchor: [22, 26],
+    iconSize: [48, 52], iconAnchor: [24, 47],
   })
 }
 
 /** Kunskapsstjärna. Besvarade stjärnor tonas ner och märks med resultatet. */
 function starIcon(state: 'open' | 'correct' | 'wrong') {
   const answered = state !== 'open'
-  const bg = state === 'correct' ? '#00843e' : state === 'wrong' ? '#8a8a8a' : '#c98a00'
-  const mark = state === 'correct' ? '&#10003;' : state === 'wrong' ? '&#10005;' : '&#11088;'
-  const pulse = answered
+  const accent = state === 'correct' ? '#00843e' : state === 'wrong' ? '#8d938c' : '#c98a00'
+  const mark = state === 'correct' ? '&#10003;' : state === 'wrong' ? '&#10005;' : '&#9733;'
+  const halo = answered
     ? ''
-    : '<div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(201,138,0,.22);' +
-      'animation:pulse 2s infinite"></div>'
+    : '<span style="position:absolute;inset:-8px;border-radius:50%;' +
+      'background:rgba(201,138,0,.24);animation:lcq-halo 2.4s ease-out infinite"></span>'
   return L.divIcon({
     className: '',
     html:
-      '<div style="width:48px;height:58px;display:flex;flex-direction:column;align-items:center;' +
-      'opacity:' + (answered ? 0.7 : 1) + '">' +
+      '<div style="width:52px;height:68px;display:flex;flex-direction:column;align-items:center;' +
+      'opacity:' + (answered ? 0.72 : 1) + '">' +
       '<div style="position:relative;width:40px;height:40px;display:flex;align-items:center;' +
-      'justify-content:center">' + pulse +
-      '<div style="position:relative;width:40px;height:40px;display:flex;align-items:center;' +
-      'justify-content:center;background:' + bg + ';border:2px solid #0a0a0a;border-radius:50%;' +
-      'font-size:18px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.25)">' + mark + '</div></div>' +
-      '<div style="font-size:8px;font-weight:900;letter-spacing:.18em;color:#0a0a0a;' +
-      'text-transform:uppercase;margin-top:3px;background:#fff;padding:1px 4px;' +
-      'border:1px solid rgba(0,0,0,.15)">QUIZ</div>' +
+      'justify-content:center">' + halo +
+      '<span style="position:relative;width:40px;height:40px;display:flex;align-items:center;' +
+      'justify-content:center;background:' + accent + ';border:2px solid #fff;border-radius:50%;' +
+      'font-size:17px;line-height:1;color:#fff;box-shadow:' + PIN_SHADOW + '">' + mark + '</span></div>' +
+      pinTail(accent) +
+      pinLabel('QUIZ', accent) +
       '</div>',
-    iconSize: [48, 58], iconAnchor: [24, 20],
+    iconSize: [52, 68], iconAnchor: [26, 47],
   })
 }
 
@@ -134,11 +151,14 @@ function makeQuizStars(center: LatLng, tapMode: boolean): QuizStarPin[] {
 function playerIcon() {
   return L.divIcon({
     className: '',
-    html: `<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;position:relative">
-      <div style="position:absolute;inset:0;background:rgba(26,126,52,.22);border-radius:50%;animation:pulse 2s infinite"></div>
-      <div style="width:20px;height:20px;background:#00843e;border:3px solid #fff;border-radius:50%;
-        box-shadow:0 2px 8px rgba(10,10,10,.35)"></div></div>`,
-    iconSize: [44, 44], iconAnchor: [22, 22],
+    html:
+      `<div style="width:48px;height:48px;position:relative;display:flex;align-items:center;justify-content:center">` +
+      `<span style="position:absolute;inset:6px;border-radius:50%;background:rgba(0,132,62,.22);` +
+      `animation:lcq-halo 2.6s ease-out infinite"></span>` +
+      `<span style="position:relative;width:20px;height:20px;border-radius:50%;background:#00843e;` +
+      `border:3px solid #fff;box-shadow:0 3px 10px rgba(12,20,15,.35)"></span>` +
+      `</div>`,
+    iconSize: [48, 48], iconAnchor: [24, 24],
   })
 }
 
@@ -173,6 +193,8 @@ export function MapScreen() {
   const isTapMode = collectMode === 'tap'
   const [showModePicker, setShowModePicker] = useState(false)
   const [gpsHintDismissed, setGpsHintDismissed] = useState(false)
+  // Introrutan visas en gång per spelare och går att öppna igen via "?".
+  const [showIntro, setShowIntro] = useState(() => localStorage.getItem('lcq-intro-seen') !== '1')
 
   const [gps, setGps] = useState<GpsInfo>(GPS_PENDING)
   const gpsStatus = gps.status
@@ -450,9 +472,10 @@ export function MapScreen() {
   }, [])
 
   const isNight = mapTheme === 'night'
-  const tileUrl = isNight
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+  // OpenStreetMap standardrutor — fria, kräver ingen API-nyckel och visar
+  // gator, vägnamn och kvarter tydligt. Nattläget skapas av CSS-filtret
+  // .map-night i index.css, så samma rutor används för båda teman.
+  const tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 
   return (
     <div
@@ -469,16 +492,16 @@ export function MapScreen() {
           attributionControl={false}
         >
           <TileLayer
-            key={mapTheme}
             url={tileUrl}
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+            maxZoom={19}
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
           <RecenterMap pos={playerPosition} follow={followPlayer} />
 
           <Circle
             center={[playerPosition.lat, playerPosition.lng]}
             radius={COLLECT_RADIUS}
-            pathOptions={{ color: '#00843e', fillColor: '#00843e', fillOpacity: 0.1, weight: 2 }}
+            pathOptions={{ color: '#00843e', fillColor: '#00843e', fillOpacity: 0.07, weight: 1.5, opacity: 0.55 }}
           />
 
           {/* Event venue boundary circle */}
@@ -487,11 +510,12 @@ export function MapScreen() {
               center={[CURRENT_EVENT.center.lat, CURRENT_EVENT.center.lng]}
               radius={CURRENT_EVENT.displayRadius}
               pathOptions={{
-                color: '#f59e0b',
-                fillColor: '#f59e0b',
-                fillOpacity: 0.06,
-                weight: 2,
-                dashArray: '8 6',
+                color: '#c98a00',
+                fillColor: '#c98a00',
+                fillOpacity: 0.05,
+                weight: 1.5,
+                opacity: 0.6,
+                dashArray: '6 8',
               }}
             />
           )}
@@ -552,13 +576,22 @@ export function MapScreen() {
           )}
         </AnimatePresence>
 
-        {/* Day/night toggle — diskret nere till höger */}
+        {/* Day/night toggle — diskret uppe till höger, fri från CTA-knappen */}
         <button
           onClick={toggleMapTheme}
-          className="absolute bottom-36 right-3 z-[1000] w-9 h-9 flex items-center justify-center bg-white text-[#0a0a0a] border border-black/12 shadow-[0_2px_8px_rgba(0,0,0,.12)] active:bg-[#f6f4ef]"
+          className="absolute top-3 right-3 z-[1000] w-9 h-9 rounded-full flex items-center justify-center bg-white/95 backdrop-blur text-[#0a0a0a] border border-black/10 shadow-[0_4px_12px_rgba(12,20,15,.16)] active:bg-[#f6f4ef]"
           aria-label="Växla kart-tema"
         >
           {isNight ? '☀️' : '🌙'}
+        </button>
+
+        {/* Hjälp — öppnar introrutan och lastskolan igen */}
+        <button
+          onClick={() => setShowIntro(true)}
+          className="absolute top-3 right-14 z-[1000] w-9 h-9 rounded-full flex items-center justify-center bg-white/95 backdrop-blur text-[#0a0a0a] border border-black/10 shadow-[0_4px_12px_rgba(12,20,15,.16)] text-[15px] font-black active:bg-[#f6f4ef]"
+          aria-label="Så spelar du"
+        >
+          ?
         </button>
 
         {/* In-range collect button — svart platt CTA */}
@@ -1025,7 +1058,7 @@ export function MapScreen() {
 
       {/* Välj insamlingssätt — visas första gången och vid manuellt byte */}
       <AnimatePresence>
-        {(!collectMode || showModePicker) && (
+        {!showIntro && (!collectMode || showModePicker) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1099,6 +1132,15 @@ export function MapScreen() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Intro: vad spelet går ut på och hur man lastar rätt */}
+      <HowToPlaySheet
+        open={showIntro}
+        onClose={() => {
+          localStorage.setItem('lcq-intro-seen', '1')
+          setShowIntro(false)
+        }}
+      />
     </div>
   )
 }

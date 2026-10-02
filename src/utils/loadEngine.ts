@@ -228,6 +228,7 @@ export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
     severity: LoadRuleSeverity,
     title: string,
     detail: string,
+    fix: string,
     uid: string
   ) => {
     const existing = found.get(id)
@@ -238,7 +239,7 @@ export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
       }
       return
     }
-    found.set(id, { id, severity, title, detail, count: 1, uids: [uid] })
+    found.set(id, { id, severity, title, detail, fix, count: 1, uids: [uid] })
   }
 
   for (const base of items) {
@@ -250,7 +251,10 @@ export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
         'crushed-fragile',
         'critical',
         'Ömtåligt under last',
-        'Ömtåligt gods ska stå överst eller avskilt. Last ovanpå ger krosskador.',
+        'Ömtåligt gods tål inte tryck uppifrån. Last ovanpå ger krosskador redan av lastens egen vikt, ' +
+          'och ännu mer när lasten rör sig under färden.',
+        'Flytta det ömtåliga kollit högst upp i stapeln, eller ställ det på golvet i en egen sektion ' +
+          'där inget kan lastas ovanpå. Är det märkt med paraply- eller glassymbol ska det alltid ligga överst.',
         base.uid
       )
     }
@@ -259,7 +263,10 @@ export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
         'stacked-on-unstackable',
         'critical',
         'Staplat på ostapelbart',
-        'Godset är märkt som ej stapelbart. Inget får lastas ovanpå det.',
+        'Godset är märkt som ej stapelbart. Emballaget är inte konstruerat för att bära last ovanifrån ' +
+          'och kan ge vika mitt under transporten.',
+        'Lyft bort allt som står ovanpå och placera det bredvid i stället. Behöver du höjden kan du ' +
+          'bygga vidare på ett intilliggande kolli som tål att staplas.',
         base.uid
       )
     }
@@ -269,7 +276,10 @@ export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
           'heavy-on-light',
           'critical',
           'Tungt ovanpå lätt',
-          'Tungt gods lastas underst och lätt överst — annars trycks underlaget sönder och tyngdpunkten hamnar högt.',
+          'Tungt gods ovanpå lätt trycker sönder underlaget och flyttar upp tyngdpunkten, ' +
+            'vilket gör ekipaget mer tippbenäget i kurvor och rondeller.',
+          'Byt plats på kollina: det tyngsta underst mot golvet, det lättaste överst. ' +
+            'Tänk pyramid – bred och tung bas, lätt topp.',
           upper.uid
         )
       }
@@ -283,7 +293,9 @@ export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
         'heavy-high',
         'major',
         'Tung last högt upp',
-        'Tunga kollin hör hemma på golvet. Högt placerad tyngd höjer tyngdpunkten och ökar tipprisken.',
+        'Ett tungt kolli högt upp lyfter hela lastens tyngdpunkt. Ju högre tyngdpunkt, ' +
+          'desto mindre krävs i sidled innan ekipaget börjar tippa.',
+        'Dra ner det tunga kollit till golvnivå och lägg lättare gods ovanpå i stället.',
         it.uid
       )
     }
@@ -292,7 +304,10 @@ export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
         'unsupported',
         'critical',
         'Gods utan underlag',
-        'Lasten måste vila mot golv eller underliggande gods i hela sin bredd.',
+        'Kollit svävar utan att vila mot golv eller underliggande gods. Last som inte har fullt ' +
+          'underlag kan välta eller falla så fort bilen rör sig.',
+        'Flytta ner kollit tills det står på golvet eller helt och hållet på gods under, ' +
+          'i hela sin bredd. Delvis stöd räcker inte.',
         it.uid
       )
     }
@@ -316,7 +331,10 @@ export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
       'headboard-gap',
       'minor',
       'Ej mot framstam',
-      'Lasta framifrån och tight mot framstammen. Ett stort tomrum där gör att lasten kan kasta sig framåt vid inbromsning.',
+      'Det är tomt mellan framstammen och lasten. Vid en inbromsning pressar lasten framåt med ' +
+        'upp till 80 % av sin egen vikt, och då hinner den få fart innan den tar emot.',
+      'Skjut fram hela lasten så den ligger dikt an mot framstammen. Går det inte: fyll tomrummet ' +
+        'med tompallar eller stötta av lasten framåt.',
       floorOccupied[firstCol]!.uid
     )
   }
@@ -329,7 +347,10 @@ export function evaluateLoadRules(items: PlacedItem[]): LoadRuleReport {
             'load-gap',
             'major',
             'Glapp i lasten',
-            'Tomrum mellan kollin låter lasten förskjutas i sidled och längsled. Lasta tight eller fyll ut.',
+            'Tomrum mellan kollin låter lasten komma i rörelse och slå mot nästa kolli. ' +
+              'Ju större glapp, desto hårdare smäll när det väl tar emot.',
+            'Lasta tight kolli mot kolli. Blir det ändå över: fyll ut med tompallar, ' +
+              'surra ihop kollina eller lås dem med en mellanvägg.',
             nextItem.uid
           )
         }

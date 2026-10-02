@@ -58,20 +58,23 @@
     opacity: .45;
   }
 
-  /* Leaflet dark overrides */
-  .leaflet-container { background: #08100a !important; }
-  .leaflet-tile { filter: brightness(0.9) saturate(0.85); }
+  /* Leaflet bas */
+  .leaflet-container { background: #edefe9 !important; font-family: inherit; }
   .leaflet-control-attribution { display: none !important; }
+  .leaflet-tile { filter: none; }
 
-  /* Nattläge – lysande gröna vägar mot svart bakgrund */
-  .map-night .leaflet-container { background: #03070400 !important; }
-  .map-night .leaflet-tile {
-    filter: brightness(0.82) sepia(1) hue-rotate(72deg) saturate(5.5) contrast(1.12);
+  /* Dagläge – dämpad, stilren karta där gatunamnen fortfarande är läsbara.
+     Filtret ligger på hela tile-panelen så att inga sömmar syns mellan rutor. */
+  .map-day .leaflet-container { background: #edefe9 !important; }
+  .map-day .leaflet-tile-pane {
+    filter: saturate(0.38) brightness(1.07) contrast(0.9);
   }
 
-  /* Dagläge – ljus, lättläst karta */
-  .map-day .leaflet-container { background: #e9eee9 !important; }
-  .map-day .leaflet-tile { filter: none; }
+  /* Nattläge – mörk karta med svag grön ton */
+  .map-night .leaflet-container { background: #0b120d !important; }
+  .map-night .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(185deg) brightness(0.92) contrast(0.85) saturate(0.4);
+  }
 
   /* Scrollbar hide utility */
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -284,6 +287,13 @@
 @keyframes pulse {
   0%,100% { transform: scale(1);   opacity: .6; }
   50%      { transform: scale(1.8); opacity: .15; }
+}
+
+/* Mjuk, utåtgående halo för spelar- och quizmarkörer */
+@keyframes lcq-halo {
+  0%   { transform: scale(.82); opacity: .6; }
+  70%  { transform: scale(1.45); opacity: 0; }
+  100% { transform: scale(1.45); opacity: 0; }
 }
 
 /* Smooth canvas rendering */

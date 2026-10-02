@@ -94,6 +94,7 @@ export interface LoadViolation {
   severity: LoadRuleSeverity
   title: string            // kort etikett i UI
   detail: string           // regeln förklarad
+  fix: string              // konkret åtgärd: så här lastar du i stället
   count: number            // antal kollin som bryter mot regeln
   uids: string[]           // berörda placeringar
 }
